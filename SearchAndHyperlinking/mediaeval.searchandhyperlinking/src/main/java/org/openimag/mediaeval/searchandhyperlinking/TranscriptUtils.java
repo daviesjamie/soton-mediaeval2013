@@ -35,8 +35,16 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 public abstract class TranscriptUtils {
 
+	public static void main(String[] args) throws FileNotFoundException, SAXException, IOException {
+		List<SolrInputDocument> docs = readSubtitlesFile(new File(args[0]));
+		
+		System.out.println(docs.isEmpty());
+	}
+	
 	public static List<SolrInputDocument> readSubtitlesFile(File subsFile)
 														   throws SAXException, FileNotFoundException, IOException {
+		System.out.println("(Subs) " + subsFile.getName());
+		
 		XMLReader xr = XMLReaderFactory.createXMLReader();
 		
 		final List<SolrInputDocument> docs = new ArrayList<SolrInputDocument>();
@@ -50,12 +58,10 @@ public abstract class TranscriptUtils {
 									 String qName,
 	                				 Attributes attributes)
 	                						 throws SAXException {
-				if (qName.equals("p") && currentDoc == null) {
+				if (localName.equals("p") && currentDoc == null) {
 					currentDoc = new SolrInputDocument();
 					
-					//doc.addField("id", val);
 					currentDoc.addField("program", progName);
-					//doc.addField("phrase", );
 					currentDoc.addField("start", HMStoS(attributes.getValue("begin")));
 					currentDoc.addField("end", HMStoS(attributes.getValue("end")));
 					currentDoc.addField("source", "subtitles");
@@ -77,12 +83,14 @@ public abstract class TranscriptUtils {
 		});
 		
 		xr.parse(new InputSource(new FileReader(subsFile)));
-		
+
 		return docs;
 	}
 	
 	public static List<SolrInputDocument> readLIMSIFile(File limsiFile)
 			throws FileNotFoundException, IOException, ParserConfigurationException, SAXException {
+		System.out.println("(LIMSI) " + limsiFile.getName());
+		
 		String progName = limsiFile.getName().split("\\.")[0];
 		
 		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -245,39 +253,6 @@ public abstract class TranscriptUtils {
 		}
 		
 		return results;
-	}
-	
-	public static void main(String[] args) {
-		Set<String> lvl1 = new HashSet<String>();
-		lvl1.add("A");
-		lvl1.add("B");
-		lvl1.add("C");
-		
-		Set<String> lvl2 = new HashSet<String>();
-		lvl2.add("1");
-		lvl2.add("2");
-		lvl2.add("3");
-		
-		Set<String> lvl3 = new HashSet<String>();
-		lvl3.add("dog");
-		lvl3.add("cat");
-		lvl3.add("pig");
-		
-		List<Set<String>> sets = new ArrayList<Set<String>>();
-		sets.add(lvl1);
-		sets.add(lvl2);
-		sets.add(lvl3);
-		
-		List<List<String>> iter = generatePermutations(sets);
-		//List<List<String>> proc = procGenPerms(sets);
-		
-		for (List<String> l : iter) {
-			for (String s : l) {
-				System.out.println(s);
-			}
-			
-			System.out.println("---\n");
-		}
 	}
 
 	public static float HMStoS(String hmsString) {
