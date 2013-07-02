@@ -47,7 +47,7 @@ public class SolrTest {
 		SolrServer server = new HttpSolrServer("http://127.0.0.1:8983/solr");
 		
 		//List<SolrInputDocument> docs = TranscriptUtils.readSubtitlesFile(new File("/home/jpreston/Work/data/mediaeval/mediaeval-searchhyper/collection/subtitles/xml/20080511_001500_bbcthree_two_pints_of_lager_and.xml"));
-		List<SolrInputDocument> docs = TranscriptUtils.readLIMSIFile(new File("/home/jpreston/Work/data/mediaeval/mediaeval-searchhyper/collection/transcripts/LIMSI/20080511_001500_bbcthree_two_pints_of_lager_and.xml"));
+		List<SolrInputDocument> docs = TranscriptUtils.readLIMSIFile(new File(args[0]));
 		
 		server.add(docs);
 		server.commit();

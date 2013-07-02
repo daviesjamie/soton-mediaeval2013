@@ -121,8 +121,8 @@ public abstract class TranscriptUtils {
 																"etime")));
 								solrDoc.addField("source", "limsi");
 								
-								SortedMap<Float, Set<String>> transcriptMatrix = 
-										new TreeMap<Float, Set<String>>();
+								SortedMap<Float, SortedMap<Float, String>> transcriptMatrix = 
+										new TreeMap<Float, SortedMap<Float, String>>();
 								
 								NodeList wordNodeList = segmentElement.getChildNodes();
 								for (int k = 0; k < wordNodeList.getLength(); k++) {
@@ -130,48 +130,50 @@ public abstract class TranscriptUtils {
 										Element wordElement = (Element) wordNodeList.item(k);
 										
 										// Get each Word and group together words occurring
-										// at same time (alternatives).
+										// at same time (alternatives), maintaining 
+										// confidence information.
 										if (wordElement.getTagName().equals("Word")) {
 											String word = wordElement.getTextContent();
 											
+											if (word.equals(" {fw} ")) {
+												continue;
+											}
+											
 											Float start = Float.parseFloat(
 															wordElement.getAttribute("stime"));
+											Float conf = Float.parseFloat(
+															wordElement.getAttribute("conf"));
 											
-											Set<String> words = transcriptMatrix.get(start);
+											SortedMap<Float, String> words =
+													transcriptMatrix.get(start);
 											
 											if (words != null) {
-												words.add(word);
+												words.put(conf, word);
 											} else {
-												words = new HashSet<String>();
-												words.add(word);
+												words = new TreeMap<Float, String>();
+												words.put(conf, word);
 												transcriptMatrix.put(start, words);
 											}
 										}
 									}
 								}
 								
-								// Generate list of all possible transcripts.
-								List<List<String>> transcripts =
-										generatePermutations(
-												new ArrayList<Set<String>>(
-														transcriptMatrix.values()));
+								// Generate most probable transcript from the
+								// confidence scores.
+								String phrase = "";
 								
-								// Build each doc.
-								for (List<String> transcript : transcripts) {
-									String phrase = "";
+								for (SortedMap<Float, String> pos : 
+										transcriptMatrix.values()) {
+									String next = "";
 									
-									for (String word : transcript) {
-										phrase += word;
+									for (String s : pos.values()) {
+										next = s;
 									}
 									
-									/*SolrInputDocument newDoc = solrDoc.deepCopy();
-									newDoc.addField("phrase", phrase);
-									
-									docs.add(newDoc);*/
-									
-									solrDoc.addField("phrase", phrase);
+									phrase += next;
 								}
 								
+								solrDoc.addField("phrase", phrase);
 								docs.add(solrDoc);
 							}
 						}
