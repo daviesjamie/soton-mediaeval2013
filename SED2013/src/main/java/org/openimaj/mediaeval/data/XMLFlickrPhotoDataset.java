@@ -5,7 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -30,6 +32,7 @@ public class XMLFlickrPhotoDataset implements Dataset<Photo> {
 
 	private PhotoList pl;
 	Logger logger = Logger.getLogger(XMLFlickrPhotoDataset.class);
+	private Map<String, Photo> idIndex;
 
 	/**
 	 * @param xmlFile
@@ -45,15 +48,24 @@ public class XMLFlickrPhotoDataset implements Dataset<Photo> {
 	/**
 	 * @param is
 	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
 	 */
-	public XMLFlickrPhotoDataset(InputStream is) throws IOException, SAXException, ParserConfigurationException {
+	public XMLFlickrPhotoDataset(InputStream is) throws IOException {
 		logger.debug("Loading XML file from InputStream");
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		Document doc = dBuilder.parse(is);
+		DocumentBuilder dBuilder;
+		Document doc = null;
+		try {
+			dBuilder = dbFactory.newDocumentBuilder();
+			doc = dBuilder.parse(is);
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
 		pl = PhotoUtils.createPhotoList(doc.getDocumentElement());
+		logger.debug("Preparing ID index");
+		this.idIndex = new HashMap<String,Photo>();
+		for (Photo p : this) {
+			this.idIndex.put(p.getId(), p);
+		}
 	}
 
 	@Override
@@ -85,6 +97,14 @@ public class XMLFlickrPhotoDataset implements Dataset<Photo> {
 	@Override
 	public int numInstances() {
 		return pl.size();
+	}
+
+	/**
+	 * @param photoID
+	 * @return the photo with this id
+	 */
+	public Photo get(String photoID) {
+		return this.idIndex.get(photoID);
 	}
 
 }

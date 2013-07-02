@@ -1,5 +1,6 @@
 package org.openimaj.mediaeval.vis;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -51,8 +52,8 @@ public class FlickrPhotoWorldVisualiser {
 	}
 
 	public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException {
-		InputStream dsStream = FlickrPhotoWorldVisualiser.class.getResourceAsStream("/flickr.photo.xml");
-//		InputStream dsStream = new FileInputStream("/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml");
+//		InputStream dsStream = FlickrPhotoWorldVisualiser.class.getResourceAsStream("/flickr.photo.xml");
+		InputStream dsStream = new FileInputStream("/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml");
 		XMLFlickrPhotoDataset dataset = new XMLFlickrPhotoDataset(dsStream);
 		FlickrPhotoWorldVisualiser fpwv = new FlickrPhotoWorldVisualiser(dataset);
 
