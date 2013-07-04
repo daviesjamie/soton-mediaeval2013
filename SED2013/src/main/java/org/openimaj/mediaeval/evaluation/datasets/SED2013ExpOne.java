@@ -2,6 +2,8 @@ package org.openimaj.mediaeval.evaluation.datasets;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -39,7 +41,11 @@ public class SED2013ExpOne {
 	 * @author Sina Samangooei (ss@ecs.soton.ac.uk)
 	 *
 	 */
-	public class Training extends MapBackedDataset<Integer, ListDataset<Photo>, Photo>{
+	public static class Training extends MapBackedDataset<Integer, ListDataset<Photo>, Photo>{
+		private XMLFlickrPhotoDataset fullDataset;
+		private Logger logger = Logger.getLogger(Training.class);
+		private Map<Photo, Integer> invertedCluster;
+
 		/**
 		 * @param clusterCSV a stream (file or other) in CSV format containing clusterID,photoID
 		 * @param photosXML a stream (file or other) in XML format containing a flickr photolist usable by {@link XMLFlickrPhotoDataset#XMLFlickrPhotoDataset(java.io.InputStream)}
@@ -57,7 +63,9 @@ public class SED2013ExpOne {
 		public Training(InputStream clusterCSV, XMLFlickrPhotoDataset xmlFlickrPhotoDataset) throws IOException {
 			CSVParser parser = new CSVParser(clusterCSV, '\t');
 			String[] line;
+			logger.debug("Loading cluster CSV");
 			while((line = parser.getLine()) != null){
+				if(line[0].equals("cluster")) continue;
 				Integer clusterID = Integer.parseInt(line[0]);
 				String photoID = line[1];
 				ListDataset<Photo> clusterSet = this.get(clusterID);
@@ -66,12 +74,35 @@ public class SED2013ExpOne {
 				}
 				clusterSet.add(xmlFlickrPhotoDataset.get(photoID));
 			}
+			this.fullDataset = xmlFlickrPhotoDataset;
+			this.invertedCluster = prepareInvertedCluster();
+			
 		}
+
+		private Map<Photo, Integer> prepareInvertedCluster() {
+			Map<Photo, Integer> ret = new HashMap<Photo,Integer>();
+			for (Integer cluster : this.keySet()) {
+				for (Photo p : this.get(cluster)) {					
+					ret.put(p, cluster);
+				}
+			}
+			return ret;
+		}
+
+		/**
+		 * @param photo
+		 * @return the cluster containing this photo, null if it doesn't exist
+		 */
+		public Integer getPhotoCluster(Photo photo) {
+			return this.invertedCluster.get(photo);
+		}
+
+		
 	}
 
 	/**
 	 * @param ds
-	 * @return
+	 * @return the analysis
 	 */
 	public MEAnalysis eval(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds) {
 		return eval(ds,new PhotoTime());

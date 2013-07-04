@@ -4,9 +4,12 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
@@ -22,6 +25,7 @@ import com.aetrion.flickr.photos.PhotoUrl;
 import com.aetrion.flickr.photos.Size;
 import com.aetrion.flickr.tags.Tag;
 import com.aetrion.flickr.util.XMLUtilities;
+import com.hp.hpl.jena.sparql.util.NodeFactory;
 
 /**
  * Utilitiy-methods to transfer requested XML to Photo-objects.
@@ -177,7 +181,8 @@ public final class PhotoUtils {
             if (ownerElement == null) {
                 User owner = new User();
                 owner.setId(getAttribute("owner", photoElement, defaultElement));
-                owner.setUsername(getAttribute("ownername", photoElement, defaultElement));
+                
+                owner.setUsername(getAttrAlternatives(photoElement,"username","ownername"));
                 photo.setOwner(owner);
                 photo.setUrl("http://flickr.com/photos/" + owner.getId() + "/" + photo.getId());
             } else {
@@ -410,5 +415,58 @@ public final class PhotoUtils {
         }
         return photos;
     }
+    /**
+     * 
+     * <photo id="85556119" 
+     * 	photo_url="http://farm1.staticflickr.com/39/85556119_4958c870fd.jpg" 
+     * 	username="niallkennedy" 
+     * 	dateTaken="2006-01-11 20:48:24.0" 
+     * 	dateUploaded="2006-01-12 09:05:13.0">
+     * 		<title>Group shot</title>
+     * 		<description>A shot of almost the entire crowd at the Mac small business dinner</description>
+     * 		<tags>
+     * 			<tag>macsb</tag>
+     * 			<tag>macworld</tag>
+     * 		</tags>
+     * 		<location latitude="37.7836" longitude="-122.399"></location>
+     * 	</photo>
+     * @param p
+     * @param elm
+     * @return 
+     */
+	public static Node createElement(Photo p, Document doc) {
+		Element elm = doc.createElement("photo");
+		elm.setAttribute("id", sanitize(p.getId()));
+		elm.setAttribute("photo_url", sanitize(p.getUrl()));
+		elm.setAttribute("username", sanitize(p.getOwner().getUsername()));
+		elm.setAttribute("dateTaken", sanitize(((DateFormat)DATE_FORMATS.get()).format(p.getDateTaken())));
+		elm.setAttribute("dateUploaded", sanitize(((DateFormat)DATE_FORMATS.get()).format(p.getDatePosted())));
+		Element title = doc.createElement("title");
+		title.appendChild(doc.createTextNode(sanitize(p.getTitle())));
+		elm.appendChild(title);
+		Element desc = doc.createElement("description");
+		desc.appendChild(doc.createTextNode(sanitize(p.getDescription())));
+		elm.appendChild(desc);
+		Element tags = doc.createElement("tags");
+		for (Object tagO : p.getTags()) {
+			Element tag = doc.createElement("tag");
+			Text tagContent = doc.createTextNode(sanitize(((Tag)tagO).getValue()));
+			tag.appendChild(tagContent);
+			tags.appendChild(tag);
+		}
+		elm.appendChild(tags);
+		if(p.getGeoData()!=null){			
+			Element location = doc.createElement("location");
+			location.setAttribute("latitude", "" + p.getGeoData().getLatitude());
+			location.setAttribute("longitude", "" + p.getGeoData().getLongitude());
+			elm.appendChild(location);
+		}
+		return elm;
+	}
+
+	private static String sanitize(String s) {
+		if(s == null) return "";
+		return s;
+	}
 
 }
