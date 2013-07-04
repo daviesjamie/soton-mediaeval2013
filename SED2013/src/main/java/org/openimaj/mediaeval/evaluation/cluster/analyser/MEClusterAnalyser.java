@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.openimaj.util.pair.IntIntPair;
 
+import twitter4j.internal.logging.Logger;
+
 
 /**
  * A set of measures used to evaulate clustering. 
@@ -15,6 +17,8 @@ import org.openimaj.util.pair.IntIntPair;
  *
  */
 public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
+	private Logger logger = Logger.getLogger(MEClusterAnalyser.class);
+
 	@Override
 	public MEAnalysis analyse(int[][] correct, int[][] estimated) {
 		Map<Integer,Integer> invCor = invert(correct);
@@ -28,8 +32,11 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 	private double nmi(int[][] c, int[][] e, Map<Integer, Integer> ic, Map<Integer, Integer> ie) {
 		double N = Math.max(ic.size(), ie.size());
 		double mi = mutualInformation(N, c,e,ic,ie);
+		logger.debug(String.format("Iec = %2.5f",mi));
 		double ent_e = entropy(e,N);
+		logger.debug(String.format("He = %2.5f",ent_e));
 		double ent_c = entropy(c,N);
+		logger.debug(String.format("Hc = %2.5f",ent_c));
 		return mi / ((ent_e + ent_c)/2);
 	}
 	
@@ -42,6 +49,7 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 	private double entropy(int[][] clusters, double N) {
 		double total = 0;
 		for (int k = 0; k < clusters.length; k++) {
+			logger .debug(String.format("%2.1f/%2.1f * log2 ((%2.1f / %2.1f) )",(double)clusters[k].length,(double)N,(double)clusters[k].length,(double)N));
 			double prop = clusters[k].length / N;
 			total += prop * log2(prop);
 		}
@@ -73,7 +81,11 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 					if(ic.get(e[k][i]) == j) both++;
 				}
 				double normProp = (both * N)/(n_c * n_e);
-				mi += (both / N) + (log2(normProp));
+				logger.debug(String.format("normprop = %2.5f",normProp));
+				double sum = (both / N) * (log2(normProp));
+				mi += sum;
+				
+				logger.debug(String.format("%2.1f/%2.1f * log2 ((%2.1f * %2.1f) / (%2.1f * %2.1f)) = %2.5f",both,N,both,N,n_c,n_e,sum));
 			}
 		}
 		return mi;

@@ -1,5 +1,8 @@
 package org.openimaj.mediaeval.data.util;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +31,11 @@ import com.aetrion.flickr.util.XMLUtilities;
  */
 public final class PhotoUtils {
 	private static final long serialVersionUID = 12L;
-
+	private static final ThreadLocal DATE_FORMATS = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        }
+    };
     private PhotoUtils() {
     }
 
@@ -82,11 +89,23 @@ public final class PhotoUtils {
         photo.setOriginalSecret(photoElement.getAttribute("originalsecret"));
         photo.setIconServer(photoElement.getAttribute("iconserver"));
         photo.setIconFarm(photoElement.getAttribute("iconfarm"));
-        photo.setDateTaken(photoElement.getAttribute("datetaken"));
-        photo.setDatePosted(photoElement.getAttribute("dateupload"));
+        String taken = getAttrAlternatives(photoElement,"datetaken","dateTaken");
+		photo.setDateTaken(taken);
+        String uploaded = getAttrAlternatives(photoElement,"dateuploaded","dateupload","dateUploaded","dateUpload");
+        try{
+        	Long.parseLong(uploaded);
+        	photo.setDatePosted(uploaded);
+        }catch(Exception e){
+        	try {
+        		photo.setDatePosted(((DateFormat)DATE_FORMATS.get()).parse(uploaded));
+			} catch (ParseException e1) {
+				
+			}
+        }
         photo.setLastUpdate(photoElement.getAttribute("lastupdate"));
         // flickr.groups.pools.getPhotos provides this value!
-        photo.setDateAdded(photoElement.getAttribute("dateadded"));
+        String added = photoElement.getAttribute("dateadded");
+		photo.setDateAdded(added);
         photo.setOriginalWidth(photoElement.getAttribute("o_width"));
         photo.setOriginalHeight(photoElement.getAttribute("o_height"));
         photo.setMedia(photoElement.getAttribute("media"));
@@ -225,9 +244,9 @@ public final class PhotoUtils {
             photo.setTakenGranularity(datesElement.getAttribute("takengranularity"));
             photo.setLastUpdate(datesElement.getAttribute("lastupdate"));
         } catch (IndexOutOfBoundsException e) {
-            photo.setDateTaken(photoElement.getAttribute("datetaken"));
+            photo.setDateTaken(taken);
         } catch (NullPointerException e) {
-            photo.setDateTaken(photoElement.getAttribute("datetaken"));
+            photo.setDateTaken(taken);
         }
 
         NodeList permissionsNodes = photoElement.getElementsByTagName("permissions");
@@ -363,7 +382,15 @@ public final class PhotoUtils {
         return photo;
     }
 
-    /**
+    private static String getAttrAlternatives(Element elm,String ... strings) {
+		for (String string : strings) {
+			String ret = elm.getAttribute(string);
+			if(ret != null && !ret.equals("")) return ret;
+		}
+		return "";
+	}
+
+	/**
      * Parse a list of Photos from given Element.
      *
      * @param photosElement

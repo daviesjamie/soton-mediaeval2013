@@ -15,12 +15,12 @@ import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
  *
  * @param <T>
  */
-public class DoubleDBSCANDatasetClusterer<T> implements DatasetClusterer<T> {
+public class DoubleDBSCANClusterer<T> implements Clusterer<T> {
 	
-	private final class ExtractedDataset implements DataSource<double[]> {
+	private final class ExtractedDatasource implements DataSource<double[]> {
 		private final List<T> data;
 
-		private ExtractedDataset(List<T> data) {
+		private ExtractedDatasource(List<T> data) {
 			this.data = data;
 		}
 
@@ -89,7 +89,7 @@ public class DoubleDBSCANDatasetClusterer<T> implements DatasetClusterer<T> {
 	 * @param dbscan
 	 * 
 	 */
-	public DoubleDBSCANDatasetClusterer(
+	public DoubleDBSCANClusterer(
 			FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
 	) {
 		this.extractor = extractor;
@@ -97,7 +97,7 @@ public class DoubleDBSCANDatasetClusterer<T> implements DatasetClusterer<T> {
 	}
 	@Override
 	public int[][] cluster(final List<T> data) {
-		DoubleDBSCANClusters res = dbscan.cluster(new ExtractedDataset(data));
+		DoubleDBSCANClusters res = dbscan.cluster(new ExtractedDatasource(data));
 		return res.getClusterMembers();
 	}
 

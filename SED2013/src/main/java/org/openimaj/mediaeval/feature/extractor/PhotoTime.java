@@ -1,5 +1,7 @@
 package org.openimaj.mediaeval.feature.extractor;
 
+import java.util.Date;
+
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 
@@ -16,9 +18,12 @@ public class PhotoTime implements FeatureExtractor<DoubleFV, Photo>{
 	@Override
 	public DoubleFV extractFeature(Photo p) {
 		DoubleFV ret = new DoubleFV(3);
-		ret.values[0] = p.getDateAdded().getTime();
-		ret.values[1] = p.getDatePosted().getTime();
-		ret.values[2] = p.getDateTaken().getTime();
+		Date dateAdded = p.getDateAdded();
+		if(dateAdded!=null) ret.values[0] = dateAdded.getTime();
+		Date datePosted = p.getDatePosted();
+		if(datePosted!=null) ret.values[1] = datePosted.getTime();
+		Date dateTaken = p.getDateTaken();
+		if(dateTaken!=null) ret.values[2] = dateTaken.getTime();
 		return ret ;
 	}
 
