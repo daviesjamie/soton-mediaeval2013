@@ -3,28 +3,111 @@ package org.openimaj.mediaeval.vis;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.openimaj.data.dataset.Dataset;
-import org.openimaj.mediaeval.data.XMLFlickrPhotoDataset;
+import org.openimaj.image.colour.ColourMap;
+import org.openimaj.image.colour.RGBColour;
+import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
+import org.openimaj.util.pair.LongLongPair;
+import org.openimaj.vis.general.BarVisualisation;
+import org.openimaj.vis.general.StrokeColourProvider;
 import org.xml.sax.SAXException;
+
+import twitter4j.internal.logging.Logger;
 
 import com.aetrion.flickr.photos.Photo;
 
 
+/**
+ * @author Sina Samangooei (ss@ecs.soton.ac.uk)
+ *
+ */
 public class FlickrPhotoTimeVisualiser {
 
-	public FlickrPhotoTimeVisualiser(Dataset<Photo> photos) {
+	private Logger logger = Logger.getLogger(FlickrPhotoTimeVisualiser.class);
 
+	/**
+	 * @param photos
+	 * @param end 
+	 * @param start 
+	 */
+	public FlickrPhotoTimeVisualiser(Training photos, Date start, Date end) {
+		System.out.println(photos.numInstances());
+//		LongLongPair minmax = findMinMax(photos);
+		LongLongPair minmax = LongLongPair.pair(timeNorm(start.getTime()), timeNorm(end.getTime()));
+		double[] data = new double[(int) (minmax.second - minmax.first)+1];
+		final Float[][] clusterColours = new Float[data.length][];
+		Map<Integer,Float[]> clusterColourMap = new HashMap<Integer,Float[]>();
+		int i = 0;
+		for (Integer cluster : photos.keySet()) {
+//			clusterColourMap.put(cluster, ColourMap.Hot.apply(i++/(float)photos.size()));
+			clusterColourMap.put(cluster, RGBColour.randomColour());
+		}
+		for (int j = 0; j < clusterColours.length; j++) {
+			clusterColours[j] = RGBColour.BLACK;
+		}
+		
+		for (Photo photo : photos) {
+			int time = timeNorm(photo);
+			if(time < minmax.first || time > minmax.second) continue;
+			int index = (time - (int)minmax.first); 
+			logger.debug(String.format("Photo: %s, Time: %d, Index: %d",photo.getId(),time,index));
+			data[index] = 1;
+			clusterColours[index] = clusterColourMap.get(photos.getPhotoCluster(photo));
+		}
+		BarVisualisation vis = new BarVisualisation(2000,600);
+		vis.setInvidiualBarColours(clusterColours);
+		vis.setData(data);
+		
+		vis.showWindow("Flickr Clusters");
+		logger.debug("Number of clusters: " + photos.size());
+		
 	}
 
-	public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException {
-//		InputStream dsStream = FlickrPhotoWorldVisualiser.class.getResourceAsStream("/flickr.photo.xml");
-		InputStream dsStream = new FileInputStream("/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml");
-		XMLFlickrPhotoDataset dataset = new XMLFlickrPhotoDataset(dsStream);
-		FlickrPhotoWorldVisualiser fpwv = new FlickrPhotoWorldVisualiser(dataset);
+	private int timeNorm(long t) {
+		return (int) (t/1000/60/60);
+	}
 
+	private LongLongPair findMinMax(Training photos) {
+		long min = Long.MAX_VALUE;
+		long max = 0;
+		for (Photo photo : photos) {
+			int time = timeNorm(photo,true);
+			logger.debug(String.format("Photo: %s, Time: %d",photo.getId(),time));
+			if(time < 0) 
+				logger.error(String.format("Photo(%s) has problems",photo.getId()));
+			min = Math.min(min, time);
+			max = Math.max(max, time);
+		}
+		return LongLongPair.pair(min, max);
+	}
+
+	private int timeNorm(Photo photo) {
+		return timeNorm(photo,false);
+	}
+	private int timeNorm(Photo photo,boolean force) {
+		long t = photo.getDateTaken().getTime();
+		if(force || t < 1000) t = photo.getDatePosted().getTime();
+		return timeNorm(t);
+	}
+
+	public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException, ParseException {
+//		InputStream dsStream = FlickrPhotoTimeVisualiser.class.getResourceAsStream("/flickr.photo.xml");
+//		InputStream dsStream = FlickrPhotoTimeVisualiser.class.getResourceAsStream("/sed2013_partial_dataset_train.xml");
+//		InputStream clStream = FlickrPhotoTimeVisualiser.class.getResourceAsStream("/sed2013_partial_dataset_train_gs.csv");
+		InputStream dsStream = new FileInputStream("/Users/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train.xml");
+		InputStream clStream = new FileInputStream("/Users/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train_gs.csv");
+		Training dataset = new Training(clStream, dsStream);
+		SimpleDateFormat f = new SimpleDateFormat("yyyy MM dd");
+		Date start = f.parse("2007 01 01");
+		Date end = f.parse("2007 01 20");
+		FlickrPhotoTimeVisualiser fpwv = new FlickrPhotoTimeVisualiser(dataset,start,end);
 	}
 
 }

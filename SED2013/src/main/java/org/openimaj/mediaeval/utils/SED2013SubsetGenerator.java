@@ -9,7 +9,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +29,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.log4j.Logger;
 import org.openimaj.mediaeval.data.util.PhotoUtils;
 import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
+import org.openimaj.mediaeval.vis.FlickrPhotoTimeVisualiser;
 import org.openimaj.util.queue.BoundedPriorityQueue;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -53,9 +57,8 @@ public class SED2013SubsetGenerator {
 	 * @param string 
 	 * @throws IOException 
 	 */
-	public SED2013SubsetGenerator(InputStream clusterCSV, InputStream photosXML, String clusterOut, String photoOut) throws IOException {
+	public SED2013SubsetGenerator(InputStream clusterCSV, InputStream photosXML, String clusterOut, String photoOut,int select) throws IOException {
 		this.training = new Training(clusterCSV, photosXML);
-		int select = 500;
 		logger.debug(String.format("Selecting %d oldest photos",select));
 		BoundedPriorityQueue<Photo> bpq = new BoundedPriorityQueue<Photo>(select, new PhotoTimeComparator());
 		int seen = 0;
@@ -72,6 +75,48 @@ public class SED2013SubsetGenerator {
 		}
 		writeClusterCSV(clusterOut, selectedClusters);
 		writePhotoXML(photoOut, selectedClusters);
+	}
+	
+	/**
+	 * @param clusterCSV
+	 * @param photosXML 
+	 * @param string2 
+	 * @param string 
+	 * @throws IOException 
+	 * @throws ParseException 
+	 */
+	public SED2013SubsetGenerator(InputStream clusterCSV, InputStream photosXML, String clusterOut, String photoOut,int select,Date start, Date end) throws IOException, ParseException {
+		this.training = new Training(clusterCSV, photosXML);
+		logger.debug(String.format("Selecting %d oldest photos",select));
+		BoundedPriorityQueue<Photo> bpq = new BoundedPriorityQueue<Photo>(select, new PhotoTimeComparator());
+		int seen = 0;
+		int dateSkipped = 0;
+		for (Photo photo : this.training) {
+			seen++;
+			if(photo.getId().equals("553386348")){
+				System.out.println(photo);
+			}
+			if(outsideRange(start, end, photo.getDatePosted()) || outsideRange(start, end, photo.getDateTaken()) ) {
+				dateSkipped++;
+				continue;
+			}
+			bpq.add(photo);
+		}
+		logger.debug(String.format("Saw %d photos",seen));
+		logger.debug(String.format("Skipped %d photos",dateSkipped));
+
+		List<Photo> orderedPhotos = bpq.toOrderedList();
+		Set<Integer> selectedClusters = new HashSet<Integer>();
+		for (Photo photo : orderedPhotos) {
+			selectedClusters.add(this.training.getPhotoCluster(photo));
+		}
+		writeClusterCSV(clusterOut, selectedClusters);
+		writePhotoXML(photoOut, selectedClusters);
+	}
+
+	private boolean outsideRange(Date start, Date end, Date d) {
+		if(d == null) return true;
+		return d.before(start) || d.after(end);
 	}
 
 	private void writePhotoXML(String photoOut, Set<Integer> selectedClusters) {
@@ -120,11 +165,24 @@ public class SED2013SubsetGenerator {
 		printer.close();
 	}
 	
-	public static void main(String[] args) throws IOException {
-		InputStream clusterfis = new FileInputStream("/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train_gs.csv");
-		InputStream photosfis = new FileInputStream("/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml");
+	public static void main(String[] args) throws IOException, ParseException {
+//		InputStream clusterfis = new FileInputStream("/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train_gs.csv");
+//		InputStream photosfis = new FileInputStream("/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml");
+		InputStream clusterfis = new FileInputStream("/Users/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train_gs.csv");
+		InputStream photosfis = new FileInputStream("/Users/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml");
+//		InputStream photosfis = FlickrPhotoTimeVisualiser.class.getResourceAsStream("/sed2013_partial_dataset_train.xml");
+//		InputStream clusterfis = FlickrPhotoTimeVisualiser.class.getResourceAsStream("/sed2013_partial_dataset_train_gs.csv");
 //		InputStream clusterfis = SED2013SubsetGenerator.class.getResourceAsStream("/flickr.photo.cluster.csv");
 //		InputStream photosfis =  SED2013SubsetGenerator.class.getResourceAsStream("/flickr.photo.xml");
-		new SED2013SubsetGenerator(clusterfis, photosfis,"/home/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train_gs.csv","/home/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train.xml");
+//		String clusterOut = "/home/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train_gs.csv";
+//		String photoOut = "/home/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train.xml";
+		String clusterOut = "/Users/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train_gs.csv";
+		String photoOut = "/Users/ss/Experiments/mediaeval/SED2013/sed2013_partial_dataset_train.xml";
+		
+		SimpleDateFormat f = new SimpleDateFormat("yyyy");
+		Date start = f.parse("2007");
+		Date end = f.parse("2008");
+		
+		new SED2013SubsetGenerator(clusterfis, photosfis,clusterOut,photoOut,200,start,end);
 	}
 }
