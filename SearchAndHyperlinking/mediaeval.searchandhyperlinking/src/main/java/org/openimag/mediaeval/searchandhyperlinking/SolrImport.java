@@ -34,12 +34,12 @@ public class SolrImport {
 	private static final int CACHE_SIZE = 1000000;
 	
 	public static enum ImportType {
-		Subtitles, LIMSI
+		Subtitles, LIMSI, Metadata
 	}
 
 	/**
-	 * Import subtitle and LIMSI data from the directories specified on the 
-	 * command line into a Solr server running at http://localhost:8983/.
+	 * Import data from the directory specified on the command line into a 
+	 * Solr server running at http://localhost:8983/.
 	 * 
 	 * 
 	 * @param args[0] - Path to subs dir.
@@ -48,32 +48,39 @@ public class SolrImport {
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		File subsDir = new File(args[0]);
-		File limsiDir = new File(args[1]);
+		File filesDir = new File(args[0]);
+		String type = args[1];
 		File excludes = new File(args[2]);
 		
 		List<String> excludeList = Arrays.asList(FileUtils.readlines(excludes));
-
-		List<File> subsFiles = new ArrayList<File>();
-		for (File subsFile : subsDir.listFiles()) {
-			if (!excludeList.contains(subsFile.getName())) {
-				subsFiles.add(subsFile);
-			}
-		}
 		
-		List<File> limsiFiles = new ArrayList<File>();
-		for (File limsiFile : limsiDir.listFiles()) {
-			if (!excludeList.contains(limsiFile.getName())) {
-				limsiFiles.add(limsiFile);
-			}
-		}
+		List<File> files = removeExcluded(filesDir, excludeList);
 
 		SolrServer server = new HttpSolrServer("http://localhost:8983/solr");
 		
-		importFiles(server, subsFiles, ImportType.Subtitles);
-		importFiles(server, limsiFiles, ImportType.LIMSI);
+		ImportType importType= null;
+		if (type.equals("subs")) {
+			importType = ImportType.Subtitles;
+		} else if (type.equals("limsi")) {
+			importType = ImportType.LIMSI;
+		} else if (type.equals("meta")) {
+			importType = ImportType.Metadata;
+		}
+		
+		importFiles(server, files, importType);
 		
 		server.commit();
+	}
+	
+	public static List<File> removeExcluded(File dir, List<String> excludes) {
+		List<File> files = new ArrayList<File>();
+		for (File file : dir.listFiles()) {
+			if (!excludes.contains(file.getName().split("\\.")[0])) {
+				files.add(file);
+			}
+		}
+		
+		return files;
 	}
 
 	public static void importFiles(SolrServer server,
@@ -94,8 +101,9 @@ public class SolrImport {
 			List<SolrInputDocument> sourceDocs = null;
 			
 			switch (type) {
-				case Subtitles: sourceDocs = TranscriptUtils.readSubtitlesFile(sourceFile); break;
-				case LIMSI: sourceDocs = TranscriptUtils.readLIMSIFile(sourceFile); break;
+				case Subtitles: sourceDocs = ImportUtils.readSubtitlesFile(sourceFile); break;
+				case LIMSI: sourceDocs = ImportUtils.readLIMSIFile(sourceFile); break;
+				case Metadata: sourceDocs = ImportUtils.readMetadataFile(sourceFile); break;
 				default: throw new Exception("Type not implemented!");
 			}
 			

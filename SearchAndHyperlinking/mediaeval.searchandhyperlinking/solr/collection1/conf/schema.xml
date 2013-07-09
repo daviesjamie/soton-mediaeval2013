@@ -21,26 +21,28 @@
       <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
         <analyzer type="index">
           <tokenizer class="solr.StandardTokenizerFactory"/>
+          <filter class="solr.LowerCaseFilterFactory"/>
           <filter class="solr.StopFilterFactory"
                   ignoreCase="true"
                   words="stopwords.txt"
                   />
-          <filter class="solr.LowerCaseFilterFactory"/>
   	<filter class="solr.EnglishPossessiveFilterFactory"/>
+          <filter class="solr.SynonymFilterFactory" format="wordnet" synonyms="wn_s.pl" ignoreCase="true" expand="true"/>
          <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
          <filter class="solr.PorterStemFilterFactory"/>
+         <filter class="solr.PhoneticFilterFactory" encoder="DoubleMetaphone"/>
         </analyzer>
         <analyzer type="query">
           <tokenizer class="solr.StandardTokenizerFactory"/>
-          <filter class="solr.SynonymFilterFactory" format="wordnet" synonyms="wn_s.pl" ignoreCase="true" expand="true"/>
+          <filter class="solr.LowerCaseFilterFactory"/>
           <filter class="solr.StopFilterFactory"
                   ignoreCase="true"
                   words="stopwords.txt"
                   />
-          <filter class="solr.LowerCaseFilterFactory"/>
   	<filter class="solr.EnglishPossessiveFilterFactory"/>
           <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
           <filter class="solr.PorterStemFilterFactory"/>
+         <filter class="solr.PhoneticFilterFactory" encoder="DoubleMetaphone"/>
         </analyzer>
       </fieldType>
   
@@ -85,13 +87,22 @@
       <fieldType name="float" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0" />
   </types>
    <fields>
-      <!--<field name="id" type="int" indexed="true" stored="true" required="true" multiValued="false" />-->
+      <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+      <field name="type" type="string" indexed="true" stored="true" required="true" multiValued="false" />
       <field name="program" type="string" indexed="true" stored="true" required="true" multiValued="false" />
-      <field name="phrase" type="text_en" indexed="true" stored="true" required="true" multiValued="true" />
-      <field name="start" type="float" indexed="true" stored="true" required="true" multiValued="false" />
-      <field name="end" type="float" indexed="true" stored="true" required="true" multiValued="false" />
-      <field name="source" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+      
+      <!-- Subs/transcript fields. -->
+      <field name="phrase" type="text_en" indexed="true" stored="true" required="false" multiValued="true" />
+      <field name="start" type="float" indexed="true" stored="true" required="false" multiValued="false" />
+      <field name="end" type="float" indexed="true" stored="true" required="false" multiValued="false" />
+      <field name="source" type="string" indexed="true" stored="true" required="false" multiValued="false" />
+
+      <!-- Program fields. -->
+      <field name="synopsis" type="text_en" indexed="true" stored="true" required="false" multiValued="false" />
+      <field name="length" type="float" indexed="true" stored="true" required="false" multiValued="false" />
+      <field name="title" type="text_en" indexed="true" stored="true" required="false" multiValued="false" />
   </fields>
 
-<!--  <uniqueKey>id</uniqueKey>-->
+<uniqueKey>id</uniqueKey>
+<defaultSearchField>program</defaultSearchField>
 </schema>
