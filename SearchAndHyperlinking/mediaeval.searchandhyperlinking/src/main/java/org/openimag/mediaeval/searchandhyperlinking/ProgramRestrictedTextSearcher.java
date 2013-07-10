@@ -1,15 +1,28 @@
 package org.openimag.mediaeval.searchandhyperlinking;
 
+import gov.sandia.cognition.learning.algorithm.clustering.AgglomerativeClusterer;
+import gov.sandia.cognition.learning.algorithm.clustering.cluster.Cluster;
+import gov.sandia.cognition.learning.algorithm.clustering.cluster.DefaultCluster;
+import gov.sandia.cognition.learning.algorithm.clustering.cluster.DefaultClusterCreator;
+import gov.sandia.cognition.learning.algorithm.clustering.divergence.ClusterToClusterDivergenceFunction;
+import gov.sandia.cognition.learning.algorithm.clustering.hierarchy.ClusterHierarchyNode;
+import gov.sandia.cognition.learning.function.distance.CosineDistanceMetric;
+import gov.sandia.cognition.util.CloneableSerializable;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -20,6 +33,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrInputDocument;
 import org.openimaj.feature.DoubleFVComparison;
 import org.openimaj.image.DisplayUtilities;
 import org.openimaj.image.MBFImage;
@@ -31,6 +45,8 @@ import org.openimaj.knn.NearestNeighboursFactory;
 import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
+import org.openimaj.util.filter.FilterUtils;
+import org.openimaj.util.function.Predicate;
 import org.xml.sax.SAXException;
 
 public class ProgramRestrictedTextSearcher implements Searcher {
@@ -42,23 +58,22 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 		
 		List<Query> queries = Query.readQueriesFromFile(new File("/home/jpreston/Work/data/mediaeval/mediaeval-searchhyper/dev/dev-queries.xml"));
 		
-		for (Query q : queries) {			
+		for (Query q : queries) {
+			
 			List<Result> res = searcher.search(q);
 
 			for (int i = 0; i < res.size(); i++) {
 				Result r = res.get(i);
 				
-				if (r.getConfidenceScore() > 0.35) {
-					System.out.println(q.getQueryID() + " " +
-									  "Q0" + " " +
-									  "v" + r.getProgram() + " " +
-									  DataUtils.StoMS(r.getStartTime()) + " " +
-									  DataUtils.StoMS(r.getEndTime()) + " " +
-									  DataUtils.StoMS(r.getJumpInPoint()) + " " +
-									  (i + 1) + " " +
-									  r.getConfidenceScore() + " " +
-									  "run_1");
-				}
+				System.out.println(q.getQueryID() + " " +
+								  "Q0" + " " +
+								  "v" + r.getProgram() + " " +
+								  DataUtils.StoMS(r.getStartTime()) + " " +
+								  DataUtils.StoMS(r.getEndTime()) + " " +
+								  DataUtils.StoMS(r.getJumpInPoint()) + " " +
+								  (i + 1) + " " +
+								  r.getConfidenceScore() + " " +
+								  "run_1");
 			}
 		}
 	}
@@ -74,20 +89,16 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 		// Maximum number of programs to query in synopsis for.
 		final int MAX_SYNOPSIS_RESULTS = 3;
 		
-		// Stores weight for each program.
+		// Store weight and length for each program.
 		Map<String, Float> progWeights = new HashMap<String, Float>();
-		Map<String, Float> progLength = new HashMap<String, Float>();
+		Map<String, Float> progLengths = new HashMap<String, Float>();
 		
 		// Get synopsis results.
-		SolrQuery solrQuery = new SolrQuery("{!df=synopsis} type:progmeta AND (" + 
-											q.getQueryText() + ")");
-		solrQuery.setRows(MAX_SYNOPSIS_RESULTS);
-		solrQuery.addField("score");
-		solrQuery.addField("*");
+		String query = "{!df=synopsis} type:progmeta AND (" + q.getQueryText() + ")";
 		
-		QueryResponse response;
+		SolrDocumentList results;
 		try {
-			response = server.query(solrQuery);
+			results = SearchUtils.queryServer(server, query, MAX_SYNOPSIS_RESULTS);
 		} catch (SolrServerException e) {
 			e.printStackTrace();
 			return null;
@@ -95,34 +106,26 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 		
 		Set<String> progNames = new HashSet<String>();
 		
-		// Weight programs and add to list, add titles to progName set.
-		SolrDocumentList results = response.getResults();
-		
 		float maxScore = results.getMaxScore();
 		
 		for (int i = 0; i < results.size(); i++) {
 			String program = (String) results.get(i).getFieldValue("program");
 			float progScore = (Float) results.get(i).getFieldValue("score");
 			progWeights.put(program, progScore / maxScore);
-			progLength.put(program, (Float) results.get(i).getFieldValue("length"));
+			progLengths.put(program, (Float) results.get(i).getFieldValue("length"));
 			progNames.add((String) results.get(i).getFieldValue("title"));
 		}
 		
 		// Find program IDs matching titles from synopses, add to list.
 		for (String title : progNames) {
-			solrQuery = new SolrQuery("{!df=title} type:progmeta AND \"" + title + "\"");
-			solrQuery.setRows(100);
-			solrQuery.addField("score");
-			solrQuery.addField("*");
-			
+			query = "{!df=title} type:progmeta AND \"" + title + "\"";
+
 			try {
-				response = server.query(solrQuery);
+				results = SearchUtils.queryServer(server, query, 100);
 			} catch (SolrServerException e) {
 				e.printStackTrace();
 				return null;
 			}
-			
-			results = response.getResults();
 			
 			// Scale maxScore so that results are skewed in favour of synopsis
 			// hits.
@@ -131,7 +134,7 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 			for (SolrDocument doc : results) {
 				String program = (String) doc.getFieldValue("program");
 				
-				progLength.put(program, (Float) doc.getFieldValue("length"));
+				progLengths.put(program, (Float) doc.getFieldValue("length"));
 				
 				if (!progWeights.containsKey(program)) {
 					float progScore = (Float) doc.getFieldValue("score");
@@ -146,99 +149,166 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 		for (Map.Entry<String, Float> entry : progWeights.entrySet()) {
 			String program = entry.getKey();
 			Float progWeight = entry.getValue();
+			Float progLength = progLengths.get(program);
 			
-			if (progWeight < 0.5) continue;
+			//if (progWeight < 0.5) continue;
 			
-			solrQuery = new SolrQuery("{!df=phrase} type:trans AND program:" +
-									  program + " AND (" + q.getQueryText() + ")");
-			solrQuery.setRows(1000);
+			query = "{!df=phrase} type:trans AND program:" +
+					program + " AND (" + q.getQueryText() + ")";
 			
 			try {
-				response = server.query(solrQuery);
+				results = SearchUtils.queryServer(server, query, 1000);
 			} catch (SolrServerException e) {
 				e.printStackTrace();
 				return null;
 			}
-		
-			results = response.getResults();
 			
-			// Cluster results.
-			double[][] data = new double[results.size()][2];
-			for (int i = 0; i < results.size(); i++) {
-				data[i][0] = (Float) results.get(i).getFieldValue("start");
-				data[i][1] = (Float) results.get(i).getFieldValue("end");
-			}
+			/*maxScore = results.getMaxScore();
 			
-			MBFImage vis = DataUtils.visualiseData(data, progLength.get(program), RGBColour.GREEN);
-			
-			NearestNeighboursFactory<DoubleNearestNeighboursExact, double[]> nnFactory =
-				new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.EUCLIDEAN);
-			DBSCANConfiguration<DoubleNearestNeighbours, double[]> dbscanConfig = 
-				new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(2, 10, 3, nnFactory);
-			DoubleDBSCAN dbscan = new DoubleDBSCAN(dbscanConfig);
-			
-			DoubleDBSCANClusters clusters = dbscan.cluster(data);
-			
+			// Convert results.
 			List<Result> progResults = new ArrayList<Result>();
 			
-			float maxConf = 0;
-			
-			boolean clustered = false;
-			
-			int[][] indices = clusters.getClusterMembers();
-			for (int i = 0; i < indices.length; i++) {
-				double min = Double.MAX_VALUE;
-				double max = 0;
+			for (SolrDocument doc : results) {
+				Float start = (Float) doc.getFieldValue("start");
+				Float end = (Float) doc.getFieldValue("end");
+				Float docScore = (Float) doc.getFieldValue("score");
 				
-				for (int j = 0; j < indices[i].length; j++) {
-					double start = data[indices[i][j]][0];
-					double end = data[indices[i][j]][1];
-					
-					if (start < min) min = start;
-					if (end > max) max = end;
+				// Program weight has more value than transcript weight.
+				Float confidence = (float) (((progWeight) + 0.75*(docScore / maxScore)) / 1.75);
+				
+				progResults.add(new Result(program, start, end, start, confidence));
+			}*/
+			
+			// Convert SolrDocument results to Results objects, calculating 
+			// average cosine similarity as weighting.
+			List<Result> progResults = new ArrayList<Result>();
+			
+			CosineDistanceMetric distanceMetric = new CosineDistanceMetric();
+			
+			SolrDocument[] resultsArray = results.toArray(new SolrDocument[0]);
+			for (int i = 0; i < resultsArray.length; i++) {
+				SolrDocument doc = resultsArray[i];
+				
+				Float start = (Float) doc.getFieldValue("start");
+				Float end = (Float) doc.getFieldValue("end");
+				String id = (String) doc.getFieldValue("id");
+				
+				MapVector docVector;
+				try {
+					docVector = SearchUtils.getTermVector(server, id);
+				} catch (SolrServerException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return null;
 				}
 				
-				double[][] minMaxData = { { min, max } };
+				double cosine = 0.0;
 				
-				vis.addInplace(
-					DataUtils.visualiseData(minMaxData,
-											progLength.get(program),
-											RGBColour.RED));
-				clustered = true;
+				for (int j = 0; j < resultsArray.length; j++) {
+					SolrDocument otherDoc = resultsArray[j];
+					
+					if (!doc.equals(otherDoc)) {
+						System.out.println(i + ", " + j);
+						
+						String otherId = (String) otherDoc.getFieldValue("id");
+						
+						MapVector otherDocVector;
+						try {
+							otherDocVector = SearchUtils.getTermVector(server, otherId);
+						} catch (SolrServerException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							return null;
+						}
+						
+						cosine += distanceMetric.evaluate(docVector, otherDocVector);
+					}
+				}
 				
-				if (maxConf < indices[i].length) maxConf = indices[i].length;
+				cosine /= results.size() - 1;
 				
-				Result clusterResult =
-					new Result(program, (float) min, (float) max, (float) min, indices[i].length);
-				progResults.add(clusterResult);
+				progResults.add(new Result(program, start, end, start,
+											progWeight * (float) cosine));
 			}
 			
-			// Scale confidences by maxConf and progWeight.
-			for (Result res : progResults) {
-				res.setConfidenceScore(progWeight * res.getConfidenceScore() / maxConf);
+			/*int[][] clusterParams = { { 10,  3 },
+									  { 300, 2 },
+									 // { 600, 2 },
+									//  { 300, 3 }
+									};
+
+			for (int i = 0; i < clusterParams.length && progResults.size() > 2; i ++) {
+				progResults = DataUtils.clusterResults(progResults,
+													   clusterParams[i][0],
+													   clusterParams[i][1],
+													   true,
+													   progLength);
+			}*/
+			
+			// Cluster.
+			@SuppressWarnings("serial")
+			ClusterToClusterDivergenceFunction<DefaultCluster<Result>, Result> divFunc = 
+					new ClusterToClusterDivergenceFunction<DefaultCluster<Result>, Result>() {
+
+						@Override
+						public double evaluate(DefaultCluster<Result> first,
+								DefaultCluster<Result> second) {
+							Result firstRes = DataUtils.clusterToResult(first);
+							Result secondRes = DataUtils.clusterToResult(second);
+							
+							return firstRes.distanceTo(secondRes);
+						}
+						
+						public CloneableSerializable clone() {
+							return null;
+						}
+				
+			};
+			
+			AgglomerativeClusterer<Result, DefaultCluster<Result>> clusterer = 
+				new AgglomerativeClusterer<Result, DefaultCluster<Result>>(divFunc, new DefaultClusterCreator<Result>());
+			ClusterHierarchyNode<Result, DefaultCluster<Result>> root = 
+				clusterer.clusterHierarchically(progResults);
+			
+			// Create results from clusters.
+			Queue<ClusterHierarchyNode<Result, DefaultCluster<Result>>> nodeQueue =
+				new ConcurrentLinkedQueue<ClusterHierarchyNode<Result, DefaultCluster<Result>>>();
+			nodeQueue.add(root);
+			
+			Set<Result> clusterResults = new HashSet<Result>();
+			
+			while (!nodeQueue.isEmpty()) {
+				ClusterHierarchyNode<Result, DefaultCluster<Result>> cur =
+					nodeQueue.poll();
+				Result clusterResult = DataUtils.clusterToResult(cur);
+				
+				if (clusterResult.getConfidenceScore() > 0.1 &&
+					clusterResult.getLength() > 150 &&
+					clusterResult.getLength() < 0.5 * progLength) {
+						clusterResults.add(clusterResult);
+				}
+				
+				if (cur.getChildren() != null) {
+					nodeQueue.addAll(cur.getChildren());
+				}
 			}
 			
-			queryResults.addAll(progResults);
+			/*// Junk results that are too short.
+			progResults = FilterUtils.filter(progResults, new Predicate<Result>() {
+
+				@Override
+				public boolean test(Result object) {
+					return object.getLength() > 1;
+				}
+				
+			});*/
 			
-			if (clustered) DisplayUtilities.displayName(vis, q.getQueryText() + ": " + program);
+			queryResults.addAll(clusterResults);
 		}
 		
-		Collections.sort(queryResults, new Comparator<Result>() {
-
-			@Override
-			public int compare(Result arg0, Result arg1) {
-				float diff = arg1.getConfidenceScore() - arg0.getConfidenceScore();
-				
-				if (diff < 0) {
-					return -1;
-				} else if (diff == 0) {
-					return 0;
-				} else {
-					return 1;
-				}
-			}
-		
-		});
+		// Order results by time and then by program.
+		Collections.sort(queryResults, new DataUtils.ResultTimeComparator());
+		Collections.sort(queryResults, new DataUtils.ResultProgramComparator());
 		
 		return queryResults;
 	}

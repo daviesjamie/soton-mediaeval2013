@@ -54,4 +54,52 @@ public class Result {
 			   jumpInPoint + "\n" +
 			   confidenceScore + "\n";
 	}
+	public float getLength() {
+		return endTime - startTime;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Float.floatToIntBits(confidenceScore);
+		result = prime * result + Float.floatToIntBits(endTime);
+		result = prime * result + Float.floatToIntBits(jumpInPoint);
+		result = prime * result + ((program == null) ? 0 : program.hashCode());
+		result = prime * result + Float.floatToIntBits(startTime);
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Result other = (Result) obj;
+		if (Float.floatToIntBits(confidenceScore) != Float
+				.floatToIntBits(other.confidenceScore))
+			return false;
+		if (Float.floatToIntBits(endTime) != Float
+				.floatToIntBits(other.endTime))
+			return false;
+		if (Float.floatToIntBits(jumpInPoint) != Float
+				.floatToIntBits(other.jumpInPoint))
+			return false;
+		if (program == null) {
+			if (other.program != null)
+				return false;
+		} else if (!program.equals(other.program))
+			return false;
+		if (Float.floatToIntBits(startTime) != Float
+				.floatToIntBits(other.startTime))
+			return false;
+		return true;
+	}
+
+	public float distanceTo(Result arg0) {
+		return (float) Math.sqrt(Math.pow(arg0.getStartTime() - getStartTime(), 2) + 
+						 		 Math.pow(arg0.getEndTime() - getEndTime(), 2));
+	}
 }
