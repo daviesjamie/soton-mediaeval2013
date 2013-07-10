@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -25,7 +24,6 @@ import com.aetrion.flickr.photos.PhotoUrl;
 import com.aetrion.flickr.photos.Size;
 import com.aetrion.flickr.tags.Tag;
 import com.aetrion.flickr.util.XMLUtilities;
-import com.hp.hpl.jena.sparql.util.NodeFactory;
 
 /**
  * Utilitiy-methods to transfer requested XML to Photo-objects.
@@ -35,8 +33,9 @@ import com.hp.hpl.jena.sparql.util.NodeFactory;
  */
 public final class PhotoUtils {
 	private static final long serialVersionUID = 12L;
-	private static final ThreadLocal DATE_FORMATS = new ThreadLocal() {
-        protected synchronized Object initialValue() {
+	public static final ThreadLocal DATE_FORMATS = new ThreadLocal() {
+        @Override
+		protected synchronized Object initialValue() {
             return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         }
     };
@@ -103,7 +102,7 @@ public final class PhotoUtils {
         	try {
         		photo.setDatePosted(((DateFormat)DATE_FORMATS.get()).parse(uploaded));
 			} catch (ParseException e1) {
-				
+
 			}
         }
         photo.setLastUpdate(photoElement.getAttribute("lastupdate"));
@@ -181,7 +180,7 @@ public final class PhotoUtils {
             if (ownerElement == null) {
                 User owner = new User();
                 owner.setId(getAttribute("owner", photoElement, defaultElement));
-                
+
                 owner.setUsername(getAttrAlternatives(photoElement,"username","ownername"));
                 photo.setOwner(owner);
                 photo.setUrl("http://flickr.com/photos/" + owner.getId() + "/" + photo.getId());
@@ -416,11 +415,11 @@ public final class PhotoUtils {
         return photos;
     }
     /**
-     * 
-     * <photo id="85556119" 
-     * 	photo_url="http://farm1.staticflickr.com/39/85556119_4958c870fd.jpg" 
-     * 	username="niallkennedy" 
-     * 	dateTaken="2006-01-11 20:48:24.0" 
+     *
+     * <photo id="85556119"
+     * 	photo_url="http://farm1.staticflickr.com/39/85556119_4958c870fd.jpg"
+     * 	username="niallkennedy"
+     * 	dateTaken="2006-01-11 20:48:24.0"
      * 	dateUploaded="2006-01-12 09:05:13.0">
      * 		<title>Group shot</title>
      * 		<description>A shot of almost the entire crowd at the Mac small business dinner</description>
@@ -432,7 +431,7 @@ public final class PhotoUtils {
      * 	</photo>
      * @param p
      * @param elm
-     * @return 
+     * @return
      */
 	public static Node createElement(Photo p, Document doc) {
 		Element elm = doc.createElement("photo");
@@ -455,7 +454,7 @@ public final class PhotoUtils {
 			tags.appendChild(tag);
 		}
 		elm.appendChild(tags);
-		if(p.getGeoData()!=null){			
+		if(p.getGeoData()!=null){
 			Element location = doc.createElement("location");
 			location.setAttribute("latitude", "" + p.getGeoData().getLatitude());
 			location.setAttribute("longitude", "" + p.getGeoData().getLongitude());

@@ -16,6 +16,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.log4j.Logger;
 import org.openimaj.data.dataset.Dataset;
 import org.openimaj.mediaeval.data.util.PhotoUtils;
+import org.openimaj.util.function.Operation;
+import org.openimaj.util.stream.Stream;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -61,11 +63,31 @@ public class XMLFlickrPhotoDataset implements Dataset<Photo> {
 			throw new IOException(e);
 		}
 		pl = PhotoUtils.createPhotoList(doc.getDocumentElement());
+		prepareIdIndex();
+	}
+
+	private void prepareIdIndex() {
 		logger.debug("Preparing ID index");
 		this.idIndex = new HashMap<String,Photo>();
 		for (Photo p : this) {
 			this.idIndex.put(p.getId(), p);
 		}
+	}
+
+	/**
+	 * @param stream read all the elements from a Photo stream
+	 */
+	public XMLFlickrPhotoDataset(Stream<Photo> stream) {
+		pl = new PhotoList();
+		stream.forEach(new Operation<Photo>() {
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public void perform(Photo object) {
+				pl.add(object);
+			}
+		});
+		prepareIdIndex();
 	}
 
 	@Override
@@ -107,6 +129,6 @@ public class XMLFlickrPhotoDataset implements Dataset<Photo> {
 		return this.idIndex.get(photoID);
 	}
 
-	
+
 
 }
