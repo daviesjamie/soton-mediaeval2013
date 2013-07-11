@@ -132,9 +132,6 @@
       <version>1.4.01</version>
     </dependency>
     <dependency>
-      <groupId>org.hsqldb</groupId>
-      <artifactId>hsqldb</artifactId>
-      <version>2.2.9</version>
     </dependency>
   </dependencies>
   <repositories>
