@@ -4,3 +4,4 @@ target
 .classpath
 data/*
 !data/init.sql
+!data/import_countries.rb
