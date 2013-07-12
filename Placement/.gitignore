@@ -2,4 +2,6 @@ target
 .settings
 .project
 .classpath
-data
+data/*
+!data/init.sql
+!data/import_countries.rb
