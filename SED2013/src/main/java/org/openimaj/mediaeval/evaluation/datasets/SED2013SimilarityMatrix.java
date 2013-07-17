@@ -80,11 +80,13 @@ public class SED2013SimilarityMatrix {
 //		String bigFile = "/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml";
 		
 		if(args.length!=3){
-			logger.error("Usage:<cmd> experiment_name experiment_home photo_xml_file ");
+			logger.error("Usage: <cmd> experiment_name experiment_home photo_xml_file");
+			return;
 		}
 		String expName = args[0];
 		String expHome = args[1];
 		String bigFile = args[2];
+			
 		
 		
 		String tfidfSource = String.format("%s/%s",expHome,"training.sed2013.photo_tfidf");
@@ -124,11 +126,15 @@ public class SED2013SimilarityMatrix {
 		for (int i = 0; i < allPhotos.size(); i++) {
 			SparseMatrix rmat = SparseMatrixFactoryMTJ.INSTANCE.copyMatrix(SparseMatrixFactoryMTJ.INSTANCE.createWrapper(new FlexCompRowMatrix(1, count)));
 			for (int j = i; j < allPhotos.size(); j++) {
+				if(i%100 == 0){
+					if(j%1000 == 0){
+						logger.debug(String.format("row %d, col %d/%d",i,j,allPhotos.size()));
+					}
+				}
 				double d = comp.compare(allPhotos.get(i), allPhotos.get(j));
 				if(threshold(d)){
 					rmat.setElement(0, j, d);
 				}
-				j++;
 			}
 			// flush the row matrix
 			File rowout = new File(sparseRowDir,String.format("%d.mat",i));
