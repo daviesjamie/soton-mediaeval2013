@@ -7,6 +7,7 @@ import gov.sandia.cognition.learning.algorithm.clustering.cluster.DefaultCluster
 import gov.sandia.cognition.learning.algorithm.clustering.divergence.ClusterToClusterDivergenceFunction;
 import gov.sandia.cognition.learning.algorithm.clustering.hierarchy.ClusterHierarchyNode;
 import gov.sandia.cognition.learning.function.distance.CosineDistanceMetric;
+import gov.sandia.cognition.math.matrix.Vector;
 import gov.sandia.cognition.util.CloneableSerializable;
 
 import java.io.File;
@@ -54,11 +55,17 @@ import com.google.common.collect.Constraint;
 import com.google.common.collect.Constraints;
 
 public class ProgramRestrictedTextSearcher implements Searcher {
+	private int MAX_SYNOPSIS_RESULTS = 3;
+	private float TITLE_WEIGHT_THRESHOLD = 2;
+	private int MAX_TITLE_RESULTS = 10;
+	private float TITLE_RESULT_SCALE_FACTOR = 0.5f;
+	private int MAX_TRANS_RESULTS = 500;
+	
 	private SolrServer server;
 	
 	public static void main(String[] args) throws SAXException, IOException, ParserConfigurationException {
 		SolrServer serv = new HttpSolrServer("http://seurat:8983/solr");
-		ProgramRestrictedTextSearcher searcher = new ProgramRestrictedTextSearcher(serv);
+		ProgramRestrictedQueryExpandingTextSearcher searcher = new ProgramRestrictedQueryExpandingTextSearcher(serv);
 		
 		List<Query> queries = Query.readQueriesFromFile(new File("/home/jpreston/Work/data/mediaeval/mediaeval-searchhyper/dev/dev-queries.xml"));
 		
@@ -89,9 +96,6 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 	@Override
 	public List<Result> search(Query q) {		
 		String query = q.getQueryText();
-		
-		// Search for query in synopsis.
-		final int MAX_SYNOPSIS_RESULTS = 3;
 		
 		SolrDocumentList synopsisSolrResults;
 		try {
@@ -126,9 +130,6 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 		// For each title, if the title weight exceeds a threshold, find other 
 		// programs with that title and add them to programsWithWeights, 
 		// scaling the weight.
-		final int MAX_TITLE_RESULTS = 100;
-		final float TITLE_WEIGHT_THRESHOLD = 2.0f;
-		final float TITLE_RESULT_SCALE_FACTOR = 0.5f;
 		
 		for (String title : titlesWithWeights.keySet()) {
 			float weight = titlesWithWeights.get(title);
@@ -162,7 +163,6 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 		
 		// Generate results for each program: create Result objects from 
 		// transcript hits and cluster into bigger Results.
-		final int MAX_TRANS_RESULTS = 10000;
 		
 		List<Result> queryResults = new ArrayList<Result>();
 		
@@ -186,7 +186,7 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 			for (SolrDocument result : transSolrResults) {
 				float start = (Float) result.getFieldValue("start");
 				float end = (Float) result.getFieldValue("end");
-				float weight = ((Float) result.getFieldValue("score")) + 1;
+				float weight = (Float) (result.getFieldValue("score")) + 1;
 
 				transResults.add(new Result(program, start, end, start, weight));
 			}
@@ -202,10 +202,12 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 						Result firstRes = DataUtils.clusterToResult(first);
 						Result secondRes = DataUtils.clusterToResult(second);
 						
-						float absConfDiff = Math.abs(firstRes.getConfidenceScore() -
+						double absConfDiff = Math.abs(firstRes.getConfidenceScore() -
 													 secondRes.getConfidenceScore());
 						float tempDist = firstRes.distanceTo(secondRes);
 						
+						//return absConfDiff;
+						//return tempDist;
 						return (tempDist * absConfDiff) / (tempDist + absConfDiff + 1);
 					}
 					
@@ -271,9 +273,8 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 					nodeQueue.poll();
 				Result clusterResult = DataUtils.clusterToResult(cur);
 				
-				if (clusterResult.getConfidenceScore() > 0.1 &&
-					clusterResult.getLength() > 60 * 5 &&
-					clusterResult.getLength() < 0.5 * programsWithLengths.get(program)) {
+				if (clusterResult.getLength() > 60 * 5 &&
+					clusterResult.getLength() < 0.25 * programsWithLengths.get(program)) {
 						try {
 							clusterResults.add(clusterResult);
 						} catch (TemporalException e) {
@@ -296,10 +297,32 @@ public class ProgramRestrictedTextSearcher implements Searcher {
 			queryResults.addAll(clusterResults);
 		}
 		
+		if (queryResults.size() == 0) return null;
+		
 		// Sort by confidence.
 		Collections.sort(queryResults, new Result.ResultConfidenceComparator());
+		
+		// Filter by confidence.
+		final float maxConf = queryResults.get(0).getConfidenceScore();
+
+		queryResults = FilterUtils.filter(queryResults, new Predicate<Result>() {
+
+			@Override
+			public boolean test(Result object) {
+				return object.getConfidenceScore() > 0.1 * maxConf;
+			}
+			
+		});
 		
 		return queryResults;
 	}
 
+	@Override
+	public void setProperties(Vector input) {
+		MAX_SYNOPSIS_RESULTS = (int) input.getElement(0);
+		TITLE_WEIGHT_THRESHOLD = (float) input.getElement(1);
+		MAX_TITLE_RESULTS = (int) input.getElement(2);
+		TITLE_RESULT_SCALE_FACTOR = (float) input.getElement(3);
+		MAX_TRANS_RESULTS = (int) input.getElement(4);
+	}
 }

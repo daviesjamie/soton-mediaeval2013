@@ -41,7 +41,7 @@ public class OptimiseSearcher {
 		
 		FunctionMinimizerBFGS minimizer = 
 			new FunctionMinimizerBFGS(new LineMinimizerDerivativeBased(1),
-									  vectorFactory.copyValues(3, 2, 10, 0.5f, 100, 5, 5),
+									  vectorFactory.copyValues(3, 2, 10, 0.5f, 100),
 									  1e-3,
 									  100);
 		
@@ -55,7 +55,7 @@ public class OptimiseSearcher {
 			minimizer.learn(
 				new NumericalDifferentiator.VectorJacobian(
 					new SearcherEvaluator(
-						new ProgramRestrictedQueryExpandingTextSearcher(solrServer),
+						new ProgramRestrictedTextSearcher(solrServer),
 						new MRRReducer(),
 						expectedResults,
 						600),
