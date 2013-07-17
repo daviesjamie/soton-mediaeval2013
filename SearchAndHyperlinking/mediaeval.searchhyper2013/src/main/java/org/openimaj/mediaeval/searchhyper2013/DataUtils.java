@@ -8,14 +8,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 import org.openimaj.feature.DoubleFVComparison;
 import org.openimaj.image.DisplayUtilities;
 import org.openimaj.image.Image;
@@ -31,6 +35,11 @@ import org.openimaj.math.geometry.shape.Rectangle;
 import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
+import org.openimaj.util.function.Predicate;
+
+import com.github.wcerfgba.Row;
+import com.github.wcerfgba.Table;
+
 
 public abstract class DataUtils {
 	public static final String[] badWords = { "bbc" };
@@ -57,6 +66,14 @@ public abstract class DataUtils {
 	
 	public static MBFImage visualiseData(List<Result> results, int height, float progLength, Float[] col) {
 		
+		float maxConf = 0;
+		
+		for (Result result : results) {
+			if (result.getConfidenceScore() > maxConf) {
+				maxConf = result.getConfidenceScore();
+			}
+		}
+		
 		MBFImage vis = new MBFImage(X_DIM, height, ColourSpace.RGB);
 		
 		for (int i = 0; i < results.size(); i++) {
@@ -65,8 +82,14 @@ public abstract class DataUtils {
 			int xStart = (int)((result.getStartTime() / progLength) * X_DIM);
 			int xEnd = (int)((result.getEndTime() / progLength) * X_DIM);
 			
-			vis.drawLine(xStart, 0, xStart, height, 1, col);
-			vis.drawLine(xEnd, 0, xEnd, height, 1, col);
+			Float[] colour = new Float[3];
+			
+			for (int j = 0; j < colour.length; j++) {
+				colour[j] = (result.getConfidenceScore() / maxConf) * col[j];
+			}
+			
+			vis.drawLine(xStart, 0, xStart, height, 1, colour);
+			vis.drawLine(xEnd, 0, xEnd, height, 1, colour);
 		}
 		
 		return vis;
@@ -373,5 +396,93 @@ public abstract class DataUtils {
 		list.add(clusterToResult);
 		
 		return visualiseData(list, height, progLength, green);
+	}
+
+	public static String createExpansionQuery(SolrDocumentList docs) {
+		Table wordTable = new Table("word", "count", "score");
+		
+		for (SolrDocument doc : docs) {
+			String[] words = ((String) doc.getFieldValue("phrase")).split("\\s");
+			
+			for (String word : words) {
+				String trimmedWord = word.replaceAll("^\\W+|\\W+$", "").trim().toLowerCase();
+				
+				if (trimmedWord.equals("")) continue;
+				
+				Row wordRow = wordTable.matchingRow(trimmedWord, null, null);
+				
+				if (wordRow != null) {
+					wordRow.set("count", ((Integer) wordRow.get("count")) + 1);
+					wordRow.set("score", ((Float) wordRow.get("score")) +  
+										 ((Float) doc.getFieldValue("score")));
+				} else {
+					wordTable.addRow(trimmedWord, 1, doc.getFieldValue("score"));
+				}
+			}
+		}
+		
+		wordTable = wordTable.sort(new Comparator<Row>() {
+
+			@Override
+			public int compare(Row arg0, Row arg1) {
+				return ((Float) arg1.get("score")).compareTo((Float) arg0.get("score"));
+			}
+			
+		})/*.sort(new Comparator<Row>() {
+
+			@Override
+			public int compare(Row arg0, Row arg1) {
+				return ((Integer) arg0.get("count")).compareTo((Integer) arg1.get("count"));
+			}
+			
+		})*/;
+		
+		int maxCount = 0;
+		
+		for (Row row : wordTable) {
+			if ((Integer) row.get("count") > maxCount) {
+				maxCount = (Integer) row.get("count");
+			}
+		}
+		
+		float maxScore = 0;
+		
+		for (Row row : wordTable) {
+			if ((Float) row.get("score") > maxScore) {
+				maxScore = (Float) row.get("score");
+			}
+		}
+		
+		String query = "";
+		
+		for (int i = 0; i < 100 && i < wordTable.size(); i++) {
+			Row row = wordTable.getRow(i);
+			
+			//Float score = (((Float) row.get("score")));
+			//Float score = (maxScore) / (Integer) row.get("count");
+			Float score = (Float) row.get("score") / (Integer) row.get("count");
+			
+			query += "\"" + row.get("word") + "\"^" + score + " ";
+		}
+		
+		return query;
+	}
+
+	public static MBFImage visualiseData(
+			SolrDocumentList solrDocs, int height,
+			Float progLength, Float[] col) {
+		List<Result> results = new ArrayList<Result>();
+		
+		for (SolrDocument doc : solrDocs) {
+			results.add(
+				new Result(
+					(String) doc.getFieldValue("program"),
+					(Float) doc.getFieldValue("start"),
+					(Float) doc.getFieldValue("end"),
+					(Float) doc.getFieldValue("start"),
+					(Float) doc.getFieldValue("score")));
+		}
+		
+		return visualiseData(results, height, progLength, col);
 	}
 }

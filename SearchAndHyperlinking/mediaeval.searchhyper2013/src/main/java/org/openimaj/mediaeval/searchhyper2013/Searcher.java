@@ -1,5 +1,7 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
+import gov.sandia.cognition.math.matrix.Vector;
+
 import java.util.List;
 
 /**
@@ -10,4 +12,6 @@ import java.util.List;
  */
 public interface Searcher {
 	public List<Result> search(Query q);
+
+	public void setProperties(Vector input);
 }

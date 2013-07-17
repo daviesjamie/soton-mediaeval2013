@@ -298,4 +298,83 @@ public abstract class ImportUtils {
 		
 		return secs;
 	}
+
+	public static Map<Query, Set<Result>> importExpected(File queryFile,
+														 File qRelFile) throws IOException, ParserConfigurationException, SAXException {
+		// First get queries.
+		Map<String, Query> queries = new HashMap<String, Query>();
+		
+		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		
+		Document document = builder.parse(queryFile);
+		
+		Element root = document.getDocumentElement();
+		
+		NodeList segmentNodeList = root.getChildNodes();
+		for (int j = 0; j < segmentNodeList.getLength(); j++) {
+			if (segmentNodeList.item(j) instanceof Element) {
+				Element segmentElement = (Element) segmentNodeList.item(j);
+				
+				if (segmentElement.getTagName().equals("top")) {
+					NodeList wordNodeList = segmentElement.getChildNodes();
+					
+					String itemId = null;
+					String queryText = null;
+					String visualQueues = null;
+					
+					for (int k = 0; k < wordNodeList.getLength(); k++) {
+						if (wordNodeList.item(k) instanceof Element) {
+							Element wordElement = (Element) wordNodeList.item(k);
+							
+							if (wordElement.getTagName().equals("itemId")) {
+								itemId = wordElement.getTextContent();
+							} else if (wordElement.getTagName().equals("queryText")) {
+								queryText = wordElement.getTextContent();
+							} else if (wordElement.getTagName().equals("visualQueues")) {
+								visualQueues = wordElement.getTextContent();
+							}
+						}
+					}
+					
+					queries.put(itemId, new Query(itemId, queryText, visualQueues));
+				}
+			}
+		}
+		
+		// Next get results.
+		Map<Query, Set<Result>> queryResults = new HashMap<Query, Set<Result>>();
+		 
+		String[] qRelLines = FileUtils.readlines(qRelFile);
+		
+		for (String line : qRelLines) {
+			String[] parts = line.split(" ");
+			
+			Result result;
+			
+			if (parts.length == 4) {
+				result = new Result(parts[1], Float.parseFloat(parts[2]),
+						            Float.parseFloat(parts[3]), -1, -1);
+			} else if (parts.length == 6) {
+				// THIS IS WRONG!!! Also, comments.
+				result = new Result(parts[1], Float.parseFloat(parts[2]),
+			            					  Float.parseFloat(parts[3]),
+			            					  Float.parseFloat(parts[4]),
+			            					  Float.parseFloat(parts[5]));
+			} else {
+				return null;
+			}
+			
+			Set<Result> results = queryResults.get(queries.get(parts[0]));
+			
+			if (results == null) {
+				results = new HashSet<Result>();
+				results.add(result);
+				queryResults.put(queries.get(parts[0]), results);
+			} else {
+				results.add(result);
+			}
+		}
+		
+		return queryResults;
+	}
 }

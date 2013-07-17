@@ -21,6 +21,7 @@ public class CosineSimilarityBatchProcessor {
 		try {
 			programResults = SearchUtils.queryServer(server, "type:progmeta", "", 6000000);
 		} catch (SolrServerException e2) {
+			// TODO Auto-generated catch block
 			e2.printStackTrace();
 			return;
 		}
@@ -36,6 +37,8 @@ public class CosineSimilarityBatchProcessor {
 				e1.printStackTrace();
 				continue;
 			}
+			
+			if (transcriptResults == null) continue;
 			
 			CosineDistanceMetric distanceMetric = new CosineDistanceMetric();
 			
