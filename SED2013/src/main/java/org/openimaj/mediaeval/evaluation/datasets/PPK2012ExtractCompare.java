@@ -216,7 +216,7 @@ public class PPK2012ExtractCompare {
 		List<TFIDF<Photo>> tfidfList = IOUtils.readFromFile(new File(tfidfSource));
 		for (TFIDF<Photo> tfidf : tfidfList) {
 			comps.add(new ExtractorComparator<Photo, SparseDoubleFV>(
-					memcache(filecache(tfidf,filecache + "/tfidf." + tfidf.getExtractor().getClass().getName())),
+					memcache(filecache(tfidf,filecache + "/tfidf." + tfidf.getExtractor().getClass().getSimpleName())),
 					SparseDoubleFVComparison.COSINE_SIM
 				));
 		}

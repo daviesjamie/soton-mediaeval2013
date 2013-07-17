@@ -2,9 +2,11 @@ package org.openimaj.mediaeval.evaluation.datasets;
 
 import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
 import gov.sandia.cognition.math.matrix.mtj.SparseMatrixFactoryMTJ;
+import gov.sandia.cognition.math.matrix.mtj.SparseRowMatrix;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import no.uib.cipr.matrix.sparse.FlexCompColMatrix;
 import no.uib.cipr.matrix.sparse.FlexCompRowMatrix;
 
 import org.apache.log4j.Logger;
@@ -70,39 +73,43 @@ public class SED2013SimilarityMatrix {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		String expHome = "/Users/ss/Experiments/sed2013";
-		String expName = "training.smalltest";
+//		String expHome = "/home/ss/Experiments/mediaeval/SED2013";
+//		String expName = "training.smalltest";
+//		String expName = "training.all";
+//		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
+//		String bigFile = "/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml";
+		
+		if(args.length!=3){
+			logger.error("Usage:<cmd> experiment_name experiment_home photo_xml_file ");
+		}
+		String expName = args[0];
+		String expHome = args[1];
+		String bigFile = args[2];
+		
+		
 		String tfidfSource = String.format("%s/%s",expHome,"training.sed2013.photo_tfidf");
 //		List<ExtractorComparator<Photo, DoubleFV>> excomps = SED2013ExpOne.PPK2012Similarity(tfidfSource);
-		List<ExtractorComparator<Photo, ? extends FeatureVector>> excomps = PPK2012ExtractCompare.similarity(tfidfSource,expName + ".featurecache");
+		List<ExtractorComparator<Photo, ? extends FeatureVector>> excomps = PPK2012ExtractCompare.similarity(tfidfSource,new File(expHome,expName + ".featurecache").getAbsolutePath());
 		final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(excomps) ;
-		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
 		logger .info(String.format("Loading dataset: %s ", bigFile));
 		final File xmlFile = new File(bigFile);
 		Count<CursorWrapper> count = new Count<CursorWrapper>();
 		createStream(xmlFile)
 		.forEach(count);
-		SparseMatrix sparse = SparseMatrixFactoryMTJ.INSTANCE.createMatrix((int)count.seen, (int)count.seen);
-		logger.debug(String.format("Created sparse matrix: %d x %d",sparse.getNumRows(),sparse.getNumColumns()));
-
-
-
+		
 //		similarityMatrixFromFile(comp, xmlFile, sparse);
-		similarityMatrixFromMemory(comp, xmlFile, sparse);
-		logger.error("Done creating sparse matrix, sparcity: " + CFMatrixUtils.sparcity(sparse));
-		File outFile = new File(String.format("%s.sparse",expName ));
-		IOUtils.writeToFile(sparse.getInternalMatrix(), outFile);
-		sparse = SparseMatrixFactoryMTJ.INSTANCE.copyMatrix(SparseMatrixFactoryMTJ.INSTANCE.createWrapper((FlexCompRowMatrix)IOUtils.readFromFile(outFile)));
-		logger.error("Done creating sparse matrix, sparcity: " + CFMatrixUtils.sparcity(sparse));
+		similarityMatrixFromMemory(comp, xmlFile, (int) count.seen,new File(String.format("%s/%s.sparse",expHome,expName )));
 
 	}
 	private static void similarityMatrixFromMemory(
 			final Mean<Photo> comp,
 			final File xmlFile,
-			final SparseMatrix sparse) throws XMLStreamException,
-			FileNotFoundException, ParseException
+			int count,
+			File sparseRowDir) throws XMLStreamException,
+			ParseException, IOException
 	{
-		logger.error("Loading all features into memory");
+		sparseRowDir.mkdirs();
+		logger.error("Loading all photos into memory");
 		final List<Photo> allPhotos = new ArrayList<Photo>();
 		createStream(xmlFile)
 		.map(new CursorWrapperPhoto())
@@ -115,59 +122,64 @@ public class SED2013SimilarityMatrix {
 		});
 
 		for (int i = 0; i < allPhotos.size(); i++) {
-			if(i % 100 == 0) logger.error("Starting row: " + i);
+			SparseMatrix rmat = SparseMatrixFactoryMTJ.INSTANCE.copyMatrix(SparseMatrixFactoryMTJ.INSTANCE.createWrapper(new FlexCompRowMatrix(1, count)));
 			for (int j = i; j < allPhotos.size(); j++) {
 				double d = comp.compare(allPhotos.get(i), allPhotos.get(j));
 				if(threshold(d)){
-					sparse.setElement(i, j, d);
-					sparse.setElement(j, i, d);
+					rmat.setElement(0, j, d);
 				}
 				j++;
 			}
+			// flush the row matrix
+			File rowout = new File(sparseRowDir,String.format("%d.mat",i));
+			IOUtils.writeToFile(rmat.getInternalMatrix(), rowout);
+			if(i%100 == 0){
+				logger.debug(String.format("Similarity calculated for row %d, last sparcity: %2.5f",i,CFMatrixUtils.sparcity(rmat)));
+			}
 		}
 	}
-	private static void similarityMatrixFromFile(
-			final Mean<Photo> comp,
-			final File xmlFile,
-			final SparseMatrix sparse) throws XMLStreamException,
-			FileNotFoundException, ParseException
-	{
-		createStream(xmlFile)
-		.map(new CursorWrapperPhoto())
-		.forEach(new Operation<Photo>() {
-			final int[] i = new int[]{0};
-			@Override
-			public void perform(final Photo iobj) {
-				try {
-					logger.error("Starting Row: " + i[0]);
-					createStream(xmlFile)
-					.filter(new SkipFilter<CursorWrapper>(i[0]))
-					.map(new CursorWrapperPhoto())
-					.forEach(new Operation<Photo>() {
-						int j = i[0];
-						@Override
-						public void perform(final Photo jobj) {
-							if(j%100 == 0){
-								logger.error("...Done Col: " + j);
-							}
-							double d = comp.compare(iobj, jobj);
-							if(threshold(d)){
-								sparse.setElement(i[0], j, d);
-								sparse.setElement(j, i[0], d);
-							}
-							j++;
-						}
-
-					});
-				} catch (Exception e){
-					logger.error("Couldn't parse file after seen: " + i[0],e);
-				}
-				i[0]++;
-			}
-		});
-	}
+//	private static void similarityMatrixFromFile(
+//			final Mean<Photo> comp,
+//			final File xmlFile,
+//			final SparseMatrix sparse) throws XMLStreamException,
+//			FileNotFoundException, ParseException
+//	{
+//		createStream(xmlFile)
+//		.map(new CursorWrapperPhoto())
+//		.forEach(new Operation<Photo>() {
+//			final int[] i = new int[]{0};
+//			@Override
+//			public void perform(final Photo iobj) {
+//				try {
+//					logger.error("Starting Row: " + i[0]);
+//					createStream(xmlFile)
+//					.filter(new SkipFilter<CursorWrapper>(i[0]))
+//					.map(new CursorWrapperPhoto())
+//					.forEach(new Operation<Photo>() {
+//						int j = i[0];
+//						@Override
+//						public void perform(final Photo jobj) {
+//							if(j%100 == 0){
+//								logger.error("...Done Col: " + j);
+//							}
+//							double d = comp.compare(iobj, jobj);
+//							if(threshold(d)){
+//								sparse.setElement(i[0], j, d);
+//								sparse.setElement(j, i[0], d);
+//							}
+//							j++;
+//						}
+//
+//					});
+//				} catch (Exception e){
+//					logger.error("Couldn't parse file after seen: " + i[0],e);
+//				}
+//				i[0]++;
+//			}
+//		});
+//	}
 	private static boolean threshold(double d) {
-		return d>0.4;
+		return d>0.1;
 	}
 	private static Stream<CursorWrapper> createStream(final File xmlFile) throws XMLStreamException,FileNotFoundException, ParseException
 	{
@@ -177,7 +189,7 @@ public class SED2013SimilarityMatrix {
 
 		return new XMLCursorStream(xmlFile,"photo")
 //		.filter(new CursorDateFilter(after, before))
-		.filter(new Head<CursorWrapper>(100))
+//		.filter(new Head<CursorWrapper>(10000))
 		;
 	}
 }

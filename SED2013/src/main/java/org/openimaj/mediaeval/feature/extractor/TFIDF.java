@@ -78,9 +78,13 @@ public class TFIDF<T> implements FeatureExtractor<SparseDoubleFV, T>{
 			int ftd = 0;
 			if(feats.containsKey(w))
 				ftd = feats.get(w);
-			ret.getVector().set(i, tf(ftd,feats) * idf(w));
+			double tfidf = tf(ftd,feats) * idf(w);
+			if(tfidf != 0){
+				ret.getVector().set(i, tfidf);
+			}
 			i++;
 		}
+		ret.getVector().compact();
 		return ret;
 	}
 
