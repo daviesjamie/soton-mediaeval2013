@@ -4,22 +4,22 @@ import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
-import org.openimaj.data.dataset.Dataset;
+import javax.xml.stream.XMLStreamException;
+
 import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.feature.DoubleFV;
-import org.openimaj.feature.DoubleFVComparator;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
@@ -30,16 +30,11 @@ import org.openimaj.mediaeval.data.XMLFlickrPhotoDataset;
 import org.openimaj.mediaeval.evaluation.cluster.ClusterEvaluator;
 import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
 import org.openimaj.mediaeval.evaluation.cluster.analyser.MEClusterAnalyser;
-import org.openimaj.mediaeval.evaluation.cluster.processor.DoubleDBSCANClusterer;
+import org.openimaj.mediaeval.evaluation.cluster.processor.PrecachedSimilarityDoubleDBSCANWrapper;
+import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleDBSCANWrapper;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity;
-import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity.ExtractorComparator;
-import org.openimaj.mediaeval.feature.extractor.HaversineSimilarity;
-import org.openimaj.mediaeval.feature.extractor.PhotoGeo;
+import org.openimaj.mediaeval.feature.extractor.DatasetSimilarityAggregator;
 import org.openimaj.mediaeval.feature.extractor.PhotoTime;
-import org.openimaj.mediaeval.feature.extractor.PhotoTime.Type;
-import org.openimaj.mediaeval.feature.extractor.SimilarityAggregator;
-import org.openimaj.mediaeval.feature.extractor.TFIDF;
-import org.openimaj.mediaeval.feature.extractor.TimeSimilarity;
 import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 import org.openimaj.util.stream.Stream;
@@ -193,7 +188,27 @@ public class SED2013ExpOne {
 	{
 		ClusterEvaluator<Photo, MEAnalysis> eval =
 			new ClusterEvaluator<Photo, MEAnalysis>(
-				new DoubleDBSCANClusterer<Photo>(fve,dbsConf),
+				new SpatialDoubleDBSCANWrapper<Photo>(fve,dbsConf),
+				new MEClusterAnalyser(),
+				ds
+			);
+		int[][] evaluate = eval.evaluate();
+		logger.debug("Expected Classes: " + ds.size());
+		logger.debug("Detected Classes: " + evaluate.length);
+		MEAnalysis res = eval.analyse(evaluate);
+		return res;
+	}
+	/**
+	 * @param ds the dataset to be clustered
+	 * @param fve the feature extractor
+	 * @param dbsConf the {@link DBSCANConfiguration}
+	 * @return a {@link MEAnalysis} of this experiment
+	 */
+	public MEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleDBSCAN dbsConf)
+	{
+		ClusterEvaluator<Photo, MEAnalysis> eval =
+			new ClusterEvaluator<Photo, MEAnalysis>(
+				new PrecachedSimilarityDoubleDBSCANWrapper<Photo>(fve,dbsConf),
 				new MEClusterAnalyser(),
 				ds
 			);
@@ -204,61 +219,7 @@ public class SED2013ExpOne {
 		return res;
 	}
 
-	/**
-	 * A {@link FeatureExtractor} which produces a similarity vector between a {@link Photo}
-	 * and all other photos in a {@link Dataset}. The similarity is populated with the features
-	 * from Petkos, Papadopoulos and Kompatsiaris 2012 ICMR paper, measuring similarity of
-	 * time uploaded, time taken, geographic location and textual similarity of tags, title and
-	 * description. If any features are missing entirley, the similarity is set to {@link Double#NaN}
-	 * and should be actively ignored (i.e. not treated as 0).
-	 * @param ds the dataset used for the {@link TFIDF} as well as the similarity
-	 *
-	 * @return a similarity vector constructing {@link FeatureExtractor}
-	 */
-	public static FeatureExtractor<SparseMatrix, Photo> PPK2012Similarity(Dataset<Photo> ds) {
-		List<ExtractorComparator<Photo, DoubleFV, DoubleFVComparator>> comps =
-			new ArrayList<DatasetSimilarity.ExtractorComparator<Photo,DoubleFV,DoubleFVComparator>>();
-		comps.add(
-			new ExtractorComparator<Photo, DoubleFV, DoubleFVComparator>(
-				new PhotoTime(Type.POSTED),
-				new TimeSimilarity()
-			)
-		);
-		comps.add(
-			new ExtractorComparator<Photo, DoubleFV, DoubleFVComparator>(
-				new PhotoTime(Type.TAKEN),
-				new TimeSimilarity()
-			)
-		);
-		comps.add(
-			new ExtractorComparator<Photo, DoubleFV, DoubleFVComparator>(
-				new PhotoGeo(),
-				new HaversineSimilarity()
-			)
-		);
-//		comps.add(
-//			new ExtractorComparator<Photo, DoubleFV, DoubleFVComparator>(
-//				new TFIDF<Photo>(ds,new PhotoTags(true)),
-//				DoubleFVComparison.COSINE_SIM
-//			)
-//		);
-//		comps.add(
-//			new ExtractorComparator<Photo, DoubleFV, DoubleFVComparator>(
-//				new TFIDF<Photo>(ds, new PhotoTitle()),
-//				DoubleFVComparison.COSINE_SIM
-//			)
-//		);
-//		comps.add(
-//			new ExtractorComparator<Photo, DoubleFV, DoubleFVComparator>(
-//				new TFIDF<Photo>(ds,new PhotoDescription()),
-//				DoubleFVComparison.COSINE_SIM
-//			)
-//		);
 
-		FeatureExtractor<SparseMatrix, Photo> dsSim =
-			new DatasetSimilarity<Photo>(ds, comps);
-		return dsSim;
-	}
 
 	/**
 	 * Run a sample experiment
@@ -266,28 +227,44 @@ public class SED2013ExpOne {
 	 * @throws Throwable
 	 */
 	public static void main(String[] args) throws Throwable {
+		final SimpleDateFormat df = new SimpleDateFormat("yyyy MM");
+		final Date after = df.parse("2007 01");
+		final Date before = df.parse("2007 02");
+		Training dataset = loadTrainingDataset(after,before);
+//		checkSpecificImages();
+		performExperiment(dataset);
+	}
+
+	private static void performExperiment(Training dataset) throws ParseException, XMLStreamException, FileNotFoundException, IOException {
+		logger.info(String.format("Loaded dataset: %d photos",dataset.numInstances()));
+		FeatureExtractor<SparseMatrix, Photo> dsSim = new DatasetSimilarity<Photo>(dataset, PPK2012ExtractCompare.similarity(dataset));;
+		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
+		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
+			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
+				1, 0.6, 2, new DoubleNearestNeighboursExact.Factory()
+			);
+//		logger.info("Starting Evaluation");
+//		MEAnalysis res = new SED2013ExpOne().eval(dataset, meanSim, new DoubleDBSCAN(conf));
+//		System.out.println(res.getSummaryReport());
+//		logger.info("Finished!");
+		logger.info("Starting Similarity Evaluation");
+		MEAnalysis res = new SED2013ExpOne().evalSim(dataset, meanSim, new DoubleDBSCAN(conf));
+		System.out.println(res.getSummaryReport());
+		logger.info("Finished!");
+	}
+
+	private static Training loadTrainingDataset(Date after, Date before) throws ParseException, XMLStreamException, FileNotFoundException, IOException {
 		// Some choice experiments
 		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
 		logger.info(String.format("Loading dataset: %s ", bigFile));
 		File xmlFile = new File(bigFile);
-		final SimpleDateFormat df = new SimpleDateFormat("yyyy MM");
-		final Date after = df.parse("2007 01");
-		final Date before = df.parse("2008 01 ");
+
 		Stream<Photo> photoStream = new XMLCursorStream(xmlFile,"photo")
 		.filter(new CursorDateFilter(after, before))
-		.map(new CursorWrapperPhoto());;
-		logger.info(String.format("Stream loaded and filtered, preparing training dataset"));
+		.map(new CursorWrapperPhoto());
+
 		InputStream clStream = new FileInputStream("/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train_gs.csv");
 		Training dataset = new Training(clStream, photoStream);
-
-		logger.info(String.format("Loaded dataset: %d photos",dataset.numInstances()));
-		FeatureExtractor<SparseMatrix, Photo> dsSim = PPK2012Similarity(dataset);
-		FeatureExtractor<DoubleFV, Photo> meanSim = new SimilarityAggregator.Mean<Photo>(dsSim);
-		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
-			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 2, 2, new DoubleNearestNeighboursExact.Factory()
-			);
-		MEAnalysis res = new SED2013ExpOne().eval(dataset, meanSim, new DoubleDBSCAN(conf));
-		System.out.println(res.getSummaryReport());
+		return dataset;
 	}
 }

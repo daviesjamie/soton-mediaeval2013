@@ -16,7 +16,7 @@ import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
 import org.openimaj.mediaeval.evaluation.cluster.analyser.MEClusterAnalyser;
-import org.openimaj.mediaeval.evaluation.cluster.processor.DoubleDBSCANClusterer;
+import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleDBSCANWrapper;
 import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 
@@ -114,7 +114,7 @@ public class TestClusterEvaluator{
 		
 		ClusterEvaluator<TestShape, MEAnalysis> eval = 
 			new ClusterEvaluator<TestClusterEvaluator.TestShape, MEAnalysis>(
-				new DoubleDBSCANClusterer<TestShape>(new TestShapeFV(),dbsConf), 
+				new SpatialDoubleDBSCANWrapper<TestShape>(new TestShapeFV(),dbsConf), 
 				new MEClusterAnalyser(), 
 				correct
 			);

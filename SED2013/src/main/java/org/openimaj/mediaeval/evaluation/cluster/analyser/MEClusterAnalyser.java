@@ -11,7 +11,7 @@ import twitter4j.internal.logging.Logger;
 
 
 /**
- * A set of measures used to evaulate clustering. 
+ * A set of measures used to evaulate clustering.
  * These metrics are taken from: http://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-clustering-1.html
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
@@ -28,7 +28,7 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 		ret.nmi = nmi(correct,estimated,invCor,invEst);
 		return ret;
 	}
-	
+
 	private double nmi(int[][] c, int[][] e, Map<Integer, Integer> ic, Map<Integer, Integer> ie) {
 		double N = Math.max(ic.size(), ie.size());
 		double mi = mutualInformation(N, c,e,ic,ie);
@@ -39,7 +39,7 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 		logger.debug(String.format("Hc = %2.5f",ent_c));
 		return mi / ((ent_e + ent_c)/2);
 	}
-	
+
 	/**
 	 * Maximum liklihood estimate of the entropy
 	 * @param clusters
@@ -49,7 +49,7 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 	private double entropy(int[][] clusters, double N) {
 		double total = 0;
 		for (int k = 0; k < clusters.length; k++) {
-			logger .debug(String.format("%2.1f/%2.1f * log2 ((%2.1f / %2.1f) )",(double)clusters[k].length,(double)N,(double)clusters[k].length,(double)N));
+			logger .debug(String.format("%2.1f/%2.1f * log2 ((%2.1f / %2.1f) )",(double)clusters[k].length,N,(double)clusters[k].length,N));
 			double prop = clusters[k].length / N;
 			total += prop * log2(prop);
 		}
@@ -63,7 +63,7 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 
 	/**
 	 * Maximum Liklihood estimate of the mutual information
-	 * 
+	 *
 	 * @param c
 	 * @param e
 	 * @param ic
@@ -84,7 +84,7 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 				logger.debug(String.format("normprop = %2.5f",normProp));
 				double sum = (both / N) * (log2(normProp));
 				mi += sum;
-				
+
 				logger.debug(String.format("%2.1f/%2.1f * log2 ((%2.1f * %2.1f) / (%2.1f * %2.1f)) = %2.5f",both,N,both,N,n_c,n_e,sum));
 			}
 		}
@@ -93,7 +93,7 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 
 	/**
 	 * Calculate purity. The *class* of a given point is its cluster in the ground truth.
-	 * 
+	 *
 	 * @param correct
 	 * @param estimated
 	 * @param invCor

@@ -129,6 +129,14 @@ public class XMLFlickrPhotoDataset implements Dataset<Photo> {
 		return this.idIndex.get(photoID);
 	}
 
+	/**
+	 * @return the pl
+	 */
+	public PhotoList getPhotoList() {
+		return pl;
+	}
+
+
 
 
 }

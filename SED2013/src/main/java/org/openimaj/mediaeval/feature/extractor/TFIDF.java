@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.openimaj.data.dataset.Dataset;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
+import org.openimaj.feature.SparseDoubleFV;
 
 /**
  * Given a {@link FeatureExtractor} which can extract {@link Map} of Bags of Words
@@ -18,35 +19,44 @@ import org.openimaj.feature.FeatureExtractor;
  *
  * @param <T> the items understood
  */
-public class TFIDF<T> implements FeatureExtractor<DoubleFV, T>{
-	Logger logger = Logger.getLogger(DatasetSimilarity.class);
+public class TFIDF<T> implements FeatureExtractor<SparseDoubleFV, T>{
+	final static Logger logger = Logger.getLogger(TFIDF.class);
 
 	private FeatureExtractor<Map<String, Integer>, T> extractor;
-	private Map<String, Double> idf;
+	private Map<String, Double> df;
+
+	private int ndocs;
 	/**
 	 * @param dataset the dataset to extract a vocabulary and IDF stats from
 	 * @param bowExtractor the way to extract string counts
 	 */
 	public TFIDF(Dataset<T> dataset, FeatureExtractor<Map<String,Integer>, T> bowExtractor) {
+		this();
 		this.extractor = bowExtractor;
-		this.idf = new HashMap<String,Double>();
 		logger.info("Preparing IDF stats for dataset with extractor: " + bowExtractor.getClass().toString());
-		int counter = 0;
 		for (T t : dataset) {
-			if(counter++ % 1000 == 0){
-				logger.info("Done: " + counter);
-			}
-			for (Entry<String, Integer> wc : extractor.extractFeature(t).entrySet()) {
-				Double count = this.idf.get(wc.getKey());
-				if(count == null) count = 0.;
-				this.idf.put(wc.getKey(),count + 1);
-			}
+			update(t);
 		}
-		double ndocs = dataset.numInstances();
-		for (String t : this.idf.keySet()) {
-			this.idf.put(t, Math.log(ndocs / idf.get(t)) + 1);
-		}
+	}
 
+	private TFIDF(){
+		this.extractor = null;
+		this.df = new HashMap<String,Double>();
+	}
+
+	/**
+	 * Just set the extractor, IDF is empty so currently ALL calls to {@link #extractFeature(Object)} will
+	 * produce length 0 {@link DoubleFV} instances. use {@link #update(Object)} to make something useful happen
+	 * incrementally.
+	 * @param bowExtractor
+	 */
+	public TFIDF(FeatureExtractor<Map<String,Integer>, T> bowExtractor){
+		this();
+		this.extractor = bowExtractor;
+	}
+
+	private double idf(String t) {
+		return Math.log(ndocs / df.get(t)) + 1;
 	}
 
 	/**
@@ -54,22 +64,80 @@ public class TFIDF<T> implements FeatureExtractor<DoubleFV, T>{
 	 * @param ext
 	 */
 	public TFIDF(TFIDF<?> otherIDF, FeatureExtractor<Map<String, Integer>, T> ext) {
-		this.idf = otherIDF.idf;
+		this.df = otherIDF.df;
 		this.extractor = ext;
 	}
 
 	@Override
-	public DoubleFV extractFeature(T object) {
+	public SparseDoubleFV extractFeature(T object) {
+		SparseDoubleFV ret = new SparseDoubleFV(this.df.size());
 		Map<String, Integer> feats = this.extractor.extractFeature(object);
-		DoubleFV ret = new DoubleFV(this.idf.size());
+		if(feats.size() == 0) return ret; // a TFIDF feature makes no sense for an empty document!
 		int i = 0;
-		for (Entry<String, Double> w : this.idf.entrySet()) {
-			String key = w.getKey();
-			if(!feats.containsKey(key)) ret.values[i] = 0;
-			else ret.values[i] = Math.sqrt(feats.get(key)) / w.getValue();
+		for (String w : this.df.keySet()) {
+			int ftd = 0;
+			if(feats.containsKey(w))
+				ftd = feats.get(w);
+			ret.getVector().set(i, tf(ftd,feats) * idf(w));
 			i++;
 		}
 		return ret;
+	}
+
+	private double tf(int ftd, Map<String, Integer> feats) {
+		return Math.sqrt(ftd);
+	}
+
+	/**
+	 * @param t
+	 */
+	public void update(T t) {
+		for (Entry<String, Integer> wc : extractor.extractFeature(t).entrySet()) {
+
+
+			Double count = this.df.get(wc.getKey());
+			if(count == null) count = 0.;
+			this.df.put(wc.getKey(),count + 1); // only adds 1, not the number in this document!
+		}
+		if(this.ndocs % 1000 == 0){
+			logger.info("Seen docs: " + (this.ndocs));
+		}
+		this.ndocs++;
+	}
+
+	/**
+	 * @return the df list
+	 *
+	 */
+	public Map<String, Double> getDF() {
+		return this.df;
+	}
+
+	/**
+	 * Select a tfidf vocabulary throwing away features we see too often or not often enough
+	 * @param tfidfMin
+	 * @param tfidfMax
+	 * @return a new {@link TFIDF}
+	 */
+	public TFIDF<T> getSubVocabulary(int tfidfMin, int tfidfMax) {
+		TFIDF<T> ret = new TFIDF<T>();
+		ret.extractor = this.extractor;
+		ret.ndocs = this.ndocs;
+		ret.df = new HashMap<String, Double>();
+		for (Entry<String, Double> ent : this.df.entrySet()) {
+			if(ent.getValue() > tfidfMin && ent.getValue() < tfidfMax){
+				ret.df.put(ent.getKey(), ent.getValue());
+			}
+		}
+
+		return ret;
+	}
+
+	/**
+	 * @return underlying extractor
+	 */
+	public FeatureExtractor<Map<String, Integer>, T> getExtractor() {
+		return this.extractor;
 	}
 
 }

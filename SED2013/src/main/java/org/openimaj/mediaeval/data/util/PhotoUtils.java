@@ -4,6 +4,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -383,6 +385,7 @@ public final class PhotoUtils {
             }
         }
 
+        photo.setUrl(photoElement.getAttribute("photo_url"));
         return photo;
     }
 
@@ -466,6 +469,34 @@ public final class PhotoUtils {
 	private static String sanitize(String s) {
 		if(s == null) return "";
 		return s;
+	}
+
+	/**
+	 * @param p
+	 * @return
+	 */
+	public static String toString(Photo p) {
+		String[] tags = new String[(p.getTags().size())];
+		int i = 0;
+		for (Object o : p.getTags()) {
+			Tag t = (Tag)o;
+			tags[i++] = t.getValue();
+		}
+		Date datePosted = p.getDatePosted();
+
+		String upload = "";
+		if(datePosted!=null)
+			upload = ((SimpleDateFormat)DATE_FORMATS.get()).format(datePosted);
+		Date dateTaken = p.getDateTaken();
+		String taken = "";
+		if(dateTaken!=null)
+			taken = ((SimpleDateFormat)DATE_FORMATS.get()).format(dateTaken);
+		GeoData geo = p.getGeoData();
+		String geos = "None";
+		if(geo!=null){
+			geos = String.format("%2.5f,%2.5f",geo.getLatitude(),geo.getLongitude());
+		}
+		return String.format("tags=%s, upload=%s, taken=%s, geo=%s",Arrays.toString(tags),upload,taken,geos);
 	}
 
 }

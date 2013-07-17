@@ -15,11 +15,14 @@ public class PhotoGeo implements FeatureExtractor<DoubleFV, Photo>{
 
 	@Override
 	public DoubleFV extractFeature(Photo p) {
-		DoubleFV ret = null;
+		DoubleFV ret = new DoubleFV(2);
 		if(p.hasGeoData()){
-			ret = new DoubleFV(2);
 			ret.values[0] = p.getGeoData().getLatitude();
 			ret.values[1] = p.getGeoData().getLongitude();
+		}
+		else{
+			ret.values[0] = Double.NaN;
+			ret.values[1] = Double.NaN;
 		}
 		return ret;
 	}

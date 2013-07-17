@@ -15,13 +15,13 @@ import org.openimaj.feature.FeatureExtractor;
  * @param <T>
  *
  */
-public abstract class SimilarityAggregator<T> implements FeatureExtractor<DoubleFV, T> {
+public abstract class DatasetSimilarityAggregator<T> implements FeatureExtractor<DoubleFV, T> {
 
 	private FeatureExtractor<SparseMatrix, T> ex;
 	/**
 	 * @param ex the extractor which produces similarity matricies
 	 */
-	public SimilarityAggregator(FeatureExtractor<SparseMatrix, T> ex) {
+	public DatasetSimilarityAggregator(FeatureExtractor<SparseMatrix, T> ex) {
 		this.ex = ex;
 	}
 	@Override
@@ -53,7 +53,7 @@ public abstract class SimilarityAggregator<T> implements FeatureExtractor<Double
 	 *
 	 * @param <T>
 	 */
-	public static class Mean<T> extends SimilarityAggregator<T>{
+	public static class Mean<T> extends DatasetSimilarityAggregator<T>{
 
 		/**
 		 * @param ex the extractor

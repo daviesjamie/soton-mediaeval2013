@@ -93,7 +93,13 @@ public class XMLCursorStream extends AbstractStream<CursorWrapper> {
 	 * @throws XMLStreamException
 	 */
 	public XMLCursorStream(InputStream s, String e) throws XMLStreamException {
-		SMHierarchicCursor rootCursor = smFact.rootElementCursor(s);
+		SMHierarchicCursor rootCursor;
+//		try {
+//			rootCursor = smFact.rootElementCursor(new InputStreamReader(s, "UTF-8"));
+			rootCursor = smFact.rootElementCursor(s);
+//		} catch (UnsupportedEncodingException e1) {
+//			throw new XMLStreamException(e1);
+//		}
 		rootCursor.advance();
 		this.photoCursor = rootCursor.childElementCursor("photo");
 		photoCursor.setElementTracking(Tracking.NONE);

@@ -16,7 +16,8 @@ import org.openimaj.mediaeval.data.CursorWrapperPhoto;
 import org.openimaj.mediaeval.data.XMLCursorStream;
 import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
 import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
-import org.openimaj.mediaeval.feature.extractor.SimilarityAggregator;
+import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity;
+import org.openimaj.mediaeval.feature.extractor.DatasetSimilarityAggregator;
 import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 import org.openimaj.util.function.Predicate;
@@ -64,8 +65,8 @@ public class TestSED2013ExpOne {
 
 	@Test
 	public void testEvalSim(){
-		FeatureExtractor<SparseMatrix, Photo> dsSim = SED2013ExpOne.PPK2012Similarity(ds);
-		FeatureExtractor<DoubleFV, Photo> meanSim = new SimilarityAggregator.Mean<Photo>(dsSim);
+		FeatureExtractor<SparseMatrix, Photo> dsSim = new DatasetSimilarity<Photo>(ds, PPK2012ExtractCompare.similarity(ds));
+		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
 				1, 2, 2, new DoubleNearestNeighboursExact.Factory()
@@ -75,8 +76,8 @@ public class TestSED2013ExpOne {
 	}
 	@Test
 	public void testEvalSimStream(){
-		FeatureExtractor<SparseMatrix, Photo> dsSim = SED2013ExpOne.PPK2012Similarity(dsStream);
-		FeatureExtractor<DoubleFV, Photo> meanSim = new SimilarityAggregator.Mean<Photo>(dsSim);
+		FeatureExtractor<SparseMatrix, Photo> dsSim = new DatasetSimilarity<Photo>(dsStream, PPK2012ExtractCompare.similarity(ds));
+		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
 				1, 2, 2, new DoubleNearestNeighboursExact.Factory()

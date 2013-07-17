@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 import org.openimaj.experiment.evaluation.AnalysisResult;
 import org.openimaj.experiment.evaluation.Evaluator;
 import org.openimaj.mediaeval.evaluation.cluster.analyser.ClusterAnalyser;
-import org.openimaj.mediaeval.evaluation.cluster.processor.Clusterer;
+import org.openimaj.mediaeval.evaluation.cluster.processor.ClustererWrapper;
 
 /**
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
@@ -18,7 +18,7 @@ import org.openimaj.mediaeval.evaluation.cluster.processor.Clusterer;
  */
 public class ClusterEvaluator<D, T extends AnalysisResult> implements Evaluator<int[][],T>{
 	
-	private Clusterer<D> gen;
+	private ClustererWrapper<D> gen;
 	private List<D> data;
 	private int[][] correct;
 	private ClusterAnalyser<T> analyser;
@@ -29,7 +29,7 @@ public class ClusterEvaluator<D, T extends AnalysisResult> implements Evaluator<
 	 * @param clusters
 	 * @param analyser 
 	 */
-	public ClusterEvaluator(Clusterer<D> gen, List<D> data, int[][] clusters, ClusterAnalyser<T> analyser) {
+	public ClusterEvaluator(ClustererWrapper<D> gen, List<D> data, int[][] clusters, ClusterAnalyser<T> analyser) {
 		this.gen = gen;
 		this.data = data;
 		this.correct = clusters;
@@ -40,7 +40,7 @@ public class ClusterEvaluator<D, T extends AnalysisResult> implements Evaluator<
 	 * @param analyser 
 	 * @param dataset 
 	 */
-	public <A> ClusterEvaluator(Clusterer<D> gen, ClusterAnalyser<T> analyser, Map<A,? extends List<D>> dataset) {
+	public <A> ClusterEvaluator(ClustererWrapper<D> gen, ClusterAnalyser<T> analyser, Map<A,? extends List<D>> dataset) {
 		this.gen = gen;
 		this.analyser = analyser;
 		this.data = new ArrayList<D>();

@@ -59,11 +59,23 @@ public class PhotoTime implements FeatureExtractor<DoubleFV, Photo>{
 	public DoubleFV extractFeature(Photo p) {
 		DoubleFV ret = new DoubleFV(3);
 		Date dateAdded = p.getDateAdded();
-		if(dateAdded!=null) ret.values[0] = dateAdded.getTime();
+		if(dateAdded!=null) {
+			ret.values[0] = dateAdded.getTime();
+		}else{
+			ret.values[0] = Double.NaN;
+		}
 		Date datePosted = p.getDatePosted();
-		if(datePosted!=null) ret.values[1] = datePosted.getTime();
+		if(datePosted!=null) {
+			ret.values[1] = datePosted.getTime();
+		}else{
+			ret.values[1] = Double.NaN;
+		}
 		Date dateTaken = p.getDateTaken();
-		if(dateTaken!=null) ret.values[2] = dateTaken.getTime();
+		if(dateTaken!=null) {
+			ret.values[2] = dateTaken.getTime();
+		}else{
+			ret.values[2] = Double.NaN;
+		}
 		if(type.equals(Type.ALL)){
 			return ret;
 		}

@@ -7,7 +7,7 @@ import java.util.List;
  *
  * @param <T> the type of data to be clustered
  */
-public interface Clusterer<T> {
+public interface ClustererWrapper<T> {
 	/**
 	 * @param data
 	 * @return Given a list of data items, cluster them by index

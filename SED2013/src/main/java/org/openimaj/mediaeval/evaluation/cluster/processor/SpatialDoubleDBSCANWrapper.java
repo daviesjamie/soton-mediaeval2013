@@ -3,6 +3,7 @@ package org.openimaj.mediaeval.evaluation.cluster.processor;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.openimaj.data.DataSource;
 import org.openimaj.data.RandomData;
 import org.openimaj.feature.DoubleFV;
@@ -11,12 +12,13 @@ import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
 
 /**
+ * Wraps the functionality of a {@link DoubleDBSCAN} called spatially
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
  * @param <T>
  */
-public class DoubleDBSCANClusterer<T> implements Clusterer<T> {
-	
+public class SpatialDoubleDBSCANWrapper<T> implements ClustererWrapper<T> {
+	Logger logger = Logger.getLogger(SpatialDoubleDBSCANWrapper.class);
 	private final class ExtractedDatasource implements DataSource<double[]> {
 		private final List<T> data;
 
@@ -64,6 +66,7 @@ public class DoubleDBSCANClusterer<T> implements Clusterer<T> {
 	}
 	private final class ExtractedIterator implements Iterator<double[]> {
 		private final Iterator<T> dataIter;
+		int seen = 0;
 
 		private ExtractedIterator(Iterator<T> dataIter) {
 			this.dataIter = dataIter;
@@ -74,6 +77,9 @@ public class DoubleDBSCANClusterer<T> implements Clusterer<T> {
 
 		@Override
 		public double[] next() {
+			if(seen++ % 1000 == 0){
+				logger.info(String.format("Extracting feature for %dth image",seen-1));
+			}
 			return extractor.extractFeature(dataIter.next()).values;
 		}
 
@@ -85,11 +91,11 @@ public class DoubleDBSCANClusterer<T> implements Clusterer<T> {
 	private FeatureExtractor<DoubleFV, T> extractor;
 	private DoubleDBSCAN dbscan;
 	/**
-	 * @param extractor 
+	 * @param extractor
 	 * @param dbscan
-	 * 
+	 *
 	 */
-	public DoubleDBSCANClusterer(
+	public SpatialDoubleDBSCANWrapper(
 			FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
 	) {
 		this.extractor = extractor;
