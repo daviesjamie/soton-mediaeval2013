@@ -3,5 +3,5 @@ target
 .project
 .classpath
 data/*
-!data/init.sql
-!data/import_countries.rb
+!data/fix_dups.py
+!data/importmongo
