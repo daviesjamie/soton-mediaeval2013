@@ -51,35 +51,14 @@ public class DatasetSimilarity<T> implements FeatureExtractor<SparseMatrix, T>{
 		/**
 		 * @param t1
 		 * @param t2
-		 * @return perform the held comparison using the held extractor
-		 * @throws Exception
+		 * @return perform the held comparison using the held extractor. Returns {@link Double#NaN} if the comparison is invalid
 		 */
-		public double doComparison(T t1, T t2) throws Exception{
+		public double doComparison(T t1, T t2){
 			F f1 = this.firstObject().extractFeature(t1);
 			F f2 = this.firstObject().extractFeature(t2);
-			if(f1 == null || f2 == null) throw new Exception("No valid comaprison");
+			if(f1 == null || f2 == null) return Double.NaN;
 			double comp = this.secondObject().compare(f1, f2);
-			if(Double.isNaN(comp)) throw new Exception("No valid comparison");
 			return comp;
-		}
-
-		public DistanceComparator<T> asExtractor() {
-			return new DistanceComparator<T>() {
-
-				@Override
-				public boolean isDistance() {
-					return ExtractorComparator.this.secondObject().isDistance();
-				}
-
-				@Override
-				public double compare(T o1, T o2) {
-					try {
-						return ExtractorComparator.this.doComparison(o1, o2);
-					} catch (Exception e) {
-						return Double.NaN;
-					}
-				}
-			};
 		}
 
 	}
@@ -137,11 +116,7 @@ public class DatasetSimilarity<T> implements FeatureExtractor<SparseMatrix, T>{
 			for (int j = 0; j < this.exComp.size(); j++) {
 				try{
 					double similarity = this.exComp.get(j).doComparison(object,dsItem);
-					if(Double.isNaN(similarity))
-					{
-						logger.error("Found a NaN similarity!!");
-					}
-					if(similarity != 0){
+					if(similarity != 0 && !Double.isNaN(similarity)){
 						ret.setElement(i, j, similarity * this.compMod[j]);
 					}
 
