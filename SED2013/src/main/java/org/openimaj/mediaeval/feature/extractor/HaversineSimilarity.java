@@ -30,6 +30,7 @@ public class HaversineSimilarity implements DoubleFVComparator{
 
 	@Override
 	public double compare(double[] h1, double[] h2) {
+		if(Double.isNaN(h1[0] + h2[0] + h1[1] + h2[1])) return Double.NaN;
 		double lat2 = Math.toRadians(h2[0]);
 		double lat1 = Math.toRadians(h1[0]);
 		double lon2 = Math.toRadians(h2[1]);

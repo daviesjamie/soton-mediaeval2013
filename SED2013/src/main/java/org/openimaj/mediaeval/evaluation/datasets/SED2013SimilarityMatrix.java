@@ -186,7 +186,7 @@ public class SED2013SimilarityMatrix {
 //		});
 //	}
 	private static boolean threshold(double d) {
-		return d>0.1;
+		return !Double.isNaN(d) && d>0.1;
 	}
 	private static Stream<CursorWrapper> createStream(final File xmlFile) throws XMLStreamException,FileNotFoundException, ParseException
 	{
