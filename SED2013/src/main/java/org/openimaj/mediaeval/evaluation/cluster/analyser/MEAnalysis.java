@@ -27,6 +27,10 @@ public class MEAnalysis implements AnalysisResult{
 	 */
 	public double nmi;
 	
+	public int TP;
+	public int FP;
+	public int TN;
+	public int FN;
 	
 	
 	@Override
