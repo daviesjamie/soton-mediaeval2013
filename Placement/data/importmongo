@@ -1,0 +1,14 @@
+#!/bin/zsh
+
+csvfiles=( metadata_1.csv metadata_2.csv metadata_3.csv metadata_4.csv metadata_5.csv metadata_6.csv metadata_7.csv metadata_8.csv metadata_9.csv )
+locfiles=( countries.geo.json )
+
+for f in ${files[@]}
+do
+    mongoimport --db placement --collection images --type csv --headerline --file $f
+done
+
+for f in ${files[@]}
+do
+    mongoimport --db placement --collection countries --type json --file countries.geo.json --stopOnError
+done

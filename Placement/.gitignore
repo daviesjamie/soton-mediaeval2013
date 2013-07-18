@@ -4,3 +4,4 @@ target
 .classpath
 data/*
 !data/fix_dups.py
+!data/importmongo
