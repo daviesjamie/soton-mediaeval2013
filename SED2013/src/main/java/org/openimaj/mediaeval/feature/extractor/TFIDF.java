@@ -3,12 +3,15 @@ package org.openimaj.mediaeval.feature.extractor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 import org.openimaj.data.dataset.Dataset;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.feature.SparseDoubleFV;
+import org.openimaj.util.array.SparseDoubleArray;
+import org.openimaj.util.pair.IntDoublePair;
 
 /**
  * Given a {@link FeatureExtractor} which can extract {@link Map} of Bags of Words
@@ -26,6 +29,8 @@ public class TFIDF<T> implements FeatureExtractor<SparseDoubleFV, T>{
 	private Map<String, Double> df;
 
 	private int ndocs;
+
+	private HashMap<String, Integer> keyIndex;
 	/**
 	 * @param dataset the dataset to extract a vocabulary and IDF stats from
 	 * @param bowExtractor the way to extract string counts
@@ -56,6 +61,7 @@ public class TFIDF<T> implements FeatureExtractor<SparseDoubleFV, T>{
 	}
 
 	private double idf(String t) {
+		if(!df.containsKey(t)) return 1;
 		return Math.log(ndocs / df.get(t)) + 1;
 	}
 
@@ -73,19 +79,33 @@ public class TFIDF<T> implements FeatureExtractor<SparseDoubleFV, T>{
 		SparseDoubleFV ret = new SparseDoubleFV(this.df.size());
 		Map<String, Integer> feats = this.extractor.extractFeature(object);
 		if(feats.size() == 0) return ret; // a TFIDF feature makes no sense for an empty document!
-		int i = 0;
-		for (String w : this.df.keySet()) {
-			int ftd = 0;
-			if(feats.containsKey(w))
-				ftd = feats.get(w);
+		Map<String,Integer> keyIndex = getKeyIndex();
+		TreeMap<Integer, Double> sorted = new TreeMap<Integer,Double>();
+		for (String w : feats.keySet()) {
+			int ftd = feats.get(w);
 			double tfidf = tf(ftd,feats) * idf(w);
 			if(tfidf != 0){
-				ret.getVector().set(i, tfidf);
+				sorted.put(keyIndex.get(w), tfidf);
 			}
-			i++;
 		}
-		ret.getVector().compact();
+		SparseDoubleArray retvec = ret.getVector();
+		for ( Entry<Integer, Double> ent : sorted.entrySet()) {
+			retvec.set(ent.getKey(), ent.getValue());
+		}
+		retvec.compact();
 		return ret;
+	}
+
+	private Map<String, Integer> getKeyIndex() {
+		if(this.keyIndex != null){
+			return this.keyIndex;
+		}
+		this.keyIndex = new HashMap<String,Integer>();
+		int index = 0;
+		for (String k : this.df.keySet()) {
+			this.keyIndex.put(k, index++);
+		}
+		return keyIndex;
 	}
 
 	private double tf(int ftd, Map<String, Integer> feats) {

@@ -124,6 +124,8 @@ public class SED2013SimilarityMatrix {
 		});
 
 		for (int i = 0; i < allPhotos.size(); i++) {
+			File rowout = new File(sparseRowDir,String.format("%d.mat",i));
+			if(rowout.exists()) continue;
 			SparseMatrix rmat = SparseMatrixFactoryMTJ.INSTANCE.copyMatrix(SparseMatrixFactoryMTJ.INSTANCE.createWrapper(new FlexCompRowMatrix(1, count)));
 			for (int j = i; j < allPhotos.size(); j++) {
 				if(i%100 == 0){
@@ -137,7 +139,6 @@ public class SED2013SimilarityMatrix {
 				}
 			}
 			// flush the row matrix
-			File rowout = new File(sparseRowDir,String.format("%d.mat",i));
 			IOUtils.writeToFile(rmat.getInternalMatrix(), rowout);
 			if(i%100 == 0){
 				logger.debug(String.format("Similarity calculated for row %d, last sparcity: %2.5f",i,CFMatrixUtils.sparcity(rmat)));
