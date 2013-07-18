@@ -1,39 +1,56 @@
 package org.openimaj.tools.clustering;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 
 import org.openimaj.data.dataset.Dataset;
 
 import com.google.common.collect.Iterators;
 
 /**
- * Aggregate dataset that merges its component datasets back-to-back.
+ * Aggregate Dataset that merges its component Datasets back-to-back.
  * 
  * @author John Preston (jlp1g11@ecs.soton.ac.uk)
  *
  * @param <INSTANCE>
  */
-public class AggregateDataset<INSTANCE> implements Dataset<INSTANCE> {
-	List<Dataset<INSTANCE>> datasets = new ArrayList<Dataset<INSTANCE>>();
+public class AggregateDataset<DATASET extends Dataset<INSTANCE>, INSTANCE> implements Dataset<INSTANCE> {
+	Set<DATASET> datasets;
 	
-	public boolean add(Dataset<INSTANCE> dataset) {
+	public AggregateDataset() {
+		datasets = new HashSet<DATASET>();
+	}
+	
+	public AggregateDataset(Collection<DATASET> datasets) {
+		this();
+		
+		addDatasets(datasets);
+	}
+	
+	public boolean addDataset(DATASET dataset) {
 		return datasets.add(dataset);
+	}
+	
+	public boolean addDatasets(Collection<DATASET> datasets) {
+		for (DATASET dataset : datasets) {
+			datasets.add(dataset);
+		}
+		
+		return true;
+	}
+	
+	public Set<DATASET> getSet() {
+		return datasets;
 	}
 
 	@Override
 	public Iterator<INSTANCE> iterator() {
-		Iterator<INSTANCE> iter;
+		Iterator<INSTANCE> iter = Iterators.emptyIterator();
 		
-		if (datasets.size() > 0) {
-			iter = datasets.get(0).iterator();
-		} else {
-			return null;
-		}
-		
-		for (int i = 1; i < datasets.size(); i++) {
-			iter = Iterators.concat(iter, datasets.get(i).iterator());
+		for (DATASET dataset : datasets) {
+			iter = Iterators.concat(iter, dataset.iterator());
 		}
 		
 		return iter;
