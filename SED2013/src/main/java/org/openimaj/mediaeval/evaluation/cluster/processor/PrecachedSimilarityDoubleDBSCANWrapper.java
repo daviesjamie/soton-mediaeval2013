@@ -4,9 +4,9 @@ import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
 import gov.sandia.cognition.math.matrix.mtj.SparseMatrixFactoryMTJ;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.openimaj.data.dataset.Dataset;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparison;
 import org.openimaj.feature.FeatureExtractor;
@@ -20,7 +20,7 @@ import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
  *
  * @param <T>
  */
-public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper<T> {
+public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper {
 	Logger logger = Logger.getLogger(PrecachedSimilarityDoubleDBSCANWrapper.class);
 
 	private final class ExtractedIterator implements Iterator<double[]> {
@@ -49,21 +49,24 @@ public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapp
 	}
 	private FeatureExtractor<DoubleFV, T> extractor;
 	private DoubleDBSCAN dbscan;
+	private Dataset<T> data;
 	/**
+	 * @param data the data to be clustered
 	 * @param extractor
 	 * @param dbscan
 	 *
 	 */
-	public PrecachedSimilarityDoubleDBSCANWrapper(
-			FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
+	public PrecachedSimilarityDoubleDBSCANWrapper(Dataset<T> data, FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
 	) {
+		this.data = data;
 		this.extractor = extractor;
 		this.dbscan = dbscan;
 	}
 	@Override
-	public int[][] cluster(final List<T> data) {
-		SparseMatrix mat = SparseMatrixFactoryMTJ.INSTANCE.createMatrix(data.size(),data.size());
-		double[][] feats = new double[data.size()][];
+	public int[][] cluster() {
+		int numInstances = data.numInstances();
+		SparseMatrix mat = SparseMatrixFactoryMTJ.INSTANCE.createMatrix(numInstances,numInstances);
+		double[][] feats = new double[numInstances][];
 		int index = 0;
 		for (Iterator<double[]> iterator = new ExtractedIterator(data.iterator()); iterator.hasNext();) {
 			feats[index++] = iterator.next();

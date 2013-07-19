@@ -4,18 +4,19 @@ import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparator;
 
 /**
- * The haversine formalua to determine the great-circle distance between
- * two points on earth.
+ * Use the spherical law of cosines formula to calculate similarity.
+ * Slightly faster than {@link HaversineSimilarity} but slower than {@link EquirectangularSimilarity}.
+ * Accurate to within 1 meter distance in a 64 bit system
  *
- * see: http://www.ismll.uni-hildesheim.de/pub/pdfs/Reuter_et_al_ICWSM_2011.pdf
+ * see: http://www.movable-type.co.uk/scripts/latlong.html
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
  */
-public class HaversineSimilarity implements DoubleFVComparator{
+public class LawOfCosineSimilarity implements DoubleFVComparator{
 	/**
 	 * The default normaliser
 	 */
-	public HaversineSimilarity() {
+	public LawOfCosineSimilarity() {
 	}
 
 	@Override
@@ -35,16 +36,11 @@ public class HaversineSimilarity implements DoubleFVComparator{
 		double lat1 = Math.toRadians(h1[0]);
 		double lon2 = Math.toRadians(h2[1]);
 		double lon1 = Math.toRadians(h1[1]);
-		double deltaLat = lat2 - lat1;
-		double deltaLon = lon2 - lon1;
-		double sinLat = Math.sin(deltaLat / 2.);
-		double sinLon = Math.sin(deltaLon / 2.);
-		double cosLat1 = Math.cos(lat1);
-		double cosLat2 = Math.cos(lat2);
-		double phi = (sinLat * sinLat) + cosLat1 * cosLat2 * (sinLon * sinLon);
-		double atanPhi = Math.atan2(Math.sqrt(phi), Math.sqrt(1-phi));
-		double haversine = 2 * atanPhi;
-		return 1 - haversine;
+
+		double d = Math.acos(Math.sin(lat1)*Math.sin(lat2) +
+                Math.cos(lat1)*Math.cos(lat2) *
+                Math.cos(lon2-lon1));
+		return 1-d;
 	}
 
 }

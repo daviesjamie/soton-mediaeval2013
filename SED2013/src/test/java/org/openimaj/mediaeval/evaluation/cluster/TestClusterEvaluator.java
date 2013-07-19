@@ -3,7 +3,6 @@ package org.openimaj.mediaeval.evaluation.cluster;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
-import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -22,7 +21,7 @@ import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 
 /**
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
- * 
+ *
  */
 public class TestClusterEvaluator{
 	class TestShape{
@@ -36,21 +35,21 @@ public class TestClusterEvaluator{
 		public Circle(int cluster) {
 			super(cluster);
 		}
-		
+
 	}
 	class Star extends TestShape{
 
 		public Star(int cluster) {
 			super(cluster);
 		}
-		
+
 	}
 	class Cross extends TestShape{
 
 		public Cross(int cluster) {
 			super(cluster);
 		}
-		
+
 	}
 	class TestShapeFV implements FeatureExtractor<DoubleFV, TestShape>{
 
@@ -60,12 +59,12 @@ public class TestClusterEvaluator{
 			ret[0] = object.cluster;
 			return new DoubleFV(ret);
 		}
-		
+
 	}
-	private Map<Integer, ListDataset<TestShape>> correct;
+	private MapBackedDataset<Integer, ListDataset<TestShape>,TestShape> correct;
 
 	/**
-	 * 
+	 *
 	 */
 	@Before
 	public void prepare(){
@@ -103,25 +102,32 @@ public class TestClusterEvaluator{
 			)
 		);
 	}
-	
+
+	/**
+	 * Test evaluation against the stanford cluster tests
+	 */
 	@Test
 	public void test(){
-		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf = 
+		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
 				1, 0.1, 2, new DoubleNearestNeighboursExact.Factory()
 			);
 		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
-		
-		ClusterEvaluator<TestShape, MEAnalysis> eval = 
+
+		ClusterEvaluator<TestShape, MEAnalysis> eval =
 			new ClusterEvaluator<TestClusterEvaluator.TestShape, MEAnalysis>(
-				new SpatialDoubleDBSCANWrapper<TestShape>(new TestShapeFV(),dbsConf), 
-				new MEClusterAnalyser(), 
+				new SpatialDoubleDBSCANWrapper<TestShape>(correct,new TestShapeFV(),dbsConf),
+				new MEClusterAnalyser(),
 				correct
 			);
 		MEAnalysis res = eval.analyse(eval.evaluate());
 		assertTrue(Math.abs(res.purity - 0.71) < 0.01);
 		assertTrue(Math.abs(res.nmi - 0.36) < 0.01);
+		assertTrue(res.precision == 0.5);
+		assertTrue(res.recall - 0.455 < 0.01);
+		assertTrue(Math.abs(res.fscore(1) - 0.48) < 0.01);
+		assertTrue(Math.abs(res.fscore(5) - 0.456) < 0.01);
 		System.out.println(res.getSummaryReport());
-				
+
 	}
 }

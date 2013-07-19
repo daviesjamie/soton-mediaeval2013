@@ -19,23 +19,25 @@ import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
  *
  * @param <T>
  */
-public class SimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper<T> {
+public class SimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper {
 	Logger logger = Logger.getLogger(SimilarityDoubleDBSCANWrapper.class);
 	private FeatureExtractor<DoubleFV, T> extractor;
 	private DoubleDBSCAN dbscan;
+	private List<T> data;
 	/**
 	 * @param extractor
 	 * @param dbscan
 	 *
 	 */
 	public SimilarityDoubleDBSCANWrapper(
-			FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
+			final List<T> data,FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
 	) {
+		this.data = data;
 		this.extractor = extractor;
 		this.dbscan = dbscan;
 	}
 	@Override
-	public int[][] cluster(final List<T> data) {
+	public int[][] cluster() {
 		logger.info(String.format("Constructing sparse matrix with %d features",data.size()));
 		SparseMatrix mat = SparseMatrixFactoryMTJ.INSTANCE.createMatrix(data.size(), data.size());
 		int i = 0;

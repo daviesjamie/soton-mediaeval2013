@@ -188,7 +188,7 @@ public class SED2013ExpOne {
 	{
 		ClusterEvaluator<Photo, MEAnalysis> eval =
 			new ClusterEvaluator<Photo, MEAnalysis>(
-				new SpatialDoubleDBSCANWrapper<Photo>(fve,dbsConf),
+				new SpatialDoubleDBSCANWrapper<Photo>(ds,fve,dbsConf),
 				new MEClusterAnalyser(),
 				ds
 			);
@@ -208,7 +208,7 @@ public class SED2013ExpOne {
 	{
 		ClusterEvaluator<Photo, MEAnalysis> eval =
 			new ClusterEvaluator<Photo, MEAnalysis>(
-				new PrecachedSimilarityDoubleDBSCANWrapper<Photo>(fve,dbsConf),
+				new PrecachedSimilarityDoubleDBSCANWrapper<Photo>(ds,fve,dbsConf),
 				new MEClusterAnalyser(),
 				ds
 			);

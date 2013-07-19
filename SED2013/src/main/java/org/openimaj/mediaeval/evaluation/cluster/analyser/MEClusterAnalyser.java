@@ -1,6 +1,7 @@
 package org.openimaj.mediaeval.evaluation.cluster.analyser;
 
 import gnu.trove.map.hash.TIntIntHashMap;
+import gov.sandia.cognition.math.MathUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +27,52 @@ public class MEClusterAnalyser implements ClusterAnalyser<MEAnalysis>{
 		MEAnalysis ret = new MEAnalysis();
 		ret.purity = purity(correct,estimated,invCor,invEst);
 		ret.nmi = nmi(correct,estimated,invCor,invEst);
+		decisions(ret,correct,estimated,invCor,invEst);
 		return ret;
+	}
+
+	private void decisions(MEAnalysis ret, int[][] correct, int[][] estimated, Map<Integer, Integer> invCor,Map<Integer, Integer> invEst)
+	{
+		int positive = 0;
+		int negative = 0;
+		int remainingTotal = 0;
+		int[] remaining = new int[correct.length];
+		int[] classCount = new int[correct.length];
+		// Count the remaining items not yet clustered, and the remaining items in each class not yet clustered
+		for (int i = 0; i < correct.length; i++) {
+			remainingTotal += correct[i].length;
+			remaining[i] = correct[i].length;
+		}
+		ret.TP = ret.FN = 0;
+		// Go through each estimated class
+		for (int[] cluster : estimated) {
+			// The potential correct pairings is calculated as a cluster length pick 2
+			positive += MathUtil.binomialCoefficient(cluster.length, 2);
+			remainingTotal -= cluster.length;
+			// The potential negative pairings is the size of this class times the remaining items
+			negative += remainingTotal  * cluster.length;
+
+			// We count the number of each class contained in this cluster
+			for (int i : cluster) {
+				classCount[invCor.get(i)]++;
+			}
+			// For each class, if its count is more than one update the true positives.
+			// calculate the false negative pairings by considering the number for this class NOT in this cluster
+			for (int i = 0; i < classCount.length; i++) {
+				if(classCount[i] > 1){
+					ret.TP += MathUtil.binomialCoefficient(classCount[i], 2);
+				}
+				remaining[i] -= classCount[i];
+				ret.FN += remaining[i] * classCount[i];
+				classCount[i] = 0; // reset the class count
+			}
+		}
+		ret.FP = positive - ret.TP;
+		ret.TN = negative - ret.FN;
+
+		ret.randIndex = (double)(ret.TN + ret.TP) / (double)(ret.TN + ret.TP + ret.FN + ret.FP);
+		ret.precision = ret.TP / (double)(ret.TP + ret.FP);
+		ret.recall = ret.TP / (double)(ret.TP + ret.FN);
 	}
 
 	private double nmi(int[][] c, int[][] e, Map<Integer, Integer> ic, Map<Integer, Integer> ie) {

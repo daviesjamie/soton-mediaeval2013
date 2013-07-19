@@ -4,18 +4,18 @@ import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparator;
 
 /**
- * The haversine formalua to determine the great-circle distance between
- * two points on earth.
+ * The equirectangular approximation. This is the fastest of the 3 spherical
+ * similarity metrics but apparently the least accurate
  *
- * see: http://www.ismll.uni-hildesheim.de/pub/pdfs/Reuter_et_al_ICWSM_2011.pdf
+ * see: http://www.movable-type.co.uk/scripts/latlong.html
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
  */
-public class HaversineSimilarity implements DoubleFVComparator{
+public class EquirectangularSimilarity implements DoubleFVComparator{
 	/**
 	 * The default normaliser
 	 */
-	public HaversineSimilarity() {
+	public EquirectangularSimilarity() {
 	}
 
 	@Override
@@ -35,16 +35,12 @@ public class HaversineSimilarity implements DoubleFVComparator{
 		double lat1 = Math.toRadians(h1[0]);
 		double lon2 = Math.toRadians(h2[1]);
 		double lon1 = Math.toRadians(h1[1]);
-		double deltaLat = lat2 - lat1;
-		double deltaLon = lon2 - lon1;
-		double sinLat = Math.sin(deltaLat / 2.);
-		double sinLon = Math.sin(deltaLon / 2.);
-		double cosLat1 = Math.cos(lat1);
-		double cosLat2 = Math.cos(lat2);
-		double phi = (sinLat * sinLat) + cosLat1 * cosLat2 * (sinLon * sinLon);
-		double atanPhi = Math.atan2(Math.sqrt(phi), Math.sqrt(1-phi));
-		double haversine = 2 * atanPhi;
-		return 1 - haversine;
+
+		double x = (lon2-lon1) * Math.cos((lat1+lat2)/2);
+		double y = (lat2-lat1);
+
+		double d = Math.sqrt(x*x + y*y) ;
+		return 1-d;
 	}
 
 }

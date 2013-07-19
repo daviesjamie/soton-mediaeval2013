@@ -14,11 +14,11 @@ import org.openimaj.mediaeval.evaluation.cluster.processor.ClustererWrapper;
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
  * @param <D> The type of data which the internal clusterer can cluster lists of
- * @param <T> The type of results the 
+ * @param <T> The type of results the
  */
 public class ClusterEvaluator<D, T extends AnalysisResult> implements Evaluator<int[][],T>{
-	
-	private ClustererWrapper<D> gen;
+
+	private ClustererWrapper gen;
 	private List<D> data;
 	private int[][] correct;
 	private ClusterAnalyser<T> analyser;
@@ -27,9 +27,9 @@ public class ClusterEvaluator<D, T extends AnalysisResult> implements Evaluator<
 	 * @param gen
 	 * @param data
 	 * @param clusters
-	 * @param analyser 
+	 * @param analyser
 	 */
-	public ClusterEvaluator(ClustererWrapper<D> gen, List<D> data, int[][] clusters, ClusterAnalyser<T> analyser) {
+	public ClusterEvaluator(ClustererWrapper gen, int[][] clusters, ClusterAnalyser<T> analyser) {
 		this.gen = gen;
 		this.data = data;
 		this.correct = clusters;
@@ -37,10 +37,10 @@ public class ClusterEvaluator<D, T extends AnalysisResult> implements Evaluator<
 	}
 	/**
 	 * @param gen
-	 * @param analyser 
-	 * @param dataset 
+	 * @param analyser
+	 * @param dataset
 	 */
-	public <A> ClusterEvaluator(ClustererWrapper<D> gen, ClusterAnalyser<T> analyser, Map<A,? extends List<D>> dataset) {
+	public <A> ClusterEvaluator(ClustererWrapper gen, ClusterAnalyser<T> analyser, Map<A,? extends List<D>> dataset) {
 		this.gen = gen;
 		this.analyser = analyser;
 		this.data = new ArrayList<D>();
@@ -55,10 +55,10 @@ public class ClusterEvaluator<D, T extends AnalysisResult> implements Evaluator<
 			j++;
 		}
 	}
-	
+
 	@Override
 	public int[][] evaluate() {
-		return this.gen.cluster(this.data);
+		return this.gen.cluster();
 	}
 
 	@Override

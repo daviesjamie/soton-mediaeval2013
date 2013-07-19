@@ -1,16 +1,14 @@
 package org.openimaj.mediaeval.evaluation.cluster.processor;
 
-import java.util.List;
 
 /**
+ * Something which wraps the functionality of producing clusters
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
- * @param <T> the type of data to be clustered
  */
-public interface ClustererWrapper<T> {
+public interface ClustererWrapper {
 	/**
-	 * @param data
 	 * @return Given a list of data items, cluster them by index
 	 */
-	public int[][] cluster(List<T> data);
+	public int[][] cluster();
 }

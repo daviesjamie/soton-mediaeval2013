@@ -27,6 +27,11 @@ public class TestXMLFlickrPhotoDataset {
 	@Rule
 	public TemporaryFolder folder = new TemporaryFolder();
 
+	/**
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
+	 */
 	@Test
 	public void testDataset() throws IOException, SAXException, ParserConfigurationException{
 		InputStream is = TestXMLFlickrPhotoDataset.class.getResourceAsStream("/flickr.photo.xml");
@@ -34,6 +39,10 @@ public class TestXMLFlickrPhotoDataset {
 		assertTrue(ds.numInstances() == 58);
 	}
 
+	/**
+	 * @throws IOException
+	 * @throws XMLStreamException
+	 */
 	@Test
 	public void testStreamDataset() throws IOException, XMLStreamException{
 		InputStream is = TestXMLFlickrPhotoDataset.class.getResourceAsStream("/flickr.photo.xml");

@@ -38,9 +38,12 @@ public final class PhotoUtils {
 	public static final ThreadLocal DATE_FORMATS = new ThreadLocal() {
         @Override
 		protected synchronized Object initialValue() {
-            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return format();
         }
     };
+    public static SimpleDateFormat format(){
+    	return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    }
     private PhotoUtils() {
     }
 
