@@ -275,7 +275,7 @@ public class SED2013Index {
 		}
 
 		public static IndexedPhoto fromDoc(SolrDocument doc){
-			long photoIndex = (long) doc.get("index");
+			long photoIndex = (long)(Long) doc.get("index");
 			Photo p = PhotoUtils.createPhoto(doc);
 			return new IndexedPhoto(photoIndex, p);
 		}
