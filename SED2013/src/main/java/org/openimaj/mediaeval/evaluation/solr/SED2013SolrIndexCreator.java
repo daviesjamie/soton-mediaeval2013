@@ -1,4 +1,4 @@
-package org.openimaj.mediaeval.evaluation.datasets;
+package org.openimaj.mediaeval.evaluation.solr;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +55,12 @@ public class SED2013SolrIndexCreator {
 		columns.add(new PhotoDocumentAppender() {
 			@Override
 			public void addFieldToDoc(Photo p, SolrInputDocument doc) {
+				doc.addField("url", p.getUrl());
+			}
+		});
+		columns.add(new PhotoDocumentAppender() {
+			@Override
+			public void addFieldToDoc(Photo p, SolrInputDocument doc) {
 				doc.addField("title", p.getTitle());
 			}
 		});
@@ -76,13 +82,15 @@ public class SED2013SolrIndexCreator {
 		columns.add(new PhotoDocumentAppender() {
 			@Override
 			public void addFieldToDoc(Photo p, SolrInputDocument doc) {
-				 doc.addField("timeposted", TrieDateField.formatExternal(p.getDatePosted()));
+				if(p.getDatePosted()!=null)
+					doc.addField("timeposted", TrieDateField.formatExternal(p.getDatePosted()));
 			}
 		});
 		columns.add(new PhotoDocumentAppender() {
 			@Override
 			public void addFieldToDoc(Photo p, SolrInputDocument doc) {
-				doc.addField("timetaken", TrieDateField.formatExternal(p.getDateTaken()));
+				if(p.getDateTaken()!=null)
+					doc.addField("timetaken", TrieDateField.formatExternal(p.getDateTaken()));
 			}
 		});
 		columns.add(new PhotoDocumentAppender() {
@@ -90,8 +98,15 @@ public class SED2013SolrIndexCreator {
 			public void addFieldToDoc(Photo p, SolrInputDocument doc) {
 				if(p.hasGeoData()){
 					GeoData gd = p.getGeoData();
-					doc.addField("location", String.format("%2.2f,%2.2f",gd.getLatitude(),gd.getLongitude()));
+					doc.addField("location", String.format("%2.4f,%2.4f",gd.getLatitude(),gd.getLongitude()));
 				}
+			}
+		});
+		columns.add(new PhotoDocumentAppender() {
+			int count = 0;
+			@Override
+			public void addFieldToDoc(Photo p, SolrInputDocument doc) {
+				doc.addField("index",count++);
 			}
 		});
 	}
@@ -242,12 +257,11 @@ public class SED2013SolrIndexCreator {
 
 	/**
 	 * Create a Solr document from the provided Geonames column data.
+	 * @param p the photo object
 	 *
-	 * @param row
-	 *            A String array containing the columns of data
 	 * @return SolrInputDocument: The prepared document
 	 */
-	private SolrInputDocument createSolrDoc(Photo p) {
+	public static SolrInputDocument createSolrDoc(Photo p) {
 
 		SolrInputDocument doc = new SolrInputDocument();
 		for (PhotoDocumentAppender key : columns) {

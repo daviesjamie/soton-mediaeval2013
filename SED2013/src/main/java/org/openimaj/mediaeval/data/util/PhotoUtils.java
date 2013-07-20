@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.solr.common.SolrDocument;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -500,6 +501,38 @@ public final class PhotoUtils {
 			geos = String.format("%2.5f,%2.5f",geo.getLatitude(),geo.getLongitude());
 		}
 		return String.format("tags=%s, upload=%s, taken=%s, geo=%s",Arrays.toString(tags),upload,taken,geos);
+	}
+	@SuppressWarnings("unchecked")
+	public static Photo createPhoto(SolrDocument photo) {
+		Photo p = new Photo();
+		p.setId((String) photo.getFieldValue("id"));
+		p.setTitle((String) photo.getFieldValue("title"));
+		p.setDescription((String) photo.getFieldValue("description"));
+		@SuppressWarnings("rawtypes")
+		ArrayList tags = new ArrayList();
+		if(photo.containsKey("tag")){
+			for (Object entry : photo.getFieldValues("tag")) {
+				Tag t = new Tag();
+				t.setValue(entry.toString());
+				tags.add(t);
+			}
+		}
+		p.setTags(tags);
+		if(photo.containsKey("timeposted")){
+			p.setDatePosted((Date) photo.get("timeposted"));
+		}
+		if(photo.containsKey("timetaken")){
+			p.setDateTaken((Date) photo.get("timetaken"));
+		}
+		if(photo.containsKey("location")){
+			GeoData geoData = new GeoData();
+			String[] latlong = photo.getFieldValue("location").toString().split(",");
+			geoData.setLatitude(Float.parseFloat(latlong[0]));
+			geoData.setLongitude(Float.parseFloat(latlong[1]));
+			p.setGeoData(geoData);
+		}
+
+		return p;
 	}
 
 }

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema name="SED2013" version="1.5">
+
+	<fields>
+		<field name="id" type="string" indexed="true" stored="true"
+			required="true" multiValued="false" />
+		<field name="index" type="long" indexed="true" stored="true"
+			required="true" multiValued="false" />
+		<field name="url" type="string" indexed="true" stored="true"
+			required="true" multiValued="false" />
+		<field name="title" type="text_block" indexed="true" stored="true"
+			required="false" multiValued="false" />
+		<field name="tag" type="text_block" indexed="true" stored="true"
+			required="false" multiValued="true" />
+		<field name="description" type="text_block" indexed="true"
+			stored="true" required="false" multiValued="false" />
+		<field name="timetaken" type="timestamp" indexed="true" stored="true"
+			required="false" multiValued="false" />
+		<field name="timeposted" type="timestamp" indexed="true" stored="true"
+			required="false" multiValued="false" />
+		<field name="location" type="latLon" indexed="true" stored="true"
+			required="false" multiValued="false" />
+		<field name="_version_" type="long" indexed="true" stored="true" />
+		<dynamicField name="*_latLon" indexed="true" stored="true"
+			type="double" />
+	</fields>
+
+
+	<!-- Field to use to determine and enforce document uniqueness. Unless this 
+		field is marked with required="false", it will be a required field -->
+	<uniqueKey>id</uniqueKey>
+
+
+	<types>
+		<fieldType name="string" class="solr.StrField"
+			sortMissingLast="true" />
+		<fieldType name="long" class="solr.TrieLongField"
+			precisionStep="0" positionIncrementGap="0" />
+		<fieldType name="double" class="solr.SortableDoubleField" />
+		<fieldType name="timestamp" class="solr.TrieDateField"
+			omitNorms="true" precisionStep="0" positionIncrementGap="0" />
+		<fieldType name="latLon" class="solr.LatLonType"
+			subFieldSuffix="_latLon" />
+		<fieldType name="text_block" class="solr.TextField"
+			positionIncrementGap="100">
+			<analyzer type="index">
+				<tokenizer class="solr.WhitespaceTokenizerFactory" />
+				<filter catenateAll="0" catenateNumbers="1" catenateWords="1"
+					class="solr.WordDelimiterFilterFactory" generateNumberParts="1"
+					generateWordParts="1" splitOnCaseChange="1" />
+				<filter class="solr.LowerCaseFilterFactory" />
+			</analyzer>
+			<analyzer type="query">
+				<tokenizer class="solr.WhitespaceTokenizerFactory" />
+				<filter catenateAll="0" catenateNumbers="0" catenateWords="0"
+					class="solr.WordDelimiterFilterFactory" generateNumberParts="1"
+					generateWordParts="1" splitOnCaseChange="1" />
+				<filter class="solr.LowerCaseFilterFactory" />
+			</analyzer>
+		</fieldType>
+
+	</types>
+
+
+</schema>
