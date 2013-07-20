@@ -233,7 +233,7 @@ public class SED2013Index {
 	 * @return the response
 	 * @throws SolrServerException
 	 */
-	public QueryResponse query(String query, int nRows, String[] fields,String filter,String sort) throws SolrServerException {
+	public QueryResponse query(String query, int nRows, String[] fields,String filter,String sort) throws SolrServerException  {
 		SolrQuery q = new SolrQuery();
 		q.add("defType","edismax");
 		q.add("qf", join(" ",rqfArray));
@@ -250,7 +250,11 @@ public class SED2013Index {
 //		logger.debug("qf: " + join(" ",rqfArray));
 //		logger.debug("sort: " + sort);
 //		logger.debug("SOLR Query URL:"  + q);
-		return getSolrIndex().query(q);
+		try{			
+			return getSolrIndex().query(q);
+		} catch(SolrServerException e){
+			throw e;
+		}
 	}
 
 	private String join(String join, Collection<String> rqfArray) {

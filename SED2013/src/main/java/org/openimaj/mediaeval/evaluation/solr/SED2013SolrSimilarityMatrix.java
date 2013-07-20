@@ -5,6 +5,7 @@ import gov.sandia.cognition.math.matrix.mtj.SparseMatrixFactoryMTJ;
 import gov.sandia.cognition.math.matrix.mtj.SparseVector;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
@@ -32,14 +33,23 @@ public class SED2013SolrSimilarityMatrix {
 	private static Logger logger = Logger.getLogger(SED2013SolrSimilarityMatrix.class);
 
 	public static void main(String[] args) throws IOException, XMLStreamException {
-//		final SED2013Index index = SED2013Index.instance("http://localhost:8983/solr/sed2013_train");
-		final SED2013Index index = SED2013Index.instance();
+		final SED2013Index index = SED2013Index.instance("http://localhost:8983/solr/sed2013_train");
+//		final SED2013Index index = SED2013Index.instance();
+		try{
+			constructSimilarityMatrix(args, index);
+		}finally{
+			SED2013Index.shutdown();
+		}
+	}
+
+	private static void constructSimilarityMatrix(String[] args, final SED2013Index index)
+			throws IOException, XMLStreamException, FileNotFoundException {
 		// Some choice experiments
-		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
-		String expRoot = "/Volumes/data/mediaeval/mediaeval-SED2013/tools/simmat/";
-		String tfidf = String.format("/Users/ss/Experiments/sed2013/training.sed2013.photo_tfidf",expRoot);
+		String bigFile = args[0];
+		String expRoot = args[1];
+		String tfidf = String.format("%s/training.sed2013.photo_tfidf",expRoot);
 		String featurecache = String.format("%s/train.all.featurecache",expRoot);
-		String matRoot = "/Users/ss/Experiments/sed2013/training.sed2013.solr.sparsematrix";
+		String matRoot = String.format("%s/training.sed2013.solr.sparsematrix",expRoot);
 		final int solrQueryN = 200;
 		final double eps = 0.4;
 		final int collectionN = 306144;
