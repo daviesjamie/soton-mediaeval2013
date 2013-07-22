@@ -33,12 +33,8 @@ public class AggregateDataset<DATASET extends Dataset<INSTANCE>, INSTANCE> imple
 		return datasets.add(dataset);
 	}
 	
-	public boolean addDatasets(Collection<DATASET> datasets) {
-		for (DATASET dataset : datasets) {
-			datasets.add(dataset);
-		}
-		
-		return true;
+	public boolean addDatasets(Collection<? extends DATASET> datasets) {
+		return this.datasets.addAll(datasets);
 	}
 	
 	public Set<DATASET> getSet() {
