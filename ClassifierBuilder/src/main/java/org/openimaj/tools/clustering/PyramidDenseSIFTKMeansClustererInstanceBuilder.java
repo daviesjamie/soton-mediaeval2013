@@ -52,6 +52,34 @@ public class PyramidDenseSIFTKMeansClustererInstanceBuilder implements Classifie
 	private int blocksY = 2;
 	private float phowEnergyThreshold = 0.015f;
 	
+	public PyramidDenseSIFTKMeansClustererInstanceBuilder() {
+		super();
+	}
+	
+	public PyramidDenseSIFTKMeansClustererInstanceBuilder(String[] args) throws BuildException {
+
+		for (int i = 0; i < args.length; i++) {
+			String[] option = args[i].split("=", 2);
+			
+			switch (option[0]) {
+			case "step":				step = Integer.parseInt(option[1]);					break;
+			case "binSize":				binSize = Integer.parseInt(option[1]);				break;
+			case "M":					M = Integer.parseInt(option[1]);					break;
+			case "K":					K = Integer.parseInt(option[1]);					break;
+			case "magFactor":			magFactor = Float.parseFloat(option[1]);			break;
+			case "size":				size = Integer.parseInt(option[1]);					break;
+			case "energyThreshold":		energyThreshold = Float.parseFloat(option[1]);		break;
+			case "maxKeypoints":		maxKeypoints = Integer.parseInt(option[1]);			break;
+			case "C":					C = Float.parseFloat(option[1]);					break;
+			case "eps":					eps = Float.parseFloat(option[1]);					break;
+			case "blocksX":				blocksX = Integer.parseInt(option[1]);				break;
+			case "blocksY":				blocksY = Integer.parseInt(option[1]);				break;
+			case "phowEnergyThreshold":	phowEnergyThreshold = Float.parseFloat(option[1]);	break;
+			default:	throw new BuildException("Unknown option: " + option[0]);
+			}
+		}
+	}
+	
 	
 	@Override
 	public Classifier<String, MBFImage> build(GroupedDataset<String, ListDataset<MBFImage>, MBFImage> developmentSource) {

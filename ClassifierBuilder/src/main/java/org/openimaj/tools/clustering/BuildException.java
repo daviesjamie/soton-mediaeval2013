@@ -5,7 +5,7 @@ import java.io.IOException;
 public class BuildException extends Exception {
 	
 	public BuildException(String message) {
-		super("Error building dataset: \n" + message);
+		super("Error building: \n" + message);
 	}
 
 	public BuildException(Exception cause) {
