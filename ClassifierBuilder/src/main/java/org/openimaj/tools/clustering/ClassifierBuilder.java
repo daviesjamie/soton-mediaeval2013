@@ -1,7 +1,12 @@
 package org.openimaj.tools.clustering;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PipedOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -12,6 +17,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.jfree.io.FileUtilities;
 import org.openimaj.data.DataSource;
 import org.openimaj.data.dataset.Dataset;
 import org.openimaj.data.dataset.GroupedDataset;
@@ -29,7 +35,11 @@ import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
 import org.openimaj.image.annotation.evaluation.datasets.Caltech101;
 import org.openimaj.image.annotation.evaluation.datasets.Caltech101.Record;
+import org.openimaj.io.FileUtils;
 import org.openimaj.ml.clustering.assignment.Assigner;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 
 public class ClassifierBuilder {
 	private static final Map<String, DatasetBuilder<GroupedDataset<String, ListDataset<MBFImage>, MBFImage>>>
@@ -40,6 +50,7 @@ public class ClassifierBuilder {
 	
 	private static void init() {
 		DATASETS.put("Caltech101", new Caltech101DatasetBuilder());
+		DATASETS.put("Flickr", new FlickrImageDatasetBuilder());
 		
 		CLASSIFIERS.put("PyramidDenseSIFTKMeans", PyramidDenseSIFTKMeansClustererInstanceBuilder.class);
 	}
@@ -107,10 +118,10 @@ public class ClassifierBuilder {
 			}
 			
 			classifierBuilder = establishClustererBuilder(clustererProfile);
-			dataSource = establishDataset(datasetProfile);
 			trainingSize = Integer.parseInt(trainingSetSize);
 			validationSize = Integer.parseInt(validationSetSize);
 			testingSize = Integer.parseInt(testingSetSize);
+			dataSource = establishDataset(datasetProfile, trainingSize + validationSize + testingSize);
 			out = Paths.get(outFile).toFile();
 			
 		} catch (UserInputException e) {
@@ -132,6 +143,10 @@ public class ClassifierBuilder {
 		Map<MBFImage, ClassificationResult<String>> guesses = eval.evaluate();
 		CMResult<String> result = eval.analyse(guesses);
 		System.out.println(result);
+		
+		System.out.println("Writing to file...");
+		Kryo kryo = new Kryo();
+		kryo.writeObject(new Output(new FileOutputStream(outFile)), classifier);
 	}
 
 	/**
@@ -160,7 +175,7 @@ public class ClassifierBuilder {
 				System.out.println(components[0] + " with arguments: " + components[1]);
 				
 				String[] args = components[1].split(",");
-				return CLASSIFIERS.get(components[0]).getConstructor(String[].class).newInstance((Object[]) args);
+				return CLASSIFIERS.get(components[0]).getConstructor(String[].class).newInstance((Object) args);
 			}
 		} else {
 			throw new InvalidClustererException(components[0]);
@@ -180,7 +195,7 @@ public class ClassifierBuilder {
 	 * 
 	 * @throws BuildException 
 	 */
-	private static GroupedDataset<String, ListDataset<MBFImage>, MBFImage> establishDataset(String sourceString) throws IOException, InvalidDatasetException, BuildException {
+	private static GroupedDataset<String, ListDataset<MBFImage>, MBFImage> establishDataset(String sourceString, int maxSize) throws IOException, InvalidDatasetException, BuildException {
 		System.out.println("Aggregating datasets...");
 		
 		// Datasets are semicolon-separated.
@@ -210,7 +225,7 @@ public class ClassifierBuilder {
 			}
 			
 			GroupedDataset<String, ListDataset<MBFImage>, MBFImage> subDataset = 
-					builder.build(args);
+					builder.build(args, maxSize);
 			
 			dataset.addDataset(subDataset);
 		}

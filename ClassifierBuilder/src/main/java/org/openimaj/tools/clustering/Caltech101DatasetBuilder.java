@@ -34,7 +34,7 @@ public class Caltech101DatasetBuilder implements
 	 * @param args  an optional mode specifier (mode=exclude), followed by 
 	 * 				the names of categories to include in the dataset
 	 */
-	public GroupedDataset<String, ListDataset<MBFImage>, MBFImage> build(String[] args) throws BuildException {
+	public GroupedDataset<String, ListDataset<MBFImage>, MBFImage> build(String[] args, int maxSize) throws BuildException {
 		VFSGroupDataset<Record<MBFImage>> ct101;
 		
 		try {
