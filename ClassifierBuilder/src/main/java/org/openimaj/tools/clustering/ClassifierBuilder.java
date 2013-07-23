@@ -118,10 +118,10 @@ public class ClassifierBuilder {
 			}
 			
 			classifierBuilder = establishClustererBuilder(clustererProfile);
-			dataSource = establishDataset(datasetProfile);
 			trainingSize = Integer.parseInt(trainingSetSize);
 			validationSize = Integer.parseInt(validationSetSize);
 			testingSize = Integer.parseInt(testingSetSize);
+			dataSource = establishDataset(datasetProfile, trainingSize + validationSize + testingSize);
 			out = Paths.get(outFile).toFile();
 			
 		} catch (UserInputException e) {
@@ -195,7 +195,7 @@ public class ClassifierBuilder {
 	 * 
 	 * @throws BuildException 
 	 */
-	private static GroupedDataset<String, ListDataset<MBFImage>, MBFImage> establishDataset(String sourceString) throws IOException, InvalidDatasetException, BuildException {
+	private static GroupedDataset<String, ListDataset<MBFImage>, MBFImage> establishDataset(String sourceString, int maxSize) throws IOException, InvalidDatasetException, BuildException {
 		System.out.println("Aggregating datasets...");
 		
 		// Datasets are semicolon-separated.
@@ -225,7 +225,7 @@ public class ClassifierBuilder {
 			}
 			
 			GroupedDataset<String, ListDataset<MBFImage>, MBFImage> subDataset = 
-					builder.build(args);
+					builder.build(args, maxSize);
 			
 			dataset.addDataset(subDataset);
 		}

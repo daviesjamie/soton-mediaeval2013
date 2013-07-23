@@ -20,7 +20,7 @@ public class FlickrImageDatasetBuilder implements DatasetBuilder<GroupedDataset<
 	 * Args should be of the form apikey=<API key>,secret=<API secret>,<search terms>...
 	 */
 	public GroupedDataset<String, ListDataset<MBFImage>, MBFImage> build(
-			String[] args) throws BuildException {
+			String[] args, int maxSize) throws BuildException {
 		if (args.length < 2) {
 			throw new BuildException("Not enough arguments.");
 		}
@@ -55,7 +55,7 @@ public class FlickrImageDatasetBuilder implements DatasetBuilder<GroupedDataset<
 			FlickrImageDataset<MBFImage> dataset;
 			
 			try {
-				dataset = FlickrImageDataset.create(ImageUtilities.MBFIMAGE_READER, apiToken, searchTerm, 30);
+				dataset = FlickrImageDataset.create(ImageUtilities.MBFIMAGE_READER, apiToken, searchTerm, maxSize);
 			} catch (Exception e) {
 				throw new BuildException(e);
 			}
