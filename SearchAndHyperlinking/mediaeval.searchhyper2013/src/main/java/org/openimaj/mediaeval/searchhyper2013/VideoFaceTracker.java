@@ -109,7 +109,7 @@ public class VideoFaceTracker
 	 */
 	public static class FaceComparator implements Comparator<DetectedFace>
 	{
-		public double overlapForSame = 0.8;
+		public double overlapForSame = 0.6;
 
 		@Override
 		public int compare( final DetectedFace o1, final DetectedFace o2 )
@@ -155,7 +155,7 @@ public class VideoFaceTracker
 	private final int minFrames = 30;
 
 	/** The minimum size of a face detection in pixels */
-	private final int minSize = 40;
+	private final int minSize = 80;
 
 	/** This is a counter for the number of frames detected faces exist for - only contains tracked faces */
 	private final HashMap<FaceRange,Integer> frameCount = new HashMap<FaceRange, Integer>();
@@ -206,12 +206,16 @@ public class VideoFaceTracker
 
 		// A CLM Face tracker
 		final CLMFaceTracker tracker2 = new CLMFaceTracker();
+		tracker2.getModelTracker().getInitialVars().faceDetector.set_min_size( this.minSize );
 		tracker2.setRedetectEvery( 10 );
 
 		// Read all the video frames
 		VideoTimecode lastFrameTimecode = null;
 		for( MBFImage image : xv )
 		{
+			if( xv.getCurrentFrameIndex() % 2 != 0 )
+				continue;
+
 			// Process with the shot detector. This is necessary to know whether
 			// to reset the CLM tracker.
 			sd.processFrame( image );
@@ -223,7 +227,7 @@ public class VideoFaceTracker
 			if( this.aspect != 1 )
 			{
 				image = image.process( new ResizeProcessor(
-					(int) (image.getHeight()*this.aspect), image.getHeight(), false  ) );
+					(int) (image.getHeight()*this.aspect)/2, image.getHeight()/2, false  ) );
 			}
 
 			// The face trackers work on greyscale images, so we'll flatten the colour image.
@@ -237,6 +241,9 @@ public class VideoFaceTracker
 
 			// Look for faces to track with the KLT tracker
 			final List<DetectedFace> faces1 = kltTracker.trackFace( frame );
+
+			if( faces1.size() == 0 )
+				continue;
 
 			if( VideoFaceTracker.IMAGE_DEBUG )
 				// DEBUG - Draw the KLT Tracked faces to the frame

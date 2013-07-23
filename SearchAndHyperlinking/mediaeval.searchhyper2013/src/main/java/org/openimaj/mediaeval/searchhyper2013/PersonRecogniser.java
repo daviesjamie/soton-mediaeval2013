@@ -10,12 +10,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
@@ -32,11 +30,8 @@ import opennlp.tools.util.Span;
 import org.openimaj.image.DisplayUtilities.ImageComponent;
 import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
-import org.openimaj.image.processing.face.detection.DetectedFace;
-import org.openimaj.ml.annotation.ScoredAnnotation;
 import org.openimaj.util.api.auth.DefaultTokenFactory;
 import org.openimaj.util.api.auth.common.OpenCalaisAPIToken;
-import org.openimaj.util.pair.IndependentPair;
 
 import com.google.common.io.Files;
 import com.google.gson.JsonIOException;
@@ -132,18 +127,18 @@ public class PersonRecogniser
 			final Set<String> peopleNames = this.getPeopleNames( pi );
 
 			// Create a classifier for the given people names
-			PersonMatcher pm = null;
-			final File recFile = new File( this.baseFilename + ".rec" );
-			if( recFile.exists() )
-				pm = new PersonMatcher( recFile );
-			else
-				pm = new PersonMatcher( peopleNames, recFile, true );
-
-			// These options are for minimising false positives in images with
-			// multiple people in them. We only have images with a single person
-			// in it.
-			pm.setAllowOnlyOneInstance( false );
-			pm.setIgnoreBlurredFaces( false );
+//			PersonMatcher pm = null;
+//			final File recFile = new File( this.baseFilename + ".rec" );
+//			if( recFile.exists() )
+//				pm = new PersonMatcher( recFile );
+//			else
+//				pm = new PersonMatcher( peopleNames, recFile, true );
+//
+//			// These options are for minimising false positives in images with
+//			// multiple people in them. We only have images with a single person
+//			// in it.
+//			pm.setAllowOnlyOneInstance( false );
+//			pm.setIgnoreBlurredFaces( false );
 
 			// Images are being cached by the video tracker, so
 			// we don't need to do it if the directory for the given video
@@ -186,23 +181,23 @@ public class PersonRecogniser
 			{
 				final MBFImage img = ImageUtilities.readMBF( f );
 
-				final List<? extends IndependentPair<? extends DetectedFace, ScoredAnnotation<String>>> x = pm.query( img.flatten() );
+//				final List<? extends IndependentPair<? extends DetectedFace, ScoredAnnotation<String>>> x = pm.query( img.flatten() );
 
 				// As the query image should only have one face within it, the
 				// hope is that there will only be a single result in the person
 				// matcher.
-				if( x.size() > 0 )
-				{
-					// Get the single result
-					final IndependentPair<? extends DetectedFace, ScoredAnnotation<String>> y = x.get( 0 );
-					final String name = (y.secondObject() == null ? "Unknown" : y.secondObject().annotation);
-
-					// Write the name of the person to a file next to the face
-					// image.
-					final FileWriter fw = new FileWriter( new File( f.getCanonicalPath() + ".txt" ) );
-					fw.write( name );
-					fw.close();
-				}
+//				if( x.size() > 0 )
+//				{
+//					// Get the single result
+//					final IndependentPair<? extends DetectedFace, ScoredAnnotation<String>> y = x.get( 0 );
+//					final String name = (y.secondObject() == null ? "Unknown" : y.secondObject().annotation);
+//
+//					// Write the name of the person to a file next to the face
+//					// image.
+//					final FileWriter fw = new FileWriter( new File( f.getCanonicalPath() + ".txt" ) );
+//					fw.write( name );
+//					fw.close();
+//				}
 			}
 
 			this.showResults( files );
