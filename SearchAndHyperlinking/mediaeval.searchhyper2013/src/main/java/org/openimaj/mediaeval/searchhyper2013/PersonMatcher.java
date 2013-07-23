@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -85,7 +86,7 @@ import org.openimaj.util.pair.IndependentPair;
  * <p>
  * The main method is just a test method - it will delete the recogniser after
  * it's done.
- * 
+ *
  * @author David Dupplaw (dpd@ecs.soton.ac.uk)
  * @created 5 Feb 2013
  * @version $Author$, $Revision$, $Date$
@@ -140,7 +141,7 @@ public class PersonMatcher
 
 	/**
 	 * Create a person matcher
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	public PersonMatcher() throws Exception
@@ -150,7 +151,7 @@ public class PersonMatcher
 
 	/**
 	 * Create a person matcher with the given file
-	 * 
+	 *
 	 * @param recogniserFile
 	 *            The recogniser file to load
 	 * @throws Exception
@@ -169,7 +170,7 @@ public class PersonMatcher
 
 	/**
 	 * Create a recogniser for the given person into the given file.
-	 * 
+	 *
 	 * @param person
 	 *            The person to create a recogniser for
 	 * @param recogniserFile
@@ -184,7 +185,7 @@ public class PersonMatcher
 
 	/**
 	 * Constructor that takes a query string.
-	 * 
+	 *
 	 * @param queries
 	 *            The query strings to use
 	 * @param recogniserFile
@@ -194,7 +195,7 @@ public class PersonMatcher
 	 * @throws Exception
 	 *             If the face recognition engine could not be initialised
 	 */
-	public PersonMatcher(final List<String> queries, final File recogniserFile,
+	public PersonMatcher(final Collection<String> queries, final File recogniserFile,
 			final boolean addCounterExamples)
 			throws Exception
 	{
@@ -203,7 +204,7 @@ public class PersonMatcher
 
 	/**
 	 * Constructor that takes a set of queries to search for
-	 * 
+	 *
 	 * @param queries
 	 *            The query strings to use
 	 * @param recogniserFile
@@ -236,7 +237,7 @@ public class PersonMatcher
 
 	/**
 	 * After training, you might want to save the recogniser
-	 * 
+	 *
 	 * @param recogniserFile
 	 *            The recogniser file to save to
 	 * @throws IOException
@@ -252,7 +253,7 @@ public class PersonMatcher
 	/**
 	 * Train the recogniser with examples retrieved from searching with the
 	 * given queries.
-	 * 
+	 *
 	 * @param queries
 	 *            The query strings
 	 */
@@ -332,9 +333,9 @@ public class PersonMatcher
 		{
 			final HashSet<String> seenPeople = new HashSet<String>();
 			final Iterator<? extends IndependentPair<
-					? extends DetectedFace, ScoredAnnotation<String>>> 
+					? extends DetectedFace, ScoredAnnotation<String>>>
 						it = recognisedFaces.iterator();
-			
+
 			while( it.hasNext() )
 			{
 				final IndependentPair<? extends DetectedFace, ScoredAnnotation<String>> facePair = it.next();
@@ -383,7 +384,7 @@ public class PersonMatcher
 
 	/**
 	 * Returns a face recogniser by using the FaceRecogniserTools.
-	 * 
+	 *
 	 * @param recogniserFile
 	 * @return The face recogniser engine
 	 * @throws IOException
@@ -394,10 +395,10 @@ public class PersonMatcher
 		// If we have a pre-trained file to load, load it in.
 		if( recogniserFile != null && recogniserFile.exists() )
 		{
-			System.out.println("Loading existing recogniser from " 
+			System.out.println("Loading existing recogniser from "
 					+ recogniserFile + " to update...");
 
-			final FaceRecognitionEngine<DetectedFace, String> fre = 
+			final FaceRecognitionEngine<DetectedFace, String> fre =
 					FaceRecognitionEngine.load(recogniserFile);
 			return fre;
 		}
@@ -489,7 +490,7 @@ public class PersonMatcher
 	/**
 	 * For each URL (that is an image representation of the query), load it in
 	 * and train the face recogniser.
-	 * 
+	 *
 	 * @param result
 	 *            The URL of an image that is a representation of the query
 	 * @param label
@@ -562,7 +563,7 @@ public class PersonMatcher
 
 	/**
 	 * Get the current matching threhsold of this person matcher.
-	 * 
+	 *
 	 * @return The matching threshold
 	 */
 	public float getMatchingThreshold()
@@ -574,7 +575,7 @@ public class PersonMatcher
 	 * Set the matching threshold of this person matcher. Note that this must be
 	 * called prior to processing a frame; calling afterwards will have no
 	 * effect.
-	 * 
+	 *
 	 * @param matchingThreshold
 	 *            The matching threshold to set
 	 */
@@ -584,7 +585,7 @@ public class PersonMatcher
 	}
 
 	/**
-	 * 
+	 *
 	 * @param resource
 	 * @return The displayed image
 	 * @throws Exception
@@ -618,13 +619,13 @@ public class PersonMatcher
 	 */
 	public boolean isAllowOnlyOneInstance()
 	{
-		return allowOnlyOneInstance;
+		return this.allowOnlyOneInstance;
 	}
 
 	/**
 	 *	@param allowOnlyOneInstance the allowOnlyOneInstance to set
 	 */
-	public void setAllowOnlyOneInstance( boolean allowOnlyOneInstance )
+	public void setAllowOnlyOneInstance( final boolean allowOnlyOneInstance )
 	{
 		this.allowOnlyOneInstance = allowOnlyOneInstance;
 	}
@@ -634,13 +635,13 @@ public class PersonMatcher
 	 */
 	public boolean isIgnoreBlurredFaces()
 	{
-		return ignoreBlurredFaces;
+		return this.ignoreBlurredFaces;
 	}
 
 	/**
 	 *	@param ignoreBlurredFaces the ignoreBlurredFaces to set
 	 */
-	public void setIgnoreBlurredFaces( boolean ignoreBlurredFaces )
+	public void setIgnoreBlurredFaces( final boolean ignoreBlurredFaces )
 	{
 		this.ignoreBlurredFaces = ignoreBlurredFaces;
 	}
@@ -650,13 +651,13 @@ public class PersonMatcher
 	 */
 	public float getBlurThreshold()
 	{
-		return blurThreshold;
+		return this.blurThreshold;
 	}
 
 	/**
 	 *	@param blurThreshold the blurThreshold to set
 	 */
-	public void setBlurThreshold( float blurThreshold )
+	public void setBlurThreshold( final float blurThreshold )
 	{
 		this.blurThreshold = blurThreshold;
 	}
@@ -666,13 +667,13 @@ public class PersonMatcher
 	 */
 	public RecognitionStrategy getStrategy()
 	{
-		return strategy;
+		return this.strategy;
 	}
 
 	/**
 	 *	@param strategy the strategy to set
 	 */
-	public void setStrategy( RecognitionStrategy strategy )
+	public void setStrategy( final RecognitionStrategy strategy )
 	{
 		this.strategy = strategy;
 	}
@@ -682,13 +683,13 @@ public class PersonMatcher
 	 */
 	public boolean isCacheImages()
 	{
-		return cacheImages;
+		return this.cacheImages;
 	}
 
 	/**
 	 *	@param cacheImages the cacheImages to set
 	 */
-	public void setCacheImages( boolean cacheImages )
+	public void setCacheImages( final boolean cacheImages )
 	{
 		this.cacheImages = cacheImages;
 	}
@@ -698,7 +699,7 @@ public class PersonMatcher
 	 */
 	public FaceDetector<?, FImage> getFaceDetector()
 	{
-		return faceDetector;
+		return this.faceDetector;
 	}
 
 	/**
