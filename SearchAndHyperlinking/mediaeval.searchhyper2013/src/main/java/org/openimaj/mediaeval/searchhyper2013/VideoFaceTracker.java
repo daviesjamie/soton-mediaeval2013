@@ -30,23 +30,23 @@ import org.openimaj.video.xuggle.XuggleVideo;
 /**
  *	This is a class that tracks faces forwards though a video. It uses the
  *	agreement between a number of face trackers to attempt to limit false positives
- *	and uses a heuristic (see {@link FaceComparator}) to determine the "best" 
- *	face within the track. This best face image is stored alongside the start 
+ *	and uses a heuristic (see {@link FaceComparator}) to determine the "best"
+ *	face within the track. This best face image is stored alongside the start
  *	and end timecodes of the visibility of the face (in a {@link FaceRange}).
  *	<p>
  *	Faces for which the range is less than a configured number of frames are
  *	removed from the results set. The default number of frames is 30.
  *	<p>
- *	If the video does not have square pixels (e.g. it's anamorphic), you may 
+ *	If the video does not have square pixels (e.g. it's anamorphic), you may
  *	need to set the pixel aspect ratio with {@link #setAspect(double)}. A typical
  *	setting for widescreen anamorphic DVB video would be 1.7777777 (16/9). Correcting
  *	the video aspect will help the face detectors to find faces while also ensuring
- *	the detected faces are of the correct aspect. 
+ *	the detected faces are of the correct aspect.
  *	<p>
  *	If your video is interlaced and has fast moving content you may wish to
  *	deinterlace the video during the processing. You can deinterlace the video
  *	using {@link #setDeinterlaceVideo(boolean)} with <code>true</code>. The default
- *	is false. 
+ *	is false.
  *	<p>
  *	If you intend on analysing long videos, you may need to limit the amount
  *	of memory consumed by the process. To do this you can avoid storing the
@@ -90,7 +90,6 @@ public class VideoFaceTracker
 			this.start = start;
 			this.face = face;
 			this.bestFaceScore = score;
-			this.bestFaceImage = MBFImage.createRGB( face.getFacePatch() );
 		}
 
 		@Override
@@ -136,22 +135,22 @@ public class VideoFaceTracker
 
 	/** Whether we're debugging or not - whether to print/show stuff */
 	public static final boolean DEBUG = true;
-	
+
 	/** Whether we're drawing stuff to the image */
-	public static final boolean IMAGE_DEBUG = DEBUG && false;
-	
+	public static final boolean IMAGE_DEBUG = VideoFaceTracker.DEBUG && false;
+
 	/** If cacheImages == true, this is where we'll store them */
-	public String cacheDir = "cache/"; 
+	public String cacheDir = "cache/";
 
 	/** Whether images are being cached to disk */
 	public boolean cacheImages = true;
-	
+
 	/** Whether face images will be stored to memory */
 	public boolean storeFaceImages = true;
-	
+
 	/** Whether to deinterlace the video frames */
 	public boolean deinterlaceVideo = false;
-	
+
 	/** The number of frames a face must continue to exist for to be considered a face */
 	private final int minFrames = 30;
 
@@ -161,11 +160,15 @@ public class VideoFaceTracker
 	/** This is a counter for the number of frames detected faces exist for - only contains tracked faces */
 	private final HashMap<FaceRange,Integer> frameCount = new HashMap<FaceRange, Integer>();
 
-	/** The final list of faces we've found int he video */
+	/** The final list of faces we've found in the video */
 	private final List<FaceRange> storedFaces = new ArrayList<FaceRange>();
 
+	/** The aspect ratio of the pixels */
 	public double aspect = 1;
-	
+
+	/** The amount to enlarge bounds before saving */
+	private final float enlargeBoundsAmount = 2f;
+
 	/**
 	 * 	Default constructor
 	 */
@@ -179,9 +182,9 @@ public class VideoFaceTracker
 	 */
 	public List<FaceRange> getStoredFaces()
 	{
-		return storedFaces;
+		return this.storedFaces;
 	}
-	
+
 	/**
 	 * 	Process the given video
 	 *	@param video The video to process.
@@ -219,10 +222,10 @@ public class VideoFaceTracker
 			// the frame to fix it's shape.
 			if( this.aspect != 1 )
 			{
-				image = image.process( new ResizeProcessor( 
-					(int) (image.getHeight()*aspect), image.getHeight(), false  ) );
+				image = image.process( new ResizeProcessor(
+					(int) (image.getHeight()*this.aspect), image.getHeight(), false  ) );
 			}
-			
+
 			// The face trackers work on greyscale images, so we'll flatten the colour image.
 			FImage frame = image.flattenMax();
 
@@ -299,7 +302,11 @@ public class VideoFaceTracker
 					if( sameAs == null )
 					{
 						// Start a new frame counter for this face
-						this.frameCount.put( new FaceRange( xv.getCurrentTimecode().clone(), face, score ), 1 );
+						final FaceRange fr = new FaceRange( xv.getCurrentTimecode().clone(), face, score );
+						final Rectangle enlargedBounds = face.getBounds().clone();
+						enlargedBounds.scaleCOG( this.enlargeBoundsAmount );
+						fr.bestFaceImage = image.extractROI( enlargedBounds );
+						this.frameCount.put( fr, 1 );
 					}
 					else
 					{
@@ -312,13 +319,13 @@ public class VideoFaceTracker
 						if( score > sameAs.bestFaceScore )
 						{
 							sameAs.bestFaceScore = score;
-							Rectangle enlargedBounds = face.getBounds().clone();
-							enlargedBounds.scaleCOG( 1.8f );
+							final Rectangle enlargedBounds = face.getBounds().clone();
+							enlargedBounds.scaleCOG( this.enlargeBoundsAmount );
 							sameAs.bestFaceImage = image.extractROI( enlargedBounds );
 						}
 					}
 
-					if( VideoFaceTracker.DEBUG )
+					if( VideoFaceTracker.IMAGE_DEBUG )
 						// Draw the bounds onto the frame so we can see what's going on.
 						image.drawShape( face.getBounds(), RGBColour.RED );
 				}
@@ -340,19 +347,20 @@ public class VideoFaceTracker
 
 					this.storedFaces.add( face );
 					face.end = lastFrameTimecode.clone();
-					
-					if( cacheImages )
-						cacheImage( video, face );
+
+					if( this.cacheImages )
+						this.cacheImage( video, face );
 				}
 				// We'll ignore this face if it wasn't around long enough
 				else
-					if( VideoFaceTracker.DEBUG ) System.out.println( "Discarding "+face );
+					if( VideoFaceTracker.DEBUG )
+						System.out.println( "Discarding "+face );
 
 				// Remove this face from the tracked faces list.
 				this.frameCount.remove( face );
 			}
 
-			if( VideoFaceTracker.DEBUG )
+			if( VideoFaceTracker.IMAGE_DEBUG )
 			{
 				DisplayUtilities.displayName( image, "video" );
 				this.displayPatches();
@@ -364,33 +372,33 @@ public class VideoFaceTracker
 	}
 
 	/**
-	 * 	Puts the given faces into a 
-	 * 	@param video 
+	 * 	Puts the given faces into a
+	 * 	@param video
 	 *	@param face
 	 */
-	private void cacheImage( File video, FaceRange face )
+	private void cacheImage( final File video, final FaceRange face )
 	{
 		// Make sure the cache directory exists.
-		File cDir = new File( cacheDir + video.getName() );
+		final File cDir = new File( this.cacheDir + video.getName() );
 		cDir.mkdirs();
-		
+
 		// The name of the file will be the timecode start and end
-		String timeString = face.start.getFrameNumber() + "-" + face.end.getFrameNumber();
-		
+		final String timeString = face.start.getFrameNumber() + "-" + face.end.getFrameNumber();
+
 		// Write the image to a file
-		File outputFile = new File( cDir, timeString+".png" );
+		final File outputFile = new File( cDir, timeString+".png" );
 		try
 		{
 			ImageUtilities.write( face.bestFaceImage, "png", outputFile );
 		}
-		catch( IOException e )
+		catch( final IOException e )
 		{
 			e.printStackTrace();
 		}
 
 		// If we don't want to store face images in memory, we'll remove
 		// them from the object here.
-		if( !storeFaceImages )
+		if( !this.storeFaceImages )
 		{
 			face.bestFaceImage = null;
 		}
@@ -443,7 +451,7 @@ public class VideoFaceTracker
 
 	/**
 	 * 	Calculate the face score.
-	 * 
+	 *
 	 *	@param face The face
 	 *	@param frame The original frame
 	 *	@return The score
@@ -485,32 +493,32 @@ public class VideoFaceTracker
 	 */
 	public double getAspect()
 	{
-		return aspect;
+		return this.aspect;
 	}
 
 	/**
 	 * 	Set the pixel aspect ratio
 	 *	@param aspect The aspect ratio
 	 */
-	public void setAspect( double aspect )
+	public void setAspect( final double aspect )
 	{
 		this.aspect = aspect;
 	}
 
 	/**
-	 *	Get the directory to where images are being cached. 
+	 *	Get the directory to where images are being cached.
 	 *	@return The cache dir.
 	 */
 	public String getCacheDir()
 	{
-		return cacheDir;
+		return this.cacheDir;
 	}
 
-	/**	
+	/**
 	 * 	Set the directory to where images will be cached.
 	 *	@param cacheDir The cache dir
 	 */
-	public void setCacheDir( String cacheDir )
+	public void setCacheDir( final String cacheDir )
 	{
 		this.cacheDir = cacheDir;
 	}
@@ -520,13 +528,13 @@ public class VideoFaceTracker
 	 */
 	public boolean isCacheImages()
 	{
-		return cacheImages;
+		return this.cacheImages;
 	}
 
 	/**
 	 *	@param cacheImages the cacheImages to set
 	 */
-	public void setCacheImages( boolean cacheImages )
+	public void setCacheImages( final boolean cacheImages )
 	{
 		this.cacheImages = cacheImages;
 	}
@@ -536,15 +544,31 @@ public class VideoFaceTracker
 	 */
 	public boolean isDeinterlaceVideo()
 	{
-		return deinterlaceVideo;
+		return this.deinterlaceVideo;
 	}
 
 	/**
 	 *	@param deinterlaceVideo the deinterlaceVideo to set
 	 */
-	public void setDeinterlaceVideo( boolean deinterlaceVideo )
+	public void setDeinterlaceVideo( final boolean deinterlaceVideo )
 	{
 		this.deinterlaceVideo = deinterlaceVideo;
+	}
+
+	/**
+	 *	@return the storeFaceImages
+	 */
+	public boolean isStoreFaceImages()
+	{
+		return this.storeFaceImages;
+	}
+
+	/**
+	 *	@param storeFaceImages the storeFaceImages to set
+	 */
+	public void setStoreFaceImages( final boolean storeFaceImages )
+	{
+		this.storeFaceImages = storeFaceImages;
 	}
 
 	/**
