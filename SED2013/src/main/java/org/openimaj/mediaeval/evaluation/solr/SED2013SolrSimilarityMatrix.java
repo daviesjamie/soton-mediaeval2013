@@ -1,35 +1,49 @@
 package org.openimaj.mediaeval.evaluation.solr;
 
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrixFactoryMTJ;
-import gov.sandia.cognition.math.matrix.mtj.SparseVector;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeSet;
 
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.log4j.Logger;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 import org.openimaj.feature.FeatureVector;
 import org.openimaj.io.IOUtils;
-import org.openimaj.math.matrix.CFMatrixUtils;
-import org.openimaj.mediaeval.data.CursorWrapperPhoto;
-import org.openimaj.mediaeval.data.XMLCursorStream;
+import org.openimaj.math.matrix.MatrixUtils;
+import org.openimaj.mediaeval.data.SolrDocumentToIndexedPhoto;
+import org.openimaj.mediaeval.data.SolrStream;
 import org.openimaj.mediaeval.evaluation.datasets.PPK2012ExtractCompare;
 import org.openimaj.mediaeval.evaluation.solr.SED2013Index.IndexedPhoto;
 import org.openimaj.mediaeval.feature.extractor.CombinedFVComparator;
 import org.openimaj.mediaeval.feature.extractor.CombinedFVComparator.Mean;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity.ExtractorComparator;
 import org.openimaj.util.function.Operation;
+import org.openimaj.util.pair.DoubleObjectPair;
+
+import ch.akuhn.matrix.SparseMatrix;
 
 import com.aetrion.flickr.photos.Photo;
 
 public class SED2013SolrSimilarityMatrix {
+	private static final class DoublePhotoPairComparator implements Comparator<DoubleObjectPair<IndexedPhoto>> {
+		@Override
+		public int compare(DoubleObjectPair<IndexedPhoto> o1, DoubleObjectPair<IndexedPhoto> o2) {
+			return ((Long)o1.second.first).compareTo(o2.second.first);
+		}
+	}
+
 	private static Logger logger = Logger.getLogger(SED2013SolrSimilarityMatrix.class);
 
 	public static void main(String[] args) throws IOException, XMLStreamException {
@@ -41,7 +55,8 @@ public class SED2013SolrSimilarityMatrix {
 			SED2013Index.shutdown();
 		}
 	}
-
+	final static double eps = 0.4;
+	final static int solrQueryN = 200;
 	private static void constructSimilarityMatrix(String[] args, final SED2013Index index)
 			throws IOException, XMLStreamException, FileNotFoundException {
 		// Some choice experiments
@@ -49,54 +64,86 @@ public class SED2013SolrSimilarityMatrix {
 		String expRoot = args[1];
 		String tfidf = String.format("%s/training.sed2013.photo_tfidf",expRoot);
 		String featurecache = String.format("%s/train.all.featurecache",expRoot);
-		String matRoot = String.format("%s/training.sed2013.solr.sparsematrix",expRoot);
-		final int solrQueryN = 200;
-		final double eps = 0.4;
-		final int collectionN = 306144;
-
-		final SparseMatrix mat = SparseMatrixFactoryMTJ.INSTANCE.createMatrix(collectionN, collectionN);
-		logger.info(String.format("Loading dataset: %s ", bigFile));
-		File xmlFile = new File(bigFile);
-
-		final List<ExtractorComparator<Photo, ? extends FeatureVector>> fe = PPK2012ExtractCompare.similarity(tfidf, featurecache);
+		String matRoot = String.format("%s/training.sed2013.solr.matrixlib.allparts.sparsematrix",expRoot);
 		final File matOut = new File(matRoot);
 		if(!matOut.exists()) matOut.mkdirs();
-		new XMLCursorStream(xmlFile,"photo")
-		.map(new CursorWrapperPhoto())
-		.forEach(new Operation<Photo>() {
-			int seen = 0;
+		SolrQuery q = new SolrQuery("*:*");
+		q.setSortField("index", ORDER.asc);
+		logger.info(String.format("Loading dataset: %s ", bigFile));
+
+		final List<ExtractorComparator<Photo, ? extends FeatureVector>> fe = PPK2012ExtractCompare.similarity(tfidf, featurecache);
+
+
+		SolrStream solrStream = new SolrStream(q, index.getSolrIndex());
+		final int collectionN = solrStream.getNumResults();
+		solrStream
+		.map(new SolrDocumentToIndexedPhoto())
+		.forEach(new Operation<IndexedPhoto>() {
+			int numberOfImages = collectionN;
 			@Override
-			public void perform(Photo p) {
+			public void perform(IndexedPhoto p) {
 				QueryResponse res;
-				File rowOut = new File(matOut,String.format("%d.mat",seen));
+				File rowOut = new File(matOut,String.format("%d",p.first));
 				if(rowOut.exists()){
-					seen++;
 					return;
 				}
+				rowOut.mkdir();
 				try {
-					SparseMatrix rowmat = SparseMatrixFactoryMTJ.INSTANCE.createMatrix(1, collectionN);
-					SparseVector row = rowmat.getRow(0);
-					res = index.query(p, solrQueryN);
+					res = index.query(p.second, solrQueryN);
+					SolrDocumentList results = res.getResults();
+
+
 					final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
-					for (SolrDocument photoIndex : res.getResults()) {
-						IndexedPhoto ip = IndexedPhoto.fromDoc(photoIndex);
-						double compare = comp.compare(p, ip.second);
-						if(compare > eps){
-							row.setElement((int) ip.first, compare);
+					Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
+					for (Entry<String, SparseMatrix> namerow : rowmat.entrySet()) {
+						String comparator = namerow.getKey();
+						File compOut = new File(rowOut,String.format("%s.mat",comparator));
+						SparseMatrix comprow = namerow.getValue();
+						IOUtils.writeToFile(comprow, compOut);
+						if(p.first%100 == 0){
+							logger.debug(String.format("Working on Photo %s, index %d, Comparator: %s, sparcity: %2.5f",p.second.getId(),p.first,comparator,MatrixUtils.sparcity(comprow)));
 						}
 					}
-					mat.setRow(seen, row);
-					IOUtils.writeToFile(rowmat.getInternalMatrix(), rowOut);
-					if(seen%100 == 0){
-						logger.debug(String.format("Working on Photo %s, index %d, sparcity: %2.5f",p.getId(),seen,CFMatrixUtils.sparcity(rowmat)));
-					}
 				} catch (SolrServerException e) {
-					logger.error("Error querying for photo: " + p.getId(),e);
+					logger.error("Error querying for photo: " + p.second.getId(),e);
 				} catch (IOException e) {
-					logger.error("Error writing photot to file: " + p.getId(),e);
+					logger.error("Error writing photot to file: " + p.second.getId(),e);
 				}
-				seen++;
 
+			}
+
+			private Map<String,SparseMatrix> buildComparatorSparseRow(IndexedPhoto p, SolrDocumentList results, CombinedFVComparator<Photo> comp) {
+
+				Map<String,TreeSet<DoubleObjectPair<IndexedPhoto>>> treemap = new HashMap<String,TreeSet<DoubleObjectPair<IndexedPhoto>>>();
+
+				for (SolrDocument photoIndex : results) {
+					IndexedPhoto ip = IndexedPhoto.fromDoc(photoIndex);
+					Map<String, Double> compare = comp.compareAggregation(p.second, ip.second);
+//					if(compare > eps){
+//						tree.add(DoubleObjectPair.pair(compare, ip));
+//					}
+					for (Entry<String, Double> comparatorScore : compare.entrySet()) {
+						TreeSet<DoubleObjectPair<IndexedPhoto>> tree = treemap.get(comparatorScore.getKey());
+						if(tree == null) {
+							treemap.put(comparatorScore.getKey(), tree = new TreeSet<DoubleObjectPair<IndexedPhoto>>(new DoublePhotoPairComparator()));
+						}
+
+						if(comparatorScore.getValue() > eps){
+							tree.add(DoubleObjectPair.pair(comparatorScore.getValue(), ip));
+						}
+
+					}
+				}
+				Map<String, SparseMatrix> rowmats = new HashMap<String,SparseMatrix>();
+				for (Entry<String, TreeSet<DoubleObjectPair<IndexedPhoto>>> nametree: treemap.entrySet()) {
+					TreeSet<DoubleObjectPair<IndexedPhoto>> tree = nametree.getValue();
+					SparseMatrix rowmat = new SparseMatrix(1, numberOfImages);
+					for (DoubleObjectPair<IndexedPhoto> pair : tree) {
+						rowmat.put(0, (int) pair.second.first, pair.first);
+					}
+					rowmats.put(nametree.getKey(), rowmat);
+				}
+				return rowmats;
 			}
 		});
 	}

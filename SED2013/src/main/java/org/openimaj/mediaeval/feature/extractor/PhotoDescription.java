@@ -16,4 +16,8 @@ public class PhotoDescription extends TweetTokenBOW<Photo> {
 		return p.getDescription();
 	}
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
 }
