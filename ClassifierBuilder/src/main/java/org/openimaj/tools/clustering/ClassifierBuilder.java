@@ -9,6 +9,8 @@ import java.io.ObjectOutputStream;
 import java.io.PipedOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,34 +27,41 @@ import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.data.dataset.VFSGroupDataset;
+import org.openimaj.data.identity.IdentifiableObject;
 import org.openimaj.experiment.dataset.split.GroupedRandomSplitter;
 import org.openimaj.experiment.evaluation.classification.ClassificationEvaluator;
 import org.openimaj.experiment.evaluation.classification.ClassificationResult;
 import org.openimaj.experiment.evaluation.classification.Classifier;
 import org.openimaj.experiment.evaluation.classification.analysers.confusionmatrix.CMAnalyser;
 import org.openimaj.experiment.evaluation.classification.analysers.confusionmatrix.CMResult;
+import org.openimaj.feature.DiskCachingFeatureExtractor;
+import org.openimaj.feature.DoubleFV;
+import org.openimaj.feature.FeatureExtractor;
+import org.openimaj.image.Image;
 import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
 import org.openimaj.image.annotation.evaluation.datasets.Caltech101;
 import org.openimaj.image.annotation.evaluation.datasets.Caltech101.Record;
 import org.openimaj.io.FileUtils;
+import org.openimaj.io.IOUtils;
+import org.openimaj.ml.annotation.linear.LiblinearAnnotator;
+import org.openimaj.ml.annotation.linear.LiblinearAnnotator.Mode;
 import org.openimaj.ml.clustering.assignment.Assigner;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
+import de.bwaldvogel.liblinear.SolverType;
+
 public class ClassifierBuilder {
 	private static final Map<String, DatasetBuilder<GroupedDataset<String, ListDataset<MBFImage>, MBFImage>>>
 		DATASETS = new HashMap<String, DatasetBuilder<GroupedDataset<String, ListDataset<MBFImage>, MBFImage>>>();
 	
-	private static final Map<String, Class<? extends ClassifierInstanceBuilder<MBFImage>>>
-		CLASSIFIERS = new HashMap<String, Class<? extends ClassifierInstanceBuilder<MBFImage>>>();
-	
 	private static void init() {
 		DATASETS.put("Caltech101", new Caltech101DatasetBuilder());
 		DATASETS.put("Flickr", new FlickrImageDatasetBuilder());
-		
-		CLASSIFIERS.put("PyramidDenseSIFTKMeans", PyramidDenseSIFTKMeansClustererInstanceBuilder.class);
+		DATASETS.put("GoogleImages", new GoogleImagesDatasetBuilder());
+		DATASETS.put("VFS", new VFSMBFImageDatasetBuilder());
 	}
 	
 	/**
@@ -68,13 +77,16 @@ public class ClassifierBuilder {
 	 * @throws IllegalArgumentException 
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
+	 * @throws NoSuchAlgorithmException 
 	 */
-	public static void main(String[] args) throws ParseException, IOException, BuildException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	public static void main(String[] args) throws ParseException, IOException, BuildException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, NoSuchAlgorithmException {
 		init();
 		
 		Options options = new Options();
-		options.addOption("P", true, "classifier profile");
+		options.addOption("A", true, "LiblinearAnnotator configuration");
 		options.addOption("D", true, "dataset profile");
+		options.addOption("F", true, "FeatureExtractor object file");
+		options.addOption("f", true, "output file for FeatureExtractor cache");
 		options.addOption("t", true, "number of instances in training set");
 		options.addOption("v", true, "number of instances in validation set");
 		options.addOption("s", true, "number of instances in testing set");
@@ -83,26 +95,35 @@ public class ClassifierBuilder {
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd = parser.parse(options, args);
 		
-		String clustererProfile = cmd.getOptionValue("P");
+		String annotatorConfig = cmd.getOptionValue("A");
 		String datasetProfile = cmd.getOptionValue("D");
+		String featureExtractorFile = cmd.getOptionValue("F");
+		String featureExtractorCacheFile = cmd.getOptionValue("f");
 		String trainingSetSize = cmd.getOptionValue("t");
 		String validationSetSize = cmd.getOptionValue("v");
 		String testingSetSize = cmd.getOptionValue("s");
 		String outFile = cmd.getOptionValue("o");
 		
-		ClassifierInstanceBuilder<MBFImage> classifierBuilder;
+		LiblinearAnnotator<MBFImage, String> annotator;
 		GroupedDataset<String, ListDataset<MBFImage>, MBFImage> dataSource;
+		FeatureExtractor<DoubleFV, MBFImage> featureExtractor;
 		int trainingSize;
 		int validationSize;
 		int testingSize;
 		File out;
 		
 		try {
-			if (clustererProfile == null) {
-				throw new RequiredArgumentException("P");
+			if (annotatorConfig == null) {
+				throw new RequiredArgumentException("A");
 			}
 			if (datasetProfile == null) {
 				throw new RequiredArgumentException("D");
+			}
+			if (featureExtractorFile == null) {
+				throw new RequiredArgumentException("F");
+			}
+			if (featureExtractorCacheFile == null) {
+				throw new RequiredArgumentException("f");
 			}
 			if (trainingSetSize == null) {
 				throw new RequiredArgumentException("t");
@@ -117,7 +138,8 @@ public class ClassifierBuilder {
 				throw new RequiredArgumentException("o");
 			}
 			
-			classifierBuilder = establishClustererBuilder(clustererProfile);
+			featureExtractor = buildFeatureExtractor(featureExtractorFile, featureExtractorCacheFile);
+			annotator = buildAnnotator(annotatorConfig, featureExtractor);
 			trainingSize = Integer.parseInt(trainingSetSize);
 			validationSize = Integer.parseInt(validationSetSize);
 			testingSize = Integer.parseInt(testingSetSize);
@@ -133,53 +155,82 @@ public class ClassifierBuilder {
 		GroupedRandomSplitter<String, MBFImage> splitter = 
 			new GroupedRandomSplitter<String, MBFImage>(dataSource, trainingSize, validationSize, testingSize);
 		
-		System.out.println("Building classifier with training set...");
-		Classifier<String, MBFImage> classifier = classifierBuilder.build(splitter.getTrainingDataset());
+		System.out.println("Training annotator with training set...");
+		annotator.train(splitter.getTrainingDataset());
 		
-		System.out.println("Testing classifier against testing set...");
+		System.out.println("Testing annotator against testing set...");
 		ClassificationEvaluator<CMResult<String>, String, MBFImage> eval = 
 			new ClassificationEvaluator<CMResult<String>, String, MBFImage>(
-				classifier, splitter.getTestDataset(), new CMAnalyser<MBFImage, String>(CMAnalyser.Strategy.SINGLE));
+				annotator, splitter.getTestDataset(), new CMAnalyser<MBFImage, String>(CMAnalyser.Strategy.SINGLE));
 		Map<MBFImage, ClassificationResult<String>> guesses = eval.evaluate();
 		CMResult<String> result = eval.analyse(guesses);
 		System.out.println(result);
 		
 		System.out.println("Writing to file...");
 		Kryo kryo = new Kryo();
-		kryo.writeObject(new Output(new FileOutputStream(outFile)), classifier);
+		kryo.writeObject(new Output(new FileOutputStream(out)), annotator);
 	}
 
-	/**
-	 * <type>:<args> as in sourceString.
-	 * 
-	 * @return
-	 * @throws SecurityException 
-	 * @throws NoSuchMethodException 
-	 * @throws InvocationTargetException 
-	 * @throws IllegalArgumentException 
-	 * @throws IllegalAccessException 
-	 * @throws InstantiationException 
-	 * @throws InvalidClustererException 
-	 */
-	private static ClassifierInstanceBuilder<MBFImage> establishClustererBuilder(String clustererType) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InvalidClustererException {
-		String[] components = clustererType.split(":", 2);
+	private static LiblinearAnnotator<MBFImage, String> buildAnnotator(
+			String annotatorConfig, FeatureExtractor<DoubleFV, MBFImage> featureExtractor) throws BuildException {
 		
-		if (CLASSIFIERS.containsKey(components[0])) {
-			System.out.print("Determined profile: ");
+		Mode mode = Mode.MULTICLASS;
+		SolverType solverType = SolverType.L2R_L2LOSS_SVC;
+		float C = 1.0f;
+		float eps = 0.00001f;
+		
+		for (String setting : annotatorConfig.split(",")) {
+			String[] option = setting.split("=", 2);
 			
-			if (components.length == 1) {
-				System.out.println(components[0]);
-				
-				return CLASSIFIERS.get(components[0]).getConstructor().newInstance();
-			} else {
-				System.out.println(components[0] + " with arguments: " + components[1]);
-				
-				String[] args = components[1].split(",");
-				return CLASSIFIERS.get(components[0]).getConstructor(String[].class).newInstance((Object) args);
+			switch (option[0]) {
+			case "mode":
+				switch(option[1]) {
+				case "multiclass":			mode = Mode.MULTICLASS;							break;
+				case "multilabel":			mode = Mode.MULTILABEL;							break;
+				}																			break;
+			case "solverType":
+				switch(option[1]) {
+				case "L2R_LR":				solverType = SolverType.L2R_LR;						break;
+				case "L2R_L2LOSS_SVC_DUAL":	solverType = SolverType.L2R_L2LOSS_SVC_DUAL;		break;
+				case "L2R_L2LOSS_SVC":		solverType = SolverType.L2R_L2LOSS_SVC;				break;
+				case "L2R_L1LOSS_SVC_DUAL":	solverType = SolverType.L2R_L1LOSS_SVC_DUAL;		break;
+				case "MCSVM_CS":			solverType = SolverType.MCSVM_CS;					break;
+				case "L1R_L2LOSS_SVC":		solverType = SolverType.L1R_L2LOSS_SVC;				break;
+				case "L1R_LR":				solverType = SolverType.L1R_LR;						break;
+				case "L2R_LR_DUAL":			solverType = SolverType.L2R_LR_DUAL;				break;
+				case "L2R_L2LOSS_SVR":		solverType = SolverType.L2R_L2LOSS_SVR;				break;
+				case "L2R_L2LOSS_SVR_DUAL":	solverType = SolverType.L2R_L2LOSS_SVR_DUAL;		break;
+				case "L2R_L1LOSS_SVR_DUAL":	solverType = SolverType.L2R_L1LOSS_SVR_DUAL;		break;
+				}																				break;
+
+			case "C":						C = Float.parseFloat(option[1]);					break;
+			case "eps":						eps = Float.parseFloat(option[1]);					break;
+			default:		throw new BuildException("Unknown annotator option: " + option[0]);
 			}
-		} else {
-			throw new InvalidClustererException(components[0]);
 		}
+		
+		return new LiblinearAnnotator<MBFImage, String>(featureExtractor, mode, solverType, C, eps);
+	}
+
+	private static FeatureExtractor<DoubleFV, MBFImage> buildFeatureExtractor(
+			String featureExtractorFile, String featureExtractorCacheFile) throws IOException, NoSuchAlgorithmException {
+		FeatureExtractor<DoubleFV, MBFImage> featureExtractor =
+			IOUtils.read(new File(featureExtractorFile));
+		
+		IdentifiableObjectUnwrappingFeatureExtractor<DoubleFV, MBFImage> unwrappingFeatureExtractor  = 
+			new IdentifiableObjectUnwrappingFeatureExtractor<DoubleFV, MBFImage>(featureExtractor);
+		
+		DiskCachingFeatureExtractor<DoubleFV, IdentifiableObject<MBFImage>> diskCachingFeatureExtractor = 
+			new DiskCachingFeatureExtractor<DoubleFV, IdentifiableObject<MBFImage>>(
+					new File(featureExtractorCacheFile),
+					unwrappingFeatureExtractor);
+		
+		MessageDigestIdentifiableWrappingFeatureExtractor<DoubleFV, MBFImage> wrappingFeatureExtractor = 
+			new MessageDigestIdentifiableWrappingFeatureExtractor<DoubleFV, MBFImage>(
+					MessageDigest.getInstance("MD5"),
+					diskCachingFeatureExtractor);
+		
+		return wrappingFeatureExtractor;
 	}
 
 	/**
