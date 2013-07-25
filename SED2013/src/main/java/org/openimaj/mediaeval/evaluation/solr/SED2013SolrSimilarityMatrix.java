@@ -64,8 +64,8 @@ public class SED2013SolrSimilarityMatrix {
 			SED2013Index.shutdown();
 		}
 	}
-	final static double eps = 0.4;
-	final static int solrQueryN = 200;
+	final static double eps = 0.1;
+	final static int solrQueryN = 500;
 	private static void constructSimilarityMatrix(String[] args, final SED2013Index index)
 			throws IOException, XMLStreamException, FileNotFoundException {
 		// Some choice experiments
@@ -73,7 +73,7 @@ public class SED2013SolrSimilarityMatrix {
 		String expRoot = args[1];
 		String tfidf = String.format("%s/training.sed2013.photo_tfidf",expRoot);
 		String featurecache = String.format("%s/train.all.featurecache",expRoot);
-		String matRoot = String.format("%s/training.sed2013.solr.matrixlib.allparts.sparsematrix",expRoot);
+		String matRoot = String.format("%s/training.sed2013.solr.matrixlib.allparts.%2.2f.%d.sparsematrix",expRoot,eps,solrQueryN);
 		final File matOut = new File(matRoot);
 		if(!matOut.exists()) matOut.mkdirs();
 		SolrQuery q = new SolrQuery("*:*");
