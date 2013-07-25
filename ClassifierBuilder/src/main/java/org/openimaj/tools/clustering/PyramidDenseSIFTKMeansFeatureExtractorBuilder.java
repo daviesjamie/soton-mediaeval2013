@@ -16,6 +16,7 @@ import org.openimaj.feature.local.list.LocalFeatureList;
 import org.openimaj.feature.local.list.MemoryLocalFeatureList;
 import org.openimaj.image.DisplayUtilities;
 import org.openimaj.image.FImage;
+import org.openimaj.image.Image;
 import org.openimaj.image.MBFImage;
 import org.openimaj.image.feature.ImageAnalyserFVFeatureExtractor;
 import org.openimaj.image.feature.dense.gradient.dsift.ByteDSIFTKeypoint;
@@ -37,7 +38,7 @@ import org.openimaj.util.pair.IntFloatPair;
 
 import de.bwaldvogel.liblinear.SolverType;
 
-public class PyramidDenseSIFTKMeansClustererInstanceBuilder implements ClassifierInstanceBuilder<MBFImage> {
+public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExtractorBuilder<DoubleFV, MBFImage> {
 	private int step = 5;
 	private int binSize = 7;
 	private int M = 128;
@@ -52,11 +53,7 @@ public class PyramidDenseSIFTKMeansClustererInstanceBuilder implements Classifie
 	private int blocksY = 2;
 	private float phowEnergyThreshold = 0.015f;
 	
-	public PyramidDenseSIFTKMeansClustererInstanceBuilder() {
-		super();
-	}
-	
-	public PyramidDenseSIFTKMeansClustererInstanceBuilder(String[] args) throws BuildException {
+	public PyramidDenseSIFTKMeansFeatureExtractorBuilder(String[] args) throws BuildException {
 
 		for (int i = 0; i < args.length; i++) {
 			String[] option = args[i].split("=", 2);
@@ -82,7 +79,7 @@ public class PyramidDenseSIFTKMeansClustererInstanceBuilder implements Classifie
 	
 	
 	@Override
-	public Classifier<String, MBFImage> build(GroupedDataset<String, ListDataset<MBFImage>, MBFImage> developmentSource) {
+	public FeatureExtractor<DoubleFV, MBFImage> build(Dataset<MBFImage> developmentSource) {
 		DenseSIFT dsift = new DenseSIFT(step, binSize);
 		PyramidDenseSIFT<FImage> pdsift = new PyramidDenseSIFT<FImage>(dsift, magFactor, size);
 		
@@ -123,12 +120,7 @@ public class PyramidDenseSIFTKMeansClustererInstanceBuilder implements Classifie
 		
 		FeatureExtractor<DoubleFV, MBFImage> extractor = new PHOWExtractor(pdsift, assigner);
 		
-		System.out.println("Training Liblinear annotator...");
-		LiblinearAnnotator<MBFImage, String> ann =
-			new LiblinearAnnotator<MBFImage, String>(extractor, Mode.MULTICLASS, SolverType.L2R_L2LOSS_SVC, C, eps);
-		ann.train(new ListAnnotatedGroupedDatasetWrapper<MBFImage, String>(developmentSource));
-		
-		return ann;
+		return extractor;
 	}
 
 	private class PHOWExtractor implements FeatureExtractor<DoubleFV, MBFImage> {
