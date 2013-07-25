@@ -25,12 +25,13 @@ import com.aetrion.flickr.photos.GeoData;
 import com.aetrion.flickr.photos.Photo;
 import com.aetrion.flickr.tags.Tag;
 
+/**
+ * @author Jonathan Hare (jsh2@ecs.soton.ac.uk), Sina Samangooei (ss@ecs.soton.ac.uk), David Duplaw (dpd@ecs.soton.ac.uk)
+ *
+ */
 public class SED2013SolrIndexCreator {
 	/** Logging */
 	private static Logger log = Logger.getLogger(SED2013SolrIndexCreator.class);
-
-	/** Geonames uses tab-delimited files */
-	private static String DELIMITER = "\t";
 
 	/** Some constant counters */
 	private static int BATCH_SIZE = 20000;
@@ -219,7 +220,6 @@ public class SED2013SolrIndexCreator {
 	 *             if any errors occur
 	 */
 	public int loop(final int counter) throws Exception {
-		String line = null;
 		final int seen[] = new int[1];
 		this.photoStream.forEach(new Operation<Photo>() {
 

@@ -36,6 +36,10 @@ import ch.akuhn.matrix.SparseMatrix;
 
 import com.aetrion.flickr.photos.Photo;
 
+/**
+ * @author Jonathan Hare (jsh2@ecs.soton.ac.uk), Sina Samangooei (ss@ecs.soton.ac.uk), David Duplaw (dpd@ecs.soton.ac.uk)
+ *
+ */
 public class SED2013SolrSimilarityMatrix {
 	private static final class DoublePhotoPairComparator implements Comparator<DoubleObjectPair<IndexedPhoto>> {
 		@Override
@@ -46,6 +50,11 @@ public class SED2013SolrSimilarityMatrix {
 
 	private static Logger logger = Logger.getLogger(SED2013SolrSimilarityMatrix.class);
 
+	/**
+	 * @param args
+	 * @throws IOException
+	 * @throws XMLStreamException
+	 */
 	public static void main(String[] args) throws IOException, XMLStreamException {
 		final SED2013Index index = SED2013Index.instance("http://localhost:8983/solr/sed2013_train");
 //		final SED2013Index index = SED2013Index.instance();
