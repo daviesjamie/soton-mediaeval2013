@@ -34,7 +34,14 @@ public class MessageDigestIdentifiedObject<DIGEST extends MessageDigest, OBJECT>
 
 		kryo.writeObject(output, object);
 		
-		md = digestOut.getMessageDigest().toString();
+		StringBuilder hexString = new StringBuilder();
+		byte[] bytes = digestOut.getMessageDigest().digest();
+		for (int i=0; i < bytes.length; i++) {
+			hexString.append(Integer.toHexString((bytes[i] >>> 4) & 0x0F));
+			hexString.append(Integer.toHexString(0x0F & bytes[i]));
+		}
+		
+		md = hexString.toString();
 	}
 
 	@Override

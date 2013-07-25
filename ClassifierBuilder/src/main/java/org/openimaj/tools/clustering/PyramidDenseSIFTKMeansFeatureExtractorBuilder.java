@@ -1,5 +1,6 @@
 package org.openimaj.tools.clustering;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +39,7 @@ import org.openimaj.util.pair.IntFloatPair;
 
 import de.bwaldvogel.liblinear.SolverType;
 
-public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExtractorBuilder<DoubleFV, MBFImage> {
+public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExtractorInstanceBuilder<DoubleFV, MBFImage> {
 	private int step = 5;
 	private int binSize = 7;
 	private int M = 128;
@@ -47,14 +48,16 @@ public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExt
 	private int size = 7;
 	private float energyThreshold = 0.005f;
 	private int maxKeypoints = 10000;
-	private float C = 1;
-	private float eps = 0.0001f;
 	private int blocksX = 2;
 	private int blocksY = 2;
 	private float phowEnergyThreshold = 0.015f;
 	
 	public PyramidDenseSIFTKMeansFeatureExtractorBuilder(String[] args) throws BuildException {
-
+		
+		if (args == null) {
+			return;
+		}
+		
 		for (int i = 0; i < args.length; i++) {
 			String[] option = args[i].split("=", 2);
 			
@@ -67,8 +70,6 @@ public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExt
 			case "size":				size = Integer.parseInt(option[1]);					break;
 			case "energyThreshold":		energyThreshold = Float.parseFloat(option[1]);		break;
 			case "maxKeypoints":		maxKeypoints = Integer.parseInt(option[1]);			break;
-			case "C":					C = Float.parseFloat(option[1]);					break;
-			case "eps":					eps = Float.parseFloat(option[1]);					break;
 			case "blocksX":				blocksX = Integer.parseInt(option[1]);				break;
 			case "blocksY":				blocksY = Integer.parseInt(option[1]);				break;
 			case "phowEnergyThreshold":	phowEnergyThreshold = Float.parseFloat(option[1]);	break;
@@ -78,6 +79,11 @@ public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExt
 	}
 	
 	
+	public PyramidDenseSIFTKMeansFeatureExtractorBuilder() {
+		
+	}
+
+
 	@Override
 	public FeatureExtractor<DoubleFV, MBFImage> build(Dataset<MBFImage> developmentSource) {
 		DenseSIFT dsift = new DenseSIFT(step, binSize);
@@ -118,19 +124,27 @@ public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExt
 		
 		HardAssigner<byte[], float[], IntFloatPair> assigner = result.defaultHardAssigner();
 		
-		FeatureExtractor<DoubleFV, MBFImage> extractor = new PHOWExtractor(pdsift, assigner);
+		PHOWExtractor extractor =
+			new PHOWExtractor(pdsift, assigner, blocksX, blocksY, phowEnergyThreshold);
 		
 		return extractor;
 	}
 
-	private class PHOWExtractor implements FeatureExtractor<DoubleFV, MBFImage> {
+	private static class PHOWExtractor implements FeatureExtractor<DoubleFV, MBFImage> {
 		private PyramidDenseSIFT<FImage> pdsift;
 		private HardAssigner<byte[], float[], IntFloatPair> assigner;
+		private int blocksX;
+		private int blocksY;
+		private float phowEnergyThreshold;
 
 		public PHOWExtractor(PyramidDenseSIFT<FImage> pdsift,
-				HardAssigner<byte[], float[], IntFloatPair> assigner) {
+				HardAssigner<byte[], float[], IntFloatPair> assigner,
+				int blocksX, int blocksY, float phowEnergyThreshold) {
 			this.pdsift = pdsift;
 			this.assigner = assigner;
+			this.blocksX = blocksX;
+			this.blocksY = blocksY;
+			this.phowEnergyThreshold = phowEnergyThreshold;
 		}
 
 		@Override
@@ -141,7 +155,9 @@ public class PyramidDenseSIFTKMeansFeatureExtractorBuilder implements FeatureExt
 			
 			BlockSpatialAggregator<byte[], SparseIntFV> spatial = new BlockSpatialAggregator<byte[], SparseIntFV>(bovw, blocksX, blocksY);
 			
-			return spatial.aggregate(pdsift.getByteKeypoints(phowEnergyThreshold), object.getBounds()).normaliseFV();
+			DoubleFV feature = spatial.aggregate(pdsift.getByteKeypoints(phowEnergyThreshold), object.getBounds()).normaliseFV();
+			
+			return feature;
 		}
 		
 	}
