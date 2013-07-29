@@ -2,6 +2,12 @@ package org.openimaj.mediaeval.searchhyper2013;
 
 import java.util.Comparator;
 
+/**
+ * Class for results returned by Searchers.
+ *
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
 public class Result {
 	private String program;
 	private float startTime;

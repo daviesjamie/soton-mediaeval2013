@@ -31,7 +31,11 @@ import gov.sandia.cognition.math.matrix.mtj.DenseVectorFactoryMTJ;
 public class OptimiseSearcher {
 
 	/**
-	 * @param args
+	 * Optimises a searcher with the BFGS method.
+	 * 
+	 * @param args[0]						 URL of Solr server.
+	 * @param args[1]						 File holding queries.
+	 * @param args[2]						 File holding query results.
 	 * @throws SAXException 
 	 * @throws ParserConfigurationException 
 	 * @throws IOException 
@@ -39,16 +43,18 @@ public class OptimiseSearcher {
 	public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException {
 		DenseVectorFactoryMTJ vectorFactory = new DenseVectorFactoryMTJ();
 		
+		Vector initVector = vectorFactory.copyValues(3, 2, 10, 0.5f, 100);
+		
 		FunctionMinimizerBFGS minimizer = 
 			new FunctionMinimizerBFGS(new LineMinimizerDerivativeBased(1),
-									  vectorFactory.copyValues(3, 2, 10, 0.5f, 100),
+									  initVector,
 									  1e-3,
 									  100);
 		
-		SolrServer solrServer = new HttpSolrServer("http://localhost:8983/solr");
+		SolrServer solrServer = new HttpSolrServer(args[0]);
 		
-		File queryFile = new File("/data/mediaeval/mediaeval-searchhyper/dev/dev-queries.xml");
-		File qRelFile = new File("/data/mediaeval/mediaeval-searchhyper/dev/dev-queries.qrel");
+		File queryFile = new File(args[1]);
+		File qRelFile = new File(args[2]);
 		Map<Query, Set<Result>> expectedResults = ImportUtils.importExpected(queryFile, qRelFile);
 		
 		InputOutputPair<Vector, Double> result = 
@@ -166,8 +172,6 @@ public class OptimiseSearcher {
 				mrr += rr.get(i);
 				mgap += gap.get(i);
 				masp += asp.get(i);
-				
-				//System.out.println("-> " + rr.get(i) + ", " + gap.get(i) + ", " + asp.get(i));
 			}
 			
 			mrr /= rr.size();

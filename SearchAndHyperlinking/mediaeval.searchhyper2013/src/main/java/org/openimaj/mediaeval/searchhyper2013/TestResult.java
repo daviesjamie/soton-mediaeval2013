@@ -1,5 +1,11 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
+/**
+ * Class for query results.
+ * 
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
 public class TestResult {
 	private String queryID;
 	private String program;
