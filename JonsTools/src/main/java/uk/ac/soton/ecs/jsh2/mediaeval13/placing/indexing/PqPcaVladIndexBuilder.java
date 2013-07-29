@@ -1,4 +1,4 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13;
+package uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing;
 
 import gnu.trove.set.hash.TLongHashSet;
 
@@ -17,17 +17,34 @@ import org.openimaj.hadoop.sequencefile.TextBytesSequenceFileUtility;
 import org.openimaj.image.indexing.vlad.VLADIndexerData;
 import org.openimaj.io.IOUtils;
 
+import uk.ac.soton.ecs.jsh2.mediaeval13.searchengines.LongVLADSearchEngine;
+
 /**
+ * Tool to extract the pq-pca-vlad information from hdfs and build it into a
+ * LongVLADSearchEngine.
+ * 
  * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
  * 
  */
-public class IndexBuilder {
+public class PqPcaVladIndexBuilder {
 	public static void main(String[] args) throws IOException {
+		final String latlngPath = "/Volumes/SSD/mediaeval13/placing/training_latlng";
+		// final String vladPath =
+		// "/Volumes/SSD/mediaeval13/extractors/rgb-sift1x-vlad64n-pca128-pq16.bin";
+		// final String dataPath =
+		// "hdfs://seurat/data/mediaeval/placing/rgb-sift1x-vlad/";
+		// final String outputPath =
+		// "/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx";
+		final String vladPath = "/Volumes/SSD/mediaeval13/extractors/sift1x-vlad64n-pca128-pq16.bin";
 		final String dataPath = "hdfs://seurat/data/mediaeval/placing/sift1x-vlad/";
-		final String latlngPath = "/Volumes/SSD/training_latlng";
-		final String vladPath = "/Volumes/SSD/sift1x-vlad64n-pca128-pq16.bin";
-		final String outputPath = "/Volumes/SSD/mediaeval13/placing/sift1x-vlad64n-pca128-pq16-adcnn.idx";
+		final String outputPath = "/Volumes/SSD/mediaeval13/placing/vlad-indexes/sift1x-vlad64n-pca128-pq16-adcnn.idx";
 
+		buildIndex(dataPath, latlngPath, vladPath, outputPath);
+	}
+
+	private static void buildIndex(final String dataPath, final String latlngPath, final String vladPath,
+			final String outputPath) throws IOException
+	{
 		final long[] trainingIds = loadTrainingIds(latlngPath);
 		final byte[][] pqdata = extractPQ(trainingIds, dataPath);
 
@@ -35,7 +52,7 @@ public class IndexBuilder {
 		final VLADIndexerData vladData = IOUtils.readFromFile(new File(vladPath));
 
 		System.out.println("Building and saving search engine");
-		final VLADSearchEngine searcher = new VLADSearchEngine(trainingIds, vladData, pqdata);
+		final LongVLADSearchEngine searcher = new LongVLADSearchEngine(trainingIds, vladData, pqdata);
 
 		final File out = new File(outputPath);
 		out.getParentFile().mkdirs();

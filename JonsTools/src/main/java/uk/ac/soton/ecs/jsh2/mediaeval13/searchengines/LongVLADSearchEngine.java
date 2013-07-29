@@ -1,4 +1,4 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13;
+package uk.ac.soton.ecs.jsh2.mediaeval13.searchengines;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,12 +9,19 @@ import org.openimaj.knn.pq.FloatADCNearestNeighbours;
 import org.openimaj.util.pair.IntFloatPair;
 import org.openimaj.util.pair.LongFloatPair;
 
-public class VLADSearchEngine {
-	VLADIndexerData data;
-	FloatADCNearestNeighbours nn;
-	long[] ids;
+/**
+ * Search engine for VLAD features based on a FloatADCNearestNeighbours. Assumes
+ * image ids are longs.
+ * 
+ * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
+ * 
+ */
+public class LongVLADSearchEngine {
+	public VLADIndexerData data;
+	public FloatADCNearestNeighbours nn;
+	public long[] ids;
 
-	public VLADSearchEngine(long[] ids, VLADIndexerData data, byte[][] pqData) {
+	public LongVLADSearchEngine(long[] ids, VLADIndexerData data, byte[][] pqData) {
 		nn = new FloatADCNearestNeighbours(data.getProductQuantiser(), pqData, data.numDimensions());
 		this.ids = ids;
 		this.data = data;

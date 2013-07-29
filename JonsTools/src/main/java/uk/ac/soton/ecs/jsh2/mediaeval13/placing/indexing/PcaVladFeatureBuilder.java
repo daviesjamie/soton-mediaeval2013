@@ -1,9 +1,10 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13;
+package uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,11 +20,29 @@ import org.openimaj.hadoop.sequencefile.SequenceFileUtility;
 import org.openimaj.hadoop.sequencefile.TextBytesSequenceFileUtility;
 import org.openimaj.util.pair.LongObjectPair;
 
-public class FeatureBuilder {
+/**
+ * This class extracts the contents of the pcavlad-m-xxxxx files from the hdfs
+ * and writes them to a local binary file that contains packed pairs of flickr
+ * ids (long) and pca-vlad features (float[]).
+ * 
+ * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
+ * 
+ */
+public class PcaVladFeatureBuilder {
 	public static void main(String[] args) throws IOException {
-		final String dataPath = "hdfs://seurat/data/mediaeval/placing/sift1x-vlad/";
-		final String outputPath = "/Volumes/SSD/mediaeval13/placing/sift1x-vlad64n-pca128.dat";
+		final String dataPath = "hdfs://seurat/data/mediaeval/placing/rgb-sift1x-vlad/";
+		final String outputPath = "/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat";
+		// final String dataPath =
+		// "hdfs://seurat/data/mediaeval/placing/sift1x-vlad/";
+		// final String outputPath =
+		// "/Volumes/SSD/mediaeval13/placing/vlad-indexes/sift1x-vlad64n-pca128.dat";
 
+		extract(dataPath, outputPath);
+	}
+
+	private static void extract(final String dataPath, final String outputPath) throws IOException,
+			FileNotFoundException
+	{
 		final Path[] pcavlads = SequenceFileUtility.getFilePaths(dataPath, "pcavlad-m-");
 
 		final List<LongObjectPair<float[]>> data = new ArrayList<LongObjectPair<float[]>>(7900000);
