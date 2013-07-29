@@ -61,6 +61,10 @@ public class DatasetSimilarity<T> implements FeatureExtractor<SparseMatrix, T>{
 			return comp;
 		}
 
+		@Override
+		public String toString() {
+			return this.firstObject().toString();
+		}
 	}
 	private List<ExtractorComparator<T, ? extends FeatureVector>> exComp;
 	private int[] compMod;

@@ -1,7 +1,9 @@
 package org.openimaj.mediaeval.feature.extractor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.openimaj.feature.FeatureVector;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity.ExtractorComparator;
@@ -38,6 +40,28 @@ public abstract class CombinedFVComparator<T> implements DistanceComparator<T>{
 	}
 
 	/**
+	 * @param o1
+	 * @param o2
+	 * @return the com
+	 */
+	public Map<String,Double> compareAggregation(T o1, T o2){
+		Map<String,Double> aggregationScores = new HashMap<String,Double>();
+		List<Double> comparisons = new ArrayList<Double>();
+		for (ExtractorComparator<T, ? extends FeatureVector> comp : this.comps) {
+			try {
+				double doComparison = comp.doComparison(o1, o2);
+				aggregationScores.put(comp.toString(), doComparison);
+				comparisons.add(doComparison);
+			} catch (Exception e) {
+				comparisons.add(Double.NaN);
+			}
+		}
+		double aggr = aggregate(comparisons);
+		aggregationScores.put(this.toString(), aggr);
+		return aggregationScores;
+	}
+
+	/**
 	 * @param comparisons list of comparisons, might be null if either of the features were null
 	 * @return aggregate the similarities
 	 */
@@ -53,9 +77,6 @@ public abstract class CombinedFVComparator<T> implements DistanceComparator<T>{
 	 * @param <T>
 	 */
 	public static class Mean<T> extends CombinedFVComparator<T>{
-
-
-
 		/**
 		 * @param excomps
 		 */
@@ -79,6 +100,11 @@ public abstract class CombinedFVComparator<T> implements DistanceComparator<T>{
 		@Override
 		public boolean isDistance() {
 			return this.comps.get(0).secondObject().isDistance();
+		}
+
+		@Override
+		public String toString() {
+			return "aggregationMean";
 		}
 
 	}

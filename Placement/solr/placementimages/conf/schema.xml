@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema name="photo" version="1.0">
+    <fields>
+        <field name="photoID" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+        <field name="photoTags" type="text_en_splitting" indexed="true" stored="true" required="false" multiValued="false" />
+        <field name="location" type="latlong" indexed="true" stored="true" required="false" multiValued="false" />
+        <field name="langID" type="string" indexed="true" stored="true" required="false" multiValued="false" />
+        <field name="langConfidence" type="double" indexed="true" stored="true" required="false" multiValued="false" />
+        <dynamicField name="*_latlong" type="double" indexed="true" stored="false" />
+    </fields>
+
+    <types>
+        <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
+        <fieldType name="double" class="solr.SortableDoubleField" />
+        <fieldType name="text_en_splitting" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
+            <analyzer type="index">
+                <tokenizer class="solr.WhitespaceTokenizerFactory" />
+                <filter class="solr.LowerCaseFilterFactory" />
+            </analyzer>
+            <analyzer type="query">
+                <tokenizer class="solr.WhitespaceTokenizerFactory" />
+            </analyzer>
+        </fieldType>
+        <fieldType name="latlong" class="solr.LatLonType" subFieldSuffix="_latlong" />
+    </types>
+
+    <uniqueKey>photoID</uniqueKey>
+
+</schema>

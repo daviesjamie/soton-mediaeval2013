@@ -87,4 +87,9 @@ public class PhotoTime implements FeatureExtractor<DoubleFV, Photo>{
 		return ret ;
 	}
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + "." + type.name();
+	}
+
 }

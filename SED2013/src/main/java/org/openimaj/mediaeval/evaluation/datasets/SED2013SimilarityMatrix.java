@@ -2,7 +2,6 @@ package org.openimaj.mediaeval.evaluation.datasets;
 
 import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
 import gov.sandia.cognition.math.matrix.mtj.SparseMatrixFactoryMTJ;
-import gov.sandia.cognition.math.matrix.mtj.SparseRowMatrix;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,7 +14,6 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
-import no.uib.cipr.matrix.sparse.FlexCompColMatrix;
 import no.uib.cipr.matrix.sparse.FlexCompRowMatrix;
 
 import org.apache.log4j.Logger;
@@ -25,7 +23,6 @@ import org.openimaj.io.IOUtils;
 import org.openimaj.math.matrix.CFMatrixUtils;
 import org.openimaj.mediaeval.data.Count;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
-import org.openimaj.mediaeval.data.Head;
 import org.openimaj.mediaeval.data.XMLCursorStream;
 import org.openimaj.mediaeval.data.XMLCursorStream.CursorWrapper;
 import org.openimaj.mediaeval.feature.extractor.CombinedFVComparator;
@@ -78,7 +75,7 @@ public class SED2013SimilarityMatrix {
 //		String expName = "training.all";
 //		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
 //		String bigFile = "/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml";
-		
+
 		if(args.length!=3){
 			logger.error("Usage: <cmd> experiment_name experiment_home photo_xml_file");
 			return;
@@ -86,9 +83,9 @@ public class SED2013SimilarityMatrix {
 		String expName = args[0];
 		String expHome = args[1];
 		String bigFile = args[2];
-			
-		
-		
+
+
+
 		String tfidfSource = String.format("%s/%s",expHome,"training.sed2013.photo_tfidf");
 //		List<ExtractorComparator<Photo, DoubleFV>> excomps = SED2013ExpOne.PPK2012Similarity(tfidfSource);
 		List<ExtractorComparator<Photo, ? extends FeatureVector>> excomps = PPK2012ExtractCompare.similarity(tfidfSource,new File(expHome,expName + ".featurecache").getAbsolutePath());
@@ -98,7 +95,7 @@ public class SED2013SimilarityMatrix {
 		Count<CursorWrapper> count = new Count<CursorWrapper>();
 		createStream(xmlFile)
 		.forEach(count);
-		
+
 //		similarityMatrixFromFile(comp, xmlFile, sparse);
 		similarityMatrixFromMemory(comp, xmlFile, (int) count.seen,new File(String.format("%s/%s.sparse",expHome,expName )));
 

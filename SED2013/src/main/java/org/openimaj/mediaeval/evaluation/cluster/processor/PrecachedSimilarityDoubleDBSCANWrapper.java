@@ -1,7 +1,5 @@
 package org.openimaj.mediaeval.evaluation.cluster.processor;
 
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrixFactoryMTJ;
 
 import java.util.Iterator;
 
@@ -10,9 +8,11 @@ import org.openimaj.data.dataset.Dataset;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparison;
 import org.openimaj.feature.FeatureExtractor;
-import org.openimaj.math.matrix.CFMatrixUtils;
+import org.openimaj.math.matrix.MatrixUtils;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
+
+import ch.akuhn.matrix.SparseMatrix;
 
 /**
  * Wraps the functionality of a {@link DoubleDBSCAN} called with a sparse similarity matrix
@@ -65,7 +65,7 @@ public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapp
 	@Override
 	public int[][] cluster() {
 		int numInstances = data.numInstances();
-		SparseMatrix mat = SparseMatrixFactoryMTJ.INSTANCE.createMatrix(numInstances,numInstances);
+		SparseMatrix mat = new SparseMatrix(numInstances,numInstances);
 		double[][] feats = new double[numInstances][];
 		int index = 0;
 		for (Iterator<double[]> iterator = new ExtractedIterator(data.iterator()); iterator.hasNext();) {
@@ -79,11 +79,11 @@ public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapp
 					continue;
 				if(d==0 && i!=j)
 					d=Double.MIN_VALUE;
-				mat.setElement(i, j, d);
-				mat.setElement(j, i, d);
+				mat.put(i, j, d);
+				mat.put(j, i, d);
 			}
 		}
-		logger.info(String.format("Similarity matrix sparcity: %2.5f",CFMatrixUtils.sparcity(mat)));
+		logger.info(String.format("Similarity matrix sparcity: %2.5f",MatrixUtils.sparcity(mat)));
 		DoubleDBSCANClusters res = dbscan.cluster(mat,true);
 		return res.getClusterMembers();
 	}

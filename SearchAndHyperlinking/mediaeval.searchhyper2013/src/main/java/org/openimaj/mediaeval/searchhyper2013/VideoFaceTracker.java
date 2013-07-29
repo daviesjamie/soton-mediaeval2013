@@ -4,11 +4,14 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.openimaj.image.DisplayUtilities;
 import org.openimaj.image.FImage;
@@ -16,13 +19,18 @@ import org.openimaj.image.Image.Field;
 import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
 import org.openimaj.image.colour.RGBColour;
+import org.openimaj.image.processing.face.detection.CLMDetectedFace;
 import org.openimaj.image.processing.face.detection.DetectedFace;
 import org.openimaj.image.processing.face.tracking.KLTHaarFaceTracker;
 import org.openimaj.image.processing.face.tracking.clm.CLMFaceTracker;
 import org.openimaj.image.processing.face.tracking.clm.MultiTracker.TrackedFace;
 import org.openimaj.image.processing.resize.ResizeProcessor;
 import org.openimaj.math.geometry.shape.Rectangle;
-import org.openimaj.video.processing.shotdetector.HistogramVideoShotDetector;
+import org.openimaj.math.geometry.shape.Shape;
+import org.openimaj.video.processing.shotdetector.LocalHistogramVideoShotDetector;
+import org.openimaj.video.processing.shotdetector.ShotBoundary;
+import org.openimaj.video.processing.shotdetector.ShotDetectedListener;
+import org.openimaj.video.processing.shotdetector.VideoKeyframe;
 import org.openimaj.video.processing.shotdetector.VideoShotDetector;
 import org.openimaj.video.timecode.VideoTimecode;
 import org.openimaj.video.xuggle.XuggleVideo;
@@ -109,7 +117,7 @@ public class VideoFaceTracker
 	 */
 	public static class FaceComparator implements Comparator<DetectedFace>
 	{
-		public double overlapForSame = 0.8;
+		public double overlapForSame = 0.6;
 
 		@Override
 		public int compare( final DetectedFace o1, final DetectedFace o2 )
@@ -133,6 +141,24 @@ public class VideoFaceTracker
 		}
 	}
 
+	/**
+	 * 	A class for storing information to output to the track file.
+	 *
+	 *	@author David Dupplaw (dpd@ecs.soton.ac.uk)
+	 *  @created 25 Jul 2013
+	 */
+	public static class TrackInfo
+	{
+		public Shape bounds;
+		public double score;
+
+		public TrackInfo( final Shape s, final double sc )
+		{
+			this.bounds = s;
+			this.score = sc;
+		}
+	}
+
 	/** Whether we're debugging or not - whether to print/show stuff */
 	public static final boolean DEBUG = true;
 
@@ -151,11 +177,17 @@ public class VideoFaceTracker
 	/** Whether to deinterlace the video frames */
 	public boolean deinterlaceVideo = false;
 
+	/** Whether to cache shot boundaries */
+	public boolean cacheShotBoundaries = true;
+
+	/** Whether to cache the face tracks in ASCII files */
+	public boolean cacheFaceTracks = true;
+
 	/** The number of frames a face must continue to exist for to be considered a face */
 	private final int minFrames = 30;
 
 	/** The minimum size of a face detection in pixels */
-	private final int minSize = 40;
+	private final int minSize = 80;
 
 	/** This is a counter for the number of frames detected faces exist for - only contains tracked faces */
 	private final HashMap<FaceRange,Integer> frameCount = new HashMap<FaceRange, Integer>();
@@ -163,11 +195,20 @@ public class VideoFaceTracker
 	/** The final list of faces we've found in the video */
 	private final List<FaceRange> storedFaces = new ArrayList<FaceRange>();
 
-	/** The aspect ratio of the pixels */
+	/** The aspect ratio of the pixels (1 = no change) */
 	public double aspect = 1;
 
 	/** The amount to enlarge bounds before saving */
 	private final float enlargeBoundsAmount = 2f;
+
+	/** The number of times to downscale the video (2 = half size) */
+	private double downscale = 2;
+
+	/** The number of frames between each image process (1 = every frame) */
+	private int nSkipFrames = 1;
+
+	/** The amount by which a frame must change to be a shot boundary */
+	private double shotBoundaryThresholdRatio = 0.06;
 
 	/**
 	 * 	Default constructor
@@ -198,7 +239,23 @@ public class VideoFaceTracker
 			xv.seek( 20.5 );
 
 		// Create a video shot detector
-		final VideoShotDetector<MBFImage> sd = new HistogramVideoShotDetector( xv.getFPS() );
+		final VideoShotDetector<MBFImage> sd = new LocalHistogramVideoShotDetector( xv, 4 );
+		sd.setFindKeyframes( false );	// Don't store key frames in the shot detector
+		sd.setThreshold( this.shotBoundaryThresholdRatio );
+		if( this.cacheShotBoundaries )
+		{
+			sd.addShotDetectedListener( new ShotDetectedListener<MBFImage>()
+			{
+				@Override
+				public void shotDetected( final ShotBoundary<MBFImage> sb, final VideoKeyframe<MBFImage> vk )
+				{
+					VideoFaceTracker.this.cacheShotBoundary( video, xv.getCurrentFrameIndex(), vk );
+				}
+
+				@Override
+				public void differentialCalculated( final VideoTimecode vt, final double d, final MBFImage frame ) {}
+			} );
+		}
 
 		// Create a face detector/tracker
 		final KLTHaarFaceTracker kltTracker = new KLTHaarFaceTracker( this.minSize );
@@ -206,12 +263,22 @@ public class VideoFaceTracker
 
 		// A CLM Face tracker
 		final CLMFaceTracker tracker2 = new CLMFaceTracker();
+		tracker2.getModelTracker().getInitialVars().faceDetector.set_min_size( this.minSize );
 		tracker2.setRedetectEvery( 10 );
 
-		// Read all the video frames
 		VideoTimecode lastFrameTimecode = null;
+
+		// We'll store all the tracks for the current faces here and cache them later.
+		final HashMap<FaceRange,TreeMap<Integer,TrackInfo>> currentTracks
+			= new HashMap<FaceRange, TreeMap<Integer,TrackInfo>>();
+
+		// Read all the video frames
 		for( MBFImage image : xv )
 		{
+			// Frame skipping
+			if( xv.getCurrentFrameIndex() % this.nSkipFrames != 0 )
+				continue;
+
 			// Process with the shot detector. This is necessary to know whether
 			// to reset the CLM tracker.
 			sd.processFrame( image );
@@ -223,20 +290,25 @@ public class VideoFaceTracker
 			if( this.aspect != 1 )
 			{
 				image = image.process( new ResizeProcessor(
-					(int) (image.getHeight()*this.aspect), image.getHeight(), false  ) );
+					(int) (image.getHeight()*this.aspect/this.downscale),
+					(int) (image.getHeight()/this.downscale), false  ) );
 			}
 
 			// The face trackers work on greyscale images, so we'll flatten the colour image.
 			FImage frame = image.flattenMax();
 
 			// Deinterlace the video
-			frame = frame.getFieldInterpolate( Field.ODD );
+			if( this.deinterlaceVideo )
+				frame = frame.getFieldInterpolate( Field.ODD );
 
 			if( VideoFaceTracker.DEBUG )
 				System.out.println( "Analysing frame "+xv.getCurrentTimecode() );
 
 			// Look for faces to track with the KLT tracker
 			final List<DetectedFace> faces1 = kltTracker.trackFace( frame );
+
+			if( faces1.size() == 0 )
+				continue;
 
 			if( VideoFaceTracker.IMAGE_DEBUG )
 				// DEBUG - Draw the KLT Tracked faces to the frame
@@ -296,6 +368,8 @@ public class VideoFaceTracker
 
 					if( VideoFaceTracker.DEBUG )
 						System.out.println( "        -> sameAs "+sameAs );
+					if( VideoFaceTracker.DEBUG )
+						System.out.println( "        -> Score: "+score );
 
 					// If we haven't found a similar detected face in the current face
 					// list, then we'll add it in there.
@@ -312,7 +386,7 @@ public class VideoFaceTracker
 					{
 						// If we've found a similar detected face in the current face
 						// list, we'll update it, rather than using the new one.
-						this.frameCount.put( sameAs, this.frameCount.get( sameAs ) +1 );
+						this.frameCount.put( sameAs, this.frameCount.get( sameAs ) + this.nSkipFrames );
 						sameAs.face.setBounds( face.getBounds() );
 						sameAs.face.setFacePatch( face.getFacePatch() );
 
@@ -324,6 +398,12 @@ public class VideoFaceTracker
 							sameAs.bestFaceImage = image.extractROI( enlargedBounds );
 						}
 					}
+
+					// Cache the face track in a HashMap
+					TreeMap<Integer, TrackInfo> track = currentTracks.get( sameAs );
+					if( track == null )
+						currentTracks.put( sameAs, track = new TreeMap<Integer,TrackInfo>() );
+					track.put( xv.getCurrentFrameIndex(), new TrackInfo( face.getBounds().clone(), score ) );
 
 					if( VideoFaceTracker.IMAGE_DEBUG )
 						// Draw the bounds onto the frame so we can see what's going on.
@@ -350,6 +430,10 @@ public class VideoFaceTracker
 
 					if( this.cacheImages )
 						this.cacheImage( video, face );
+
+					// Output the face tracks
+					if( this.cacheFaceTracks )
+						this.outputFaceTracks( video, face, currentTracks.get(face) );
 				}
 				// We'll ignore this face if it wasn't around long enough
 				else
@@ -358,6 +442,7 @@ public class VideoFaceTracker
 
 				// Remove this face from the tracked faces list.
 				this.frameCount.remove( face );
+				currentTracks.remove( face );
 			}
 
 			if( VideoFaceTracker.IMAGE_DEBUG )
@@ -368,6 +453,38 @@ public class VideoFaceTracker
 
 			// Store the last frame timecode.
 			lastFrameTimecode = xv.getCurrentTimecode();
+		}
+	}
+
+	/**
+	 * 	Outputs the face tracks for a given face to a file.
+	 *	@param face
+	 *	@param treeMap
+	 */
+	private void outputFaceTracks( final File video, final FaceRange face, final TreeMap<Integer, TrackInfo> treeMap )
+	{
+		// Make sure the cache directory exists.
+		final File cDir = new File( this.cacheDir + video.getName() );
+		cDir.mkdirs();
+
+		// The name of the file will be the timecode start and end
+		final String timeString =
+			String.format( "%06d", face.start.getFrameNumber() ) + "-" +
+			String.format( "%06d", face.end.getFrameNumber() );
+
+		try
+		{
+			// Write each rectangle to a file
+			final FileWriter fw = new FileWriter( new File( cDir, timeString+"-tracks.txt" ) );
+
+			for( final Entry<Integer, TrackInfo> e : treeMap.entrySet() )
+				fw.write( e.getKey()+" : "+e.getValue().score + " : "+e.getValue().bounds.toString() + "\n" );
+
+			fw.close();
+		}
+		catch( final IOException e )
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -383,10 +500,12 @@ public class VideoFaceTracker
 		cDir.mkdirs();
 
 		// The name of the file will be the timecode start and end
-		final String timeString = face.start.getFrameNumber() + "-" + face.end.getFrameNumber();
+		final String timeString =
+			String.format( "%06d", face.start.getFrameNumber() ) + "-" +
+			String.format( "%06d", face.end.getFrameNumber() );
 
 		// Write the image to a file
-		final File outputFile = new File( cDir, timeString+".png" );
+		final File outputFile = new File( cDir, timeString+"-face.png" );
 		try
 		{
 			ImageUtilities.write( face.bestFaceImage, "png", outputFile );
@@ -401,6 +520,34 @@ public class VideoFaceTracker
 		if( !this.storeFaceImages )
 		{
 			face.bestFaceImage = null;
+		}
+	}
+
+	/**
+	 * 	Caches a show boundary keyframe.
+	 *	@param video
+	 *	@param frameNumber
+	 *	@param kf
+	 */
+	private void cacheShotBoundary( final File video, final int frameNumber, final VideoKeyframe<MBFImage> kf )
+	{
+		// Make sure the cache directory exists.
+		final File cDir = new File( this.cacheDir + video.getName() );
+		cDir.mkdirs();
+
+		// The name of the file will be the timecode start and end
+		final String timeString =
+			String.format( "%06d", frameNumber );
+
+		// Write the image to a file
+		final File outputFile = new File( cDir, timeString+"-shot-boundary.png" );
+		try
+		{
+			ImageUtilities.write( kf.getImage(), "png", outputFile );
+		}
+		catch( final IOException e )
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -458,6 +605,44 @@ public class VideoFaceTracker
 	 */
 	private double calculateScore( final DetectedFace face, final MBFImage frame )
 	{
+		if( face instanceof CLMDetectedFace )
+		{
+			// The assumption is, of course, that the tracker is
+			// tracking the pose well. In reality, it actually doesn't
+			// do it very well. Never-the-less, we'll assume here that
+			// it does.  We attempt to create a formula that promotes
+			// a central pose and a large image.
+			final CLMDetectedFace f = (CLMDetectedFace)face;
+
+			// A central pose has the yaw and pitch close to zero.
+			// (zero will be the average pose of the training sets used).
+			// With our current model, the pitch and yaw need to be within
+			// 0.5 from the mean to be useful for us (determined just by
+			// eye-balling the values from the ModelManipulatorGUI)
+			final double y = f.getPitch();	// look up/down
+			final double x = f.getYaw(); 	// look side-to-side
+
+			// The size also matters. We want a large as image as possible.
+			final double area = face.getBounds().calculateArea();
+
+			// Converting the pitch and yaw to a score (from a distance):
+			//		p = 0.5 - Math.abs(pitch)
+			//		y = 0.5 - Math.abs(yaw)
+			// and we clip the score at 0 (so it can't be negative). We scale
+			// then 0-1 and then multiply them together to get a score for the pose.
+			//
+			// We then multiply that score by the area of the bounds of the face
+			// (weighted by some configurable constant, alpha) so that we promote
+			// large, good-pose faces.
+			final double alpha = 1;
+			final double score =
+					Math.max( 0, 0.5 - Math.abs( y ) )*2 *
+					Math.max( 0, 0.5 - Math.abs( x ) )*2 *
+					alpha * area;
+
+			return score;
+		}
+
 		final Rectangle r = face.getBounds();
 		return r.calculateArea();
 	}
@@ -569,6 +754,70 @@ public class VideoFaceTracker
 	public void setStoreFaceImages( final boolean storeFaceImages )
 	{
 		this.storeFaceImages = storeFaceImages;
+	}
+
+	/**
+	 *	@return the downscale
+	 */
+	public double getDownscale()
+	{
+		return this.downscale;
+	}
+
+	/**
+	 *	@param downscale the downscale to set
+	 */
+	public void setDownscale( final double downscale )
+	{
+		this.downscale = downscale;
+	}
+
+	/**
+	 *	@return the nSkipFrames
+	 */
+	public int getnSkipFrames()
+	{
+		return this.nSkipFrames;
+	}
+
+	/**
+	 *	@param nSkipFrames the nSkipFrames to set
+	 */
+	public void setnSkipFrames( final int nSkipFrames )
+	{
+		this.nSkipFrames = nSkipFrames;
+	}
+
+	/**
+	 *	@return the cacheFaceTracks
+	 */
+	public boolean isCacheFaceTracks()
+	{
+		return this.cacheFaceTracks;
+	}
+
+	/**
+	 *	@param cacheFaceTracks the cacheFaceTracks to set
+	 */
+	public void setCacheFaceTracks( final boolean cacheFaceTracks )
+	{
+		this.cacheFaceTracks = cacheFaceTracks;
+	}
+
+	/**
+	 *	@return the shotBoundaryThresholdRatio
+	 */
+	public double getShotBoundaryThresholdRatio()
+	{
+		return this.shotBoundaryThresholdRatio;
+	}
+
+	/**
+	 *	@param shotBoundaryThresholdRatio the shotBoundaryThresholdRatio to set
+	 */
+	public void setShotBoundaryThresholdRatio( final double shotBoundaryThresholdRatio )
+	{
+		this.shotBoundaryThresholdRatio = shotBoundaryThresholdRatio;
 	}
 
 	/**
