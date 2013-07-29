@@ -17,6 +17,12 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.util.NamedList;
 
+/**
+ * Includes various utility methods for searching a Solr server.
+ * 
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
 public abstract class SearchUtils {
 
 	public static SolrDocumentList queryServer(SolrServer server,
@@ -64,11 +70,5 @@ public abstract class SearchUtils {
 		}
 		
 		return tfidfVector;
-	}
-	
-	public static void main(String[] args) throws SolrServerException {
-		SolrServer server = new HttpSolrServer("http://seurat:8983/solr");
-		
-		getTermVector(server, "20080402_212000_bbcfour_up_pompeii_trans_limsi_2");
 	}
 }

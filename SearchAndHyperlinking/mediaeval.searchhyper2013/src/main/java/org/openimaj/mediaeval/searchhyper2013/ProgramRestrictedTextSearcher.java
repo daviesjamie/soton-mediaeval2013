@@ -54,6 +54,13 @@ import org.xml.sax.SAXException;
 import com.google.common.collect.Constraint;
 import com.google.common.collect.Constraints;
 
+/**
+ * Searches a Solr server for a given query, finding additional sources of hits 
+ * by finding programs whise synopsis matches have the same name.
+ * 
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
 public class ProgramRestrictedTextSearcher implements Searcher {
 	private int MAX_SYNOPSIS_RESULTS = 3;
 	private float TITLE_WEIGHT_THRESHOLD = 2;

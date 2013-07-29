@@ -11,17 +11,20 @@ import org.apache.solr.common.SolrDocumentList;
 public class CosineSimilarityBatchProcessor {
 
 	/**
-	 * @param args
+	 * Calculates cosine distance between every pair of transcript documents 
+	 * within a program. This takes a long time, and often doesn't yield 
+	 * anything useful; most distances are very close to 1. 
+	 * 
+	 * @param args[0] URL of Solr instance to retrieve documents from.
 	 * @throws SolrServerException 
 	 */
 	public static void main(String[] args) {
-		SolrServer server = new HttpSolrServer("http://seurat:8983/solr");
+		SolrServer server = new HttpSolrServer(args[0]);
 		
 		SolrDocumentList programResults;
 		try {
 			programResults = SearchUtils.queryServer(server, "type:progmeta", "", 6000000);
 		} catch (SolrServerException e2) {
-			// TODO Auto-generated catch block
 			e2.printStackTrace();
 			return;
 		}
@@ -35,6 +38,7 @@ public class CosineSimilarityBatchProcessor {
 												" AND type:trans", "", 6000000);
 			} catch (Exception e1) {
 				e1.printStackTrace();
+				// Continue if we can't get the results for this program.
 				continue;
 			}
 			
@@ -86,5 +90,4 @@ public class CosineSimilarityBatchProcessor {
 			}
 		}
 	}
-
 }

@@ -15,6 +15,9 @@ import com.google.common.collect.Sets;
  * A Vector backed by a Map to allow creating and comparing vectors where the
  * number and identities of the dimensions are not known.
  * 
+ * TODO: Half of this isn't implemented, so far it only does what is necessary 
+ * 		 for the CosineSimilarityBatchProcessor.
+ * 
  * @author John Preston (jlp1g11@ecs.soton.ac.uk)
  *
  */

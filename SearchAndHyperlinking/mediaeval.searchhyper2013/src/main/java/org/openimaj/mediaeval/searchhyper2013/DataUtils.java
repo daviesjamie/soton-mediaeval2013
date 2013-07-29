@@ -40,12 +40,26 @@ import org.openimaj.util.function.Predicate;
 import com.github.wcerfgba.Row;
 import com.github.wcerfgba.Table;
 
-
+/**
+ * Utility methods for working with data, mainly for visualising.
+ * 
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
 public abstract class DataUtils {
-	public static final String[] badWords = { "bbc" };
-	
+	// X dimension for images.
 	public static final int X_DIM = 800;
-	
+
+	/**
+	 * Takes in an array of segments (start and end times as doubles) and plots 
+	 * them on a timeline as circles.
+	 * 
+	 * @param array   The data array to plot.
+	 * @param maxVal  The maximum value for data to have as a time component
+	 * 				  (typically this is the program length).
+	 * @param col	  Colour.
+	 * @return		  MBFImage plot.
+	 */
 	public static MBFImage visualiseData(double[][] array, double maxVal, Float[] col) {
 		int Y_DIM = 200;
 		
@@ -63,7 +77,17 @@ public abstract class DataUtils {
 		
 		return img;
 	}
-	
+
+	/**
+	 * Plots a List<Result> as start and end lines going vertically on an image 
+	 * with colour scaled by confidence score.
+	 * 
+	 * @param results 	  Array to plot.
+	 * @param height	  Height of image to create.
+	 * @param progLength  Max. length of program (for calculating X values).
+	 * @param col		  Base colour.
+	 * @return			  MBFImage plot of the data.
+	 */
 	public static MBFImage visualiseData(List<Result> results, int height, float progLength, Float[] col) {
 		
 		float maxConf = 0;
@@ -95,6 +119,12 @@ public abstract class DataUtils {
 		return vis;
 	}
 	
+	/**
+	 * Converts a cluster hierarchy into a List<Result>.
+	 * 
+	 * @param resultClusterHierarchy
+	 * @return
+	 */
 	public static List<Result> flattenClusterHierarchy(ClusterHierarchyNode<Result, Cluster<Result>> resultClusterHierarchy) {
 		Set<Result> resultSet = new HashSet<Result>();
 		
@@ -120,26 +150,30 @@ public abstract class DataUtils {
 		return resultList;
 	}
 
-	public static void cleanQuery(Query q) {
-		String queryText = q.getQueryText();
-	
-		for (String noise : badWords) {
-			Pattern p = Pattern.compile(noise, Pattern.CASE_INSENSITIVE);
-			Matcher m = p.matcher(queryText);
-			
-			queryText = m.replaceAll("");
-		}
-		
-		q.setQueryText(queryText);
-	}
-
+	/**
+	 * Converts a float representing seconds into a float representing 
+	 * minutes.seconds.
+	 * 
+	 * @param startTime
+	 * @return
+	 */
 	public static float StoMS(float startTime) {
 		int mins = (int) Math.floor(startTime / 60);
 		int secs = (int) (((startTime / 60) - mins) * 60);
 		
 		return mins + (secs / 100f);
 	}
-	
+
+	/**
+	 * Clusters results using DBSCAN.
+	 * 
+	 * @param results	  Input results.
+	 * @param eps		  Epsilon for DBSCAN.
+	 * @param minSize	  Minimum cluster size for DBSCAN.
+	 * @param visualise	  Visualise the clustering along the way?
+	 * @param progLength  Maximum program length (for visualising).
+	 * @return			  A new List<Result> representing the clusters.
+	 */
 	public static List<Result> clusterResults(List<Result> results,
 											  float eps,
 											  int minSize,
@@ -223,12 +257,17 @@ public abstract class DataUtils {
 		return progResults;
 	}
 	
-	
-	
 	public static Result clusterToResult(Cluster<Result> cluster) {
 		return resultCollectionToResult(cluster.getMembers());
 	}
 
+	/**
+	 * Returns the maximum depth of a cluster hierarchy.
+	 * 
+	 * @param root  Root node.
+	 * @param acc   Accumulator value.
+	 * @return		Depth.
+	 */
 	public static int clusterHierarchyDepth(ClusterHierarchyNode root, int acc) {
 		if (root.getChildren() == null) {
 			return acc;
@@ -238,10 +277,24 @@ public abstract class DataUtils {
 						clusterHierarchyDepth((ClusterHierarchyNode) root.getChildren().get(1), acc + 1));
 	}
 	
+	/**
+	 * Returns the maximum depth of a cluster hierarchy.
+	 * 
+	 * @param root  Root node.
+	 * @return		Depth.
+	 */
 	public static int clusterHierarchyDepth(ClusterHierarchyNode root) {
 		return clusterHierarchyDepth(root, 1);
 	}
-	
+
+	/**
+	 * Visualises a cluster hierarchy on multiple levels, changing the hue as 
+	 * we descend the hierarchy.
+	 * 
+	 * @param root			 Root node.
+	 * @param programLength  Program length for calculating X values.
+	 * @return				 MBFImage of the visualisation.
+	 */
 	public static MBFImage visualiseDataClean(ClusterHierarchyNode<Result, DefaultCluster<Result>> root, float programLength) {
 		int maxDepth = clusterHierarchyDepth(root);
 		
@@ -255,7 +308,9 @@ public abstract class DataUtils {
 		List<ClusterHierarchyNode<Result, DefaultCluster<Result>>> nextLevel = 
 			new ArrayList<ClusterHierarchyNode<Result, DefaultCluster<Result>>>();
 		nextLevel.add(root);
-		
+	
+		// We add child nodes for the current level to the nextLevel list so 
+		// that we can process the tree in a breadth-first manner.
 		while (!nextLevel.isEmpty()) {
 			List<ClusterHierarchyNode<Result, DefaultCluster<Result>>> newNextLevel =
 				new ArrayList<ClusterHierarchyNode<Result, DefaultCluster<Result>>>();
@@ -287,6 +342,13 @@ public abstract class DataUtils {
 		return Transforms.HSV_TO_RGB(vis);
 	}
 	
+	/**
+	 * Aggregates a Collection<Result> into a result by discovering the minimum 
+	 * start time, maximum end time, and average confidence.
+	 * 
+	 * @param thisLevel
+	 * @return
+	 */
 	private static Result resultCollectionToResult(Collection<Result> thisLevel) {
 		String program = null;
 		float start = Float.MAX_VALUE;
@@ -323,61 +385,16 @@ public abstract class DataUtils {
 		return new Result(program, start, end, start, totalConf / res.length);
 	}
 
-	public static MBFImage visualiseData(ClusterHierarchyNode<Result, DefaultCluster<Result>> root, float programLength) {
-		int maxDepth = clusterHierarchyDepth(root);
-
-		int WIDTH = 50;
-		int Y_DIM = WIDTH * (maxDepth + 1);
-		
-		float hueStep = 1f / maxDepth;
-		
-		MBFImage vis = new MBFImage(X_DIM, Y_DIM, ColourSpace.HSV);
-		
-		int depth = 0;
-		
-		List<ClusterHierarchyNode<Result, DefaultCluster<Result>>> nextLevel = 
-			new ArrayList<ClusterHierarchyNode<Result, DefaultCluster<Result>>>();
-		nextLevel.add(root);
-		
-		while (!nextLevel.isEmpty()) {
-			List<ClusterHierarchyNode<Result, DefaultCluster<Result>>> newNextLevel =
-				new ArrayList<ClusterHierarchyNode<Result, DefaultCluster<Result>>>();
-			
-			for (ClusterHierarchyNode<Result, DefaultCluster<Result>> node : nextLevel) {
-				Result result = clusterToResult(node);
-				
-				int x0 = (int)((result.getStartTime() / programLength) * X_DIM);
-				int x1 = (int)((result.getEndTime() / programLength) * X_DIM);
-				int y = WIDTH * (depth + 1);
-				Float[] col = { depth*hueStep, 1f, 1f };
-
-				Rectangle rect = new Rectangle(x0, y, x1 - x0 + 1, WIDTH - 5);
-				vis.drawShapeFilled(rect, col);
-				
-				if (node.getChildren() != null) {
-					newNextLevel.addAll(node.getChildren());
-				} else if (node.getMembers() != null) {
-					System.out.println(node.getMembers());
-					for (Result member : node.getMembers()) {
-						x0 = (int)((member.getStartTime() / programLength) * X_DIM);
-						x1 = (int)((member.getEndTime() / programLength) * X_DIM);
-						y = WIDTH * (depth + 2);
-						Float[] col2 = { (depth + 1)*hueStep, 1f, 1f };
-
-						rect = new Rectangle(x0, y, x1 - x0 + 1, WIDTH - 5);
-						vis.drawShapeFilled(rect, col2);
-					}
-				}
-			}
-			
-			nextLevel = newNextLevel;
-			
-			depth++;
-		}
-		
-		return Transforms.HSV_TO_RGB(vis);
-	}
-
+	/**
+	 * Converts a List<CLusterHierarchyNode> to a List<Result> and visualises it
+	 * with {@link visualiseData(List<Result> results, int height, float progLength, Float[] col) visualiseData()}.
+	 *  
+	 * @param children
+	 * @param height
+	 * @param progLength
+	 * @param col
+	 * @return
+	 */
 	public static MBFImage visualiseData(
 			List<ClusterHierarchyNode<Result, DefaultCluster<Result>>> children,
 			int height, Float progLength, Float[] col) {
@@ -390,6 +407,16 @@ public abstract class DataUtils {
 		return visualiseData(results, height, progLength, col);
 	}
 
+	/**
+	 * Visualises a single Result with
+	 * {@link #visualiseData(List<Result> results, int height, float progLength, Float[] col) visualiseData()}.
+	 * 
+	 * @param clusterToResult
+	 * @param height
+	 * @param progLength
+	 * @param green
+	 * @return
+	 */
 	public static MBFImage visualiseData(Result clusterToResult, int height,
 			Float progLength, Float[] green) {
 		List<Result> list = new ArrayList<Result>();
@@ -398,6 +425,13 @@ public abstract class DataUtils {
 		return visualiseData(list, height, progLength, green);
 	}
 
+	/**
+	 * Creates an expansion query from a list of SolrDocuments by counting the 
+	 * most popular words and using words with the highest scores.
+	 *  
+	 * @param docs
+	 * @return      Query string.
+	 */
 	public static String createExpansionQuery(SolrDocumentList docs) {
 		Table wordTable = new Table("word", "count", "score");
 		
@@ -428,14 +462,7 @@ public abstract class DataUtils {
 				return ((Float) arg1.get("score")).compareTo((Float) arg0.get("score"));
 			}
 			
-		})/*.sort(new Comparator<Row>() {
-
-			@Override
-			public int compare(Row arg0, Row arg1) {
-				return ((Integer) arg0.get("count")).compareTo((Integer) arg1.get("count"));
-			}
-			
-		})*/;
+		});
 		
 		int maxCount = 0;
 		
@@ -458,8 +485,6 @@ public abstract class DataUtils {
 		for (int i = 0; i < 100 && i < wordTable.size(); i++) {
 			Row row = wordTable.getRow(i);
 			
-			//Float score = (((Float) row.get("score")));
-			//Float score = (maxScore) / (Integer) row.get("count");
 			Float score = (Float) row.get("score") / (Integer) row.get("count");
 			
 			query += "\"" + row.get("word") + "\"^" + score + " ";
@@ -468,6 +493,16 @@ public abstract class DataUtils {
 		return query;
 	}
 
+	/**
+	 * Converts SolrDocuments to Results and visualises them with 
+	 * {@link #visualiseData(List<Result> results, int height, float progLength, Float[] col) visualiseData()}.
+	 * 
+	 * @param solrDocs
+	 * @param height
+	 * @param progLength
+	 * @param col
+	 * @return
+	 */
 	public static MBFImage visualiseData(
 			SolrDocumentList solrDocs, int height,
 			Float progLength, Float[] col) {
@@ -484,5 +519,15 @@ public abstract class DataUtils {
 		}
 		
 		return visualiseData(results, height, progLength, col);
+	}
+
+	public static float HMStoS(String hmsString) {
+		String[] parts = hmsString.split(":");
+		
+		float secs = Float.parseFloat(parts[2]);
+		secs += Float.parseFloat(parts[1]) * 60;
+		secs += Float.parseFloat(parts[0]) * 60 * 60;
+		
+		return secs;
 	}
 }

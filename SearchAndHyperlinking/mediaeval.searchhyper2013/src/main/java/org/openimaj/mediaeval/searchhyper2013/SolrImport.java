@@ -25,11 +25,6 @@ import org.apache.solr.core.CoreContainer;
 import org.openimaj.io.FileUtils;
 import org.xml.sax.SAXException;
 
-/**
- * 
- * @author John Preston (jlp1g11@ecs.soton.ac.uk)
- *
- */
 public class SolrImport {
 	private static final int CACHE_SIZE = 1000000;
 	
@@ -39,24 +34,24 @@ public class SolrImport {
 
 	/**
 	 * Import data from the directory specified on the command line into a 
-	 * Solr server running at http://localhost:8983/.
+	 * Solr server running at the given URL.
 	 * 
-	 * 
-	 * @param args[0] - Path to subs dir.
-	 * @param args[1] - Path to LIMSI dir.
-	 * @param args[2] - Path to exclusion list.
+	 * @param args[0]	  Solr server URL. 
+	 * @param args[1]	  Path to file dir.
+	 * @param args[2]	  Type of files to import.
+	 * @param args[3]	  Path to exclusion list.
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		File filesDir = new File(args[0]);
-		String type = args[1];
-		File excludes = new File(args[2]);
+		File filesDir = new File(args[1]);
+		String type = args[2];
+		File excludes = new File(args[3]);
 		
 		List<String> excludeList = Arrays.asList(FileUtils.readlines(excludes));
 		
 		List<File> files = removeExcluded(filesDir, excludeList);
 
-		SolrServer server = new HttpSolrServer("http://localhost:8983/solr");
+		SolrServer server = new HttpSolrServer(args[0]);
 		
 		ImportType importType= null;
 		if (type.equals("subs")) {

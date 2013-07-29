@@ -74,6 +74,17 @@
   </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+         <mainClass>org.openimaj.tools.classification.classifierbuilder.Main</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
 	  <plugin>
         <groupId>com.mycila.maven-license-plugin</groupId>
         <artifactId>maven-license-plugin</artifactId>

@@ -37,8 +37,12 @@ import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.internal.LinkedTreeMap;
 
-
-
+/**
+ * Contains various utility methods for importing data into Solr.
+ * 
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
 public abstract class ImportUtils {
 	
 	public static List<SolrInputDocument> readSubtitlesFile(File subsFile)
@@ -65,8 +69,8 @@ public abstract class ImportUtils {
 					currentDoc.addField("id", progName + "_trans_subtitles_" + count);
 					currentDoc.addField("type", "trans");
 					currentDoc.addField("program", progName);
-					currentDoc.addField("start", HMStoS(attributes.getValue("begin")));
-					currentDoc.addField("end", HMStoS(attributes.getValue("end")));
+					currentDoc.addField("start", DataUtils.HMStoS(attributes.getValue("begin")));
+					currentDoc.addField("end", DataUtils.HMStoS(attributes.getValue("end")));
 					currentDoc.addField("source", "subtitles");
 					
 					count++;
@@ -225,78 +229,6 @@ public abstract class ImportUtils {
 		docs.add(doc);
 		
 		return docs;
-	}
-	
-	public static <T> List<List<T>> generatePermutations(List<Set<T>> sets) {
-		return genPerms(sets, new ArrayList<T>());
-	}
-	
-	private static <T> List<List<T>> genPerms(List<Set<T>> remainingSets, List<T> acc) {
-		if (remainingSets.isEmpty()) {
-			List<List<T>> result = new ArrayList<List<T>>();
-			result.add(acc);
-			
-			return result;
-		}
-		
-		Set<T> curSet = remainingSets.get(0);
-		
-		List<List<T>> perms = new ArrayList<List<T>>();
-		for (T item : curSet) {
-			List<T> newAcc = new ArrayList<T>(acc);
-			newAcc.add(item);
-			
-			List<Set<T>> newRemainingSets = new ArrayList<Set<T>>(remainingSets);
-			newRemainingSets.remove(0);
-			
-			perms.addAll(genPerms(newRemainingSets, newAcc));
-		}
-		
-		return perms;
-	}
-	
-	public static <T> List<List<T>> procGenPerms(List<Set<T>> sets) {
-		if (sets.isEmpty()) return null;
-		
-		List<List<T>> results = new ArrayList<List<T>>();
-		
-		Set<T> initSet = sets.remove(0);
-		for (T item : initSet) {
-			List<T> initList = new ArrayList<T>();
-			initList.add(item);
-			results.add(initList);
-		}
-		
-		for (Set<T> set : sets) {
-			List<List<T>> acc = new ArrayList<List<T>>();
-			
-			for (T item : set) {
-				List<List<T>> iter = new ArrayList<List<T>>(results);
-				
-				// AAARGH COPYING!!!!
-				for (int i = 0; i < iter.size(); i++) {
-					List<T> copy = new ArrayList<T>(iter.get(i));
-					copy.add(item);
-					iter.set(i, copy);
-				}
-				
-				acc.addAll(iter);
-			}
-			
-			results = acc;
-		}
-		
-		return results;
-	}
-
-	public static float HMStoS(String hmsString) {
-		String[] parts = hmsString.split(":");
-		
-		float secs = Float.parseFloat(parts[2]);
-		secs += Float.parseFloat(parts[1]) * 60;
-		secs += Float.parseFloat(parts[0]) * 60 * 60;
-		
-		return secs;
 	}
 
 	public static Map<Query, Set<Result>> importExpected(File queryFile,

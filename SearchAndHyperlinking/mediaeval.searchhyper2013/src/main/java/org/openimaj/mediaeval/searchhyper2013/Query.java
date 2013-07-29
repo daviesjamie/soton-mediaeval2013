@@ -23,6 +23,8 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
+ * Class for queries.
+ * 
  * @author John Preston (jlp1g11@ecs.soton.ac.uk)
  *
  */
