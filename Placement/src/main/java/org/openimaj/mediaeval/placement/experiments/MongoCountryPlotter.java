@@ -10,7 +10,7 @@ import com.mongodb.DB;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 
-public class MongoPhotoPlotter {
+public class MongoCountryPlotter {
     
     private static final String COUNTRY_NAME = "Morocco";
     private static final boolean STREAM = false;

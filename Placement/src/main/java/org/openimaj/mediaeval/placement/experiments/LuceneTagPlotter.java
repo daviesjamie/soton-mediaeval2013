@@ -25,7 +25,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.FastScatterPlot;
 import org.jfree.ui.ApplicationFrame;
 
-public class LuceneTest {
+public class LuceneTagPlotter {
     public static void main(String[] args) throws IOException, ParseException {
         final Directory directory = new SimpleFSDirectory(new File("data/lucene-test-index"));
 

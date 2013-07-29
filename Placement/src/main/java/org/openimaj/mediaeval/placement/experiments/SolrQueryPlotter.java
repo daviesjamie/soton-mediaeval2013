@@ -27,7 +27,7 @@ import org.openimaj.math.geometry.point.Coordinate;
 import org.openimaj.mediaeval.placement.data.SolrStream;
 import org.openimaj.util.function.Operation;
 
-public class PlotSolrGeo {
+public class SolrQueryPlotter {
     
     public static void main(String[] args) throws IOException, SolrServerException {
         final List<float[]> data = new ArrayList<float[]>(7563041);
