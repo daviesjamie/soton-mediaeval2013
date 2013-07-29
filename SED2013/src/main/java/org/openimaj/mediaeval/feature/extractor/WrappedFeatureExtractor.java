@@ -29,4 +29,9 @@ public class WrappedFeatureExtractor<FEATURE, DATA, INNER_DATA> implements Featu
 		return this.fe.extractFeature(this.fun.apply(object));
 	}
 
+	@Override
+	public String toString() {
+		return fe.toString();
+	}
+
 }

@@ -10,15 +10,12 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.log4j.Logger;
 import org.openimaj.io.IOUtils;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
-import org.openimaj.mediaeval.data.Head;
 import org.openimaj.mediaeval.data.XMLCursorStream;
-import org.openimaj.mediaeval.data.XMLCursorStream.CursorWrapper;
 import org.openimaj.mediaeval.feature.extractor.PhotoDescription;
 import org.openimaj.mediaeval.feature.extractor.PhotoTags;
 import org.openimaj.mediaeval.feature.extractor.PhotoTitle;
 import org.openimaj.mediaeval.feature.extractor.TFIDF;
 import org.openimaj.util.function.Operation;
-import org.openimaj.util.function.Predicate;
 import org.openimaj.util.stream.Stream;
 
 import com.aetrion.flickr.photos.Photo;
@@ -47,8 +44,9 @@ public class SED2013TFIDFTrainer {
 	}
 
 	public static void main(String[] args) throws XMLStreamException, IOException {
-//		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
-		String bigFile = "/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml";
+		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
+		String expHome = "/Users/ss/Experiments/sed2013";
+//		String bigFile = "/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml";
 		logger .info(String.format("Loading dataset: %s ", bigFile));
 		File xmlFile = new File(bigFile);
 
@@ -56,8 +54,7 @@ public class SED2013TFIDFTrainer {
 		.map(new CursorWrapperPhoto())
 		;
 		List<TFIDF<Photo>> tfidfList ;
-//		String expHome = "/Users/ss/Experiments/sed2013";
-		String expHome = "/home/ss/Experiments/mediaeval/SED2013";
+//		String expHome = "/home/ss/Experiments/mediaeval/SED2013";
 		String tfidfSource = String.format("%s/%s",expHome,"training.sed2013.photo_tfidf");
 //		String tfidfSource = String.format("%s/%s",expHome,"test.photo_tfidf");
 		tfidfList = new ArrayList<TFIDF<Photo>>();

@@ -27,5 +27,7 @@
   </requestDispatcher>
   <requestHandler name="/update" class="solr.XmlUpdateRequestHandler"> </requestHandler>
   <requestHandler name="/admin/" class="solr.admin.AdminHandlers" />
+  <requestHandler name="/select" class="solr.SearchHandler" default="true">
+  </requestHandler>
 
 </config>

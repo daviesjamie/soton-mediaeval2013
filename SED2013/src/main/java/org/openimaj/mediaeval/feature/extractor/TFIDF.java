@@ -11,7 +11,6 @@ import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.feature.SparseDoubleFV;
 import org.openimaj.util.array.SparseDoubleArray;
-import org.openimaj.util.pair.IntDoublePair;
 
 /**
  * Given a {@link FeatureExtractor} which can extract {@link Map} of Bags of Words
@@ -162,6 +161,11 @@ public class TFIDF<T> implements FeatureExtractor<SparseDoubleFV, T>{
 	 */
 	public FeatureExtractor<Map<String, Integer>, T> getExtractor() {
 		return this.extractor;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("%s.%s",this.getClass().getSimpleName(),this.extractor.toString());
 	}
 
 }

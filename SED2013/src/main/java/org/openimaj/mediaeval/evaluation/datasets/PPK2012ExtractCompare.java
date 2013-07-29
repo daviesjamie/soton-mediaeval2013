@@ -9,6 +9,7 @@ import org.openimaj.data.dataset.Dataset;
 import org.openimaj.feature.CachingFeatureExtractor;
 import org.openimaj.feature.DiskCachingFeatureExtractor;
 import org.openimaj.feature.DoubleFV;
+import org.openimaj.feature.FVComparator;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.feature.FeatureVector;
 import org.openimaj.feature.SparseDoubleFV;
@@ -37,6 +38,19 @@ import com.aetrion.flickr.photos.Photo;
  *
  */
 public class PPK2012ExtractCompare {
+
+	private static final class NormCosineSim implements FVComparator<SparseDoubleFV> {
+		@Override
+		public double compare(SparseDoubleFV o1, SparseDoubleFV o2) {
+			double cosSim = SparseDoubleFVComparison.COSINE_SIM.compare(o1, o2);
+			return (cosSim + 1) / 2;
+		}
+
+		@Override
+		public boolean isDistance() {
+			return false;
+		}
+	}
 
 	private static <T extends FeatureVector> FeatureExtractor<T, Photo> memcache(FeatureExtractor<T, Photo> fe) {
 		FeatureExtractor<T,IdentifiablePhoto> toId = new WrappedFeatureExtractor<T,IdentifiablePhoto,Photo>(
@@ -122,19 +136,19 @@ public class PPK2012ExtractCompare {
 		comps.add(
 			new ExtractorComparator<Photo, SparseDoubleFV>(
 				memcache(new TFIDF<Photo>(ds,new PhotoTags(true))),
-				SparseDoubleFVComparison.COSINE_SIM
+				new NormCosineSim()
 			)
 		);
 		comps.add(
 			new ExtractorComparator<Photo, SparseDoubleFV>(
 				memcache(new TFIDF<Photo>(ds, new PhotoTitle())),
-				SparseDoubleFVComparison.COSINE_SIM
+				new NormCosineSim()
 			)
 		);
 		comps.add(
 			new ExtractorComparator<Photo, SparseDoubleFV>(
 				memcache(new TFIDF<Photo>(ds,new PhotoDescription())),
-				SparseDoubleFVComparison.COSINE_SIM
+				new NormCosineSim()
 			)
 		);
 
@@ -180,7 +194,7 @@ public class PPK2012ExtractCompare {
 		for (TFIDF<Photo> tfidf : tfidfList) {
 			comps.add(new ExtractorComparator<Photo, SparseDoubleFV>(
 					memcache(tfidf),
-					SparseDoubleFVComparison.COSINE_SIM
+					new NormCosineSim()
 				));
 		}
 
@@ -225,7 +239,7 @@ public class PPK2012ExtractCompare {
 		for (TFIDF<Photo> tfidf : tfidfList) {
 			comps.add(new ExtractorComparator<Photo, SparseDoubleFV>(
 				memfilecache(tfidf,filecache + "/tfidf." + tfidf.getExtractor().getClass().getSimpleName()),
-				SparseDoubleFVComparison.COSINE_SIM
+				new NormCosineSim()
 			));
 		}
 

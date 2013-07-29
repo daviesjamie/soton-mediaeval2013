@@ -49,4 +49,8 @@ public class PhotoTags extends BagOfWords<Photo>{
 		return ret;
 	}
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
 }
