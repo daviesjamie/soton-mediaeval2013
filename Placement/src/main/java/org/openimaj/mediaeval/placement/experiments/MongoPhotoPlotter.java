@@ -2,13 +2,12 @@ package org.openimaj.mediaeval.placement.experiments;
 
 import java.net.UnknownHostException;
 
-import org.openimaj.mediaeval.placement.data.Photo;
 import org.openimaj.mediaeval.placement.utils.MongoUtils;
 import org.openimaj.mediaeval.placement.vis.PhotoPlot;
-import org.openimaj.util.stream.Stream;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 
 public class MongoPhotoPlotter {
@@ -25,8 +24,8 @@ public class MongoPhotoPlotter {
             DBObject query = new BasicDBObject( "location", new BasicDBObject( "$geoWithin", poly ) );
             
             if( STREAM ) {
-                Stream<Photo> ps = MongoUtils.findPhotos( query, null, db.getCollection( MongoUtils.MONGO_LOCS_COLLECTION ) );
-                pp.addPhotos( ps );
+                DBCursor cursor = MongoUtils.find( query, null, db.getCollection( MongoUtils.MONGO_LOCS_COLLECTION) );
+                pp.addPhotos( cursor );
             } else {
                 pp.addPhotos( MongoUtils.find( query, null, db.getCollection( MongoUtils.MONGO_LOCS_COLLECTION ) ) );
             }
