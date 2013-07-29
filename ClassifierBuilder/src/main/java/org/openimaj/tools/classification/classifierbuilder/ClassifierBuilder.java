@@ -11,6 +11,7 @@ import java.util.Map;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.openimaj.data.dataset.GroupedDataset;
@@ -56,7 +57,7 @@ public class ClassifierBuilder {
 	 */
 	public static void main(String[] args) throws ParseException, IOException, BuildException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, NoSuchAlgorithmException {
 		Options options = new Options();
-		options.addOption("A", false, "LiblinearAnnotator configuration");
+		options.addOption("A", true, "LiblinearAnnotator configuration");
 		options.addOption("D", true, "dataset profile");
 		options.addOption("F", true, "FeatureExtractor object file");
 		options.addOption("f", true, "output file for FeatureExtractor cache");
@@ -118,6 +119,10 @@ public class ClassifierBuilder {
 			
 		} catch (UserInputException e) {
 			System.err.println(e.getMessage());
+			
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("ClassifierBuilder", options);
+			
 			return;
 		}
 

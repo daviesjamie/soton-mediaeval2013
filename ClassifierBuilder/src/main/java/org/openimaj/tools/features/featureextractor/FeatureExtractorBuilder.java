@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.openimaj.data.dataset.GroupedDataset;
@@ -81,6 +82,10 @@ public class FeatureExtractorBuilder {
 			
 		} catch (UserInputException e) {
 			System.err.println(e.getMessage());
+			
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("FeatureExtractorBuilder", options);
+			
 			return;
 		}
 
