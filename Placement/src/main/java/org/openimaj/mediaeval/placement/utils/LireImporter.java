@@ -21,7 +21,14 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.FSDirectory;
 
 
+/**
+ * Imports the task's precalculated image features into a Lucene index using
+ * LIRE.
+ * 
+ * @author Jamie Davies (jagd1g11@ecs.soton.ac.uk)
+ */
 public class LireImporter {
+    /** The LIRE classes that represent the features */
     private static final String[] FIELDS = new String[] {
         "net.semanticmetadata.lire.imageanalysis.AutoColorCorrelogram",     // 0
         "net.semanticmetadata.lire.imageanalysis.BasicFeatures",            // 1
@@ -38,6 +45,7 @@ public class LireImporter {
         "net.semanticmetadata.lire.imageanalysis.Tamura"                    // 12
         };
     
+    /** The name to use for each feature */
     private static final String[] FIELDNAMES = new String[] {
         "AutoColorCorrelogram",     // 0
         "BasicFeatures",            // 1
@@ -54,6 +62,10 @@ public class LireImporter {
         "Tamura"                    // 12
     };
     
+    /**
+     * Static prefixes to add to the start of each extracted feature string to
+     * fix the format for LIRE.
+     */
     private static final String[] PREFIXES = new String[] {
         "",                 // 0
         "",                 // 1
@@ -70,24 +82,44 @@ public class LireImporter {
         "tamura "           // 12
     };
     
+    /** List of features (by their index) to skip importing */
     private static final List<Integer> SKIP = Arrays.asList( 1, 6, 8, 9 );
+
+    /** The regular expression used to split the different fields in a line */
     private static final String SPLITTER =
             " (acc|bf|cedd|col|edgehistogram|fcth|ophist|gabor|jhist|jophist|scalablecolor|RGB|tamura) ";
     
+    /** The path to the Lucene index */
     private String indexPath;
+
+    /** The files to import from */
     private List<File> inputFiles;
     
+    /**
+     * Basic constructor.
+     * Sets the path to the Lucene index, and the files to import.
+     * 
+     * @param indexPath
+     *            The path to the Lucene index (should be a directory).
+     * @param inputFiles
+     *            A {@link List} of {@link File}s to import.
+     */
     public LireImporter( String indexPath, List<File> inputFiles ) {
         this.indexPath = indexPath;
         this.inputFiles = inputFiles;
     }
 
+    /**
+     * Starts the import process. Initialises an {@link IndexWriter} and
+     * sequentially adds the contents of each file to it.
+     */
     public void run() {
         try {
             IndexWriterConfig config = new IndexWriterConfig( LuceneUtils.LUCENE_VERSION, new WhitespaceAnalyzer( LuceneUtils.LUCENE_VERSION ) );
             config.setOpenMode( IndexWriterConfig.OpenMode.CREATE_OR_APPEND );
             config.setCodec( new LireCustomCodec() );
             IndexWriter indexWriter = new IndexWriter( FSDirectory.open( new File( indexPath ) ), config );
+
             Iterator<File> iterator = inputFiles.iterator();
             while( iterator.hasNext() ) {
                 File inputFile = iterator.next();
@@ -95,6 +127,7 @@ public class LireImporter {
                 readFile( indexWriter, inputFile );
                 System.out.println( "Indexing finished." );
             }
+
             indexWriter.commit();
             indexWriter.close();
         } catch( Exception e ) {
@@ -102,6 +135,20 @@ public class LireImporter {
         }
     }
 
+    /**
+     * Reads in each image's features contained in a file into a Lucene
+     * {@link Document}, and then adds that document to the supplied
+     * {@link IndexWriter}.
+     * 
+     * @param indexWriter
+     *            The index to add the image features to.
+     * @param inputFile
+     *            The file to extract the image features from.
+     * @throws IOException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws ClassNotFoundException
+     */
     private void readFile( IndexWriter indexWriter, File inputFile ) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
         BufferedReader br = new BufferedReader( new FileReader( inputFile ), 18000 );
         String line = null;
