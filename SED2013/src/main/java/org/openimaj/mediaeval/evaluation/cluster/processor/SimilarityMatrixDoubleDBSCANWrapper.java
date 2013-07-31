@@ -1,6 +1,7 @@
 package org.openimaj.mediaeval.evaluation.cluster.processor;
 
 import org.apache.log4j.Logger;
+import org.openimaj.experiment.evaluation.cluster.processor.ClustererWrapper;
 import org.openimaj.math.matrix.MatrixUtils;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;

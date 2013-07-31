@@ -19,6 +19,9 @@ import javax.xml.stream.XMLStreamException;
 import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
+import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighbours;
@@ -27,9 +30,6 @@ import org.openimaj.mediaeval.data.CursorDateFilter;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
 import org.openimaj.mediaeval.data.XMLCursorStream;
 import org.openimaj.mediaeval.data.XMLFlickrPhotoDataset;
-import org.openimaj.mediaeval.evaluation.cluster.ClusterEvaluator;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEClusterAnalyser;
 import org.openimaj.mediaeval.evaluation.cluster.processor.PrecachedSimilarityDoubleDBSCANWrapper;
 import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleDBSCANWrapper;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity;
@@ -171,7 +171,7 @@ public class SED2013ExpOne {
 			FeatureExtractor<DoubleFV, Photo> fve) {
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 900000000000l, 2, new DoubleNearestNeighboursExact.Factory()
+				900000000000l, 2, new DoubleNearestNeighboursExact.Factory()
 			);
 		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
 
@@ -241,7 +241,7 @@ public class SED2013ExpOne {
 		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 0.6, 2, new DoubleNearestNeighboursExact.Factory()
+				0.6, 2, new DoubleNearestNeighboursExact.Factory()
 			);
 //		logger.info("Starting Evaluation");
 //		MEAnalysis res = new SED2013ExpOne().eval(dataset, meanSim, new DoubleDBSCAN(conf));

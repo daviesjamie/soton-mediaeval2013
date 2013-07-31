@@ -9,12 +9,13 @@ import org.junit.Test;
 import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
+import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEClusterAnalyser;
 import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleDBSCANWrapper;
 import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
@@ -110,7 +111,7 @@ public class TestClusterEvaluator{
 	public void test(){
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 0.1, 2, new DoubleNearestNeighboursExact.Factory()
+					0.1, 2, new DoubleNearestNeighboursExact.Factory()
 			);
 		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
 

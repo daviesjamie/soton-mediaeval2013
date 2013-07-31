@@ -8,13 +8,13 @@ import java.io.InputStream;
 import java.util.Comparator;
 
 import org.apache.log4j.Logger;
+import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
 import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
 import org.openimaj.mediaeval.data.XMLCursorStream;
-import org.openimaj.mediaeval.evaluation.cluster.ClusterEvaluator;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEClusterAnalyser;
 import org.openimaj.mediaeval.evaluation.cluster.processor.SimilarityMatrixDoubleDBSCANWrapper;
 import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
 import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
@@ -42,7 +42,7 @@ public class SED2013SimilarityMatrixExperiment {
 
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 0.6, 2, new DoubleNearestNeighboursExact.Factory()
+				0.6, 2, new DoubleNearestNeighboursExact.Factory()
 			);
 		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
 		Training ds = loadGroundtruth();

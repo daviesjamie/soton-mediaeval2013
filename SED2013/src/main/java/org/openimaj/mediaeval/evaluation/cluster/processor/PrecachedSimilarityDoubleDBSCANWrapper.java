@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 import org.openimaj.data.dataset.Dataset;
+import org.openimaj.experiment.evaluation.cluster.processor.ClustererWrapper;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparison;
 import org.openimaj.feature.FeatureExtractor;

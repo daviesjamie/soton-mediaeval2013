@@ -8,13 +8,13 @@ import javax.xml.stream.XMLStreamException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
 import org.openimaj.mediaeval.data.XMLCursorStream;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
 import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarityAggregator;
@@ -69,7 +69,7 @@ public class TestSED2013ExpOne {
 		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 2, 2, new DoubleNearestNeighboursExact.Factory()
+				2, 2, new DoubleNearestNeighboursExact.Factory()
 			);
 		MEAnalysis res = expOne.eval(ds, meanSim, new DoubleDBSCAN(conf));
 		System.out.println(res.getSummaryReport());
@@ -80,7 +80,7 @@ public class TestSED2013ExpOne {
 		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
 		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
 			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 2, 2, new DoubleNearestNeighboursExact.Factory()
+				2, 2, new DoubleNearestNeighboursExact.Factory()
 			);
 		MEAnalysis res = expOne.eval(dsStream, meanSim, new DoubleDBSCAN(conf));
 		System.out.println(res.getSummaryReport());
