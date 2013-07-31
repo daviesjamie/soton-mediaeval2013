@@ -65,7 +65,7 @@ public class LuceneIndexBuilder {
 
 	public static void main(String[] args) throws IOException {
 		final String latlngPath = "/Volumes/SSD/mediaeval13/training_latlng";
-		final String csvPath = "/Volumes/SSD/mediaeval13/all.csv";
+		final String csvPath = "/Volumes/SSD/mediaeval13/placing/all.csv";
 		final String indexPath = "/Users/jon/lucene-test-index";
 
 		buildIndex(latlngPath, csvPath, indexPath);

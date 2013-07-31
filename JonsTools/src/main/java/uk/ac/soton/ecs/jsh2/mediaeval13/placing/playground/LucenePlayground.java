@@ -30,7 +30,7 @@ public class LucenePlayground {
 		final Directory directory = new SimpleFSDirectory(new File("/Volumes/SSD/mediaeval13/placing/places.lucene"));
 
 		final Query q = new QueryParser(Version.LUCENE_43, "tags", new StandardAnalyzer(Version.LUCENE_43))
-				.parse("+southampton +snow");
+				.parse("+snow");
 
 		// 3. search
 		final int hitsPerPage = 100000;

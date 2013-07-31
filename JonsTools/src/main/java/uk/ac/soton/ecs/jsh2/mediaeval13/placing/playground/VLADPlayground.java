@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -13,7 +15,10 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
+import org.openimaj.image.DisplayUtilities;
+import org.openimaj.image.FImage;
 import org.openimaj.image.ImageUtilities;
+import org.openimaj.image.MBFImage;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.LuceneIndexBuilder;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.VLADSearcher;
@@ -27,9 +32,9 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.VLADSearcher;
 public class VLADPlayground {
 	public static void main(String[] args) throws IOException {
 		final String vladIndex =
-				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/sift1x-vlad64n-pca128-pq16-adcnn.idx";
+				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx";
 		final String featureIndex =
-				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/sift1x-vlad64n-pca128.dat";
+				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat";
 		final String luceneIndex =
 				"/Volumes/SSD/mediaeval13/placing/places.lucene";
 
@@ -39,7 +44,7 @@ public class VLADPlayground {
 		final VLADSearcher vladSearcher = new VLADSearcher(featureIndex,
 				vladIndex, luceneSearcher);
 
-		final int numResults = 10;
+		final int numResults = 100;
 
 		System.out.println("Ready for query: ");
 		String line;
@@ -63,12 +68,24 @@ public class VLADPlayground {
 				}
 			}
 
+			final List<MBFImage> images = new ArrayList<MBFImage>();
+			final FImage img = new FImage(360, 180);
 			for (int i = 0; i < results.length; i++) {
 				final ScoreDoc r = results[i];
 				final Document d = luceneSearcher.doc(r.doc);
+				final String url = d.get(LuceneIndexBuilder.FIELD_URL);
 
-				System.out.println(d.get(LuceneIndexBuilder.FIELD_URL) + "\t" + r.score);
+				final String[] llstr = d.get("location").split(" ");
+				final float x = Float.parseFloat(llstr[0]) + 180;
+				final float y = 90 - Float.parseFloat(llstr[1]);
+				img.pixels[(int) (y % img.height)][(int) (x % img.width)]++;
+
+				System.out.println(url + "\t" + r.score);
+				images.add(ImageUtilities.readMBF(new URL(url)));
 			}
+			DisplayUtilities.display("result", images);
+			DisplayUtilities.display(img.normalise(), "map");
+
 			System.out.println();
 			System.out.println("Ready for query: ");
 		}
