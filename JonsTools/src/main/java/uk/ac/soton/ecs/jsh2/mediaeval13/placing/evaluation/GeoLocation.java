@@ -1,10 +1,28 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation;
 
+/**
+ * A geolocation consisting of a latitude and longitude
+ * 
+ * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
+ * 
+ */
 public class GeoLocation {
 	public static final double EARTH_RADIUS_KM = 6372.8; // In kilometers
 
+	/**
+	 * The latitude
+	 */
 	public double latitude;
+
+	/**
+	 * The longitude
+	 */
 	public double longitude;
+
+	public GeoLocation(double lat, double lng) {
+		this.latitude = lat;
+		this.longitude = lng;
+	}
 
 	/**
 	 * Compute the haversine distance between two points on the Earth's surface
