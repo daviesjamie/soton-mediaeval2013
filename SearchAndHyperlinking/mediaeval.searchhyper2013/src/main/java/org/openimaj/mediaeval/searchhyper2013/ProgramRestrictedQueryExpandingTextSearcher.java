@@ -55,6 +55,13 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Constraint;
 import com.google.common.collect.Constraints;
 
+/**
+ * Works like a ProgramREstrictedTextSearcher but also has a query expansion 
+ * step within each program.
+ * 
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
 public class ProgramRestrictedQueryExpandingTextSearcher implements Searcher {
 	private int MAX_SYNOPSIS_RESULTS = 3;
 	private float TITLE_WEIGHT_THRESHOLD = 2;
