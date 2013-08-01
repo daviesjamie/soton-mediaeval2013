@@ -11,14 +11,10 @@ import org.apache.log4j.Logger;
 import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
 import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
-import org.openimaj.knn.DoubleNearestNeighbours;
-import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
 import org.openimaj.mediaeval.data.XMLCursorStream;
-import org.openimaj.mediaeval.evaluation.cluster.processor.SimilarityMatrixDoubleDBSCANWrapper;
 import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
-import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
+import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
 import org.openimaj.util.stream.Stream;
 
 import scala.actors.threadpool.Arrays;
@@ -40,18 +36,15 @@ public class SED2013SimilarityMatrixExperiment {
 	public static void main(String[] args) throws Exception {
 		String matrixLocation = "/Volumes/data/mediaeval/mediaeval-SED2013/tools/simmat/train.all.sparse";
 
-		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
-			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				0.6, 2, new DoubleNearestNeighboursExact.Factory()
-			);
-		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
+		SimilarityDBSCAN dbsConf = new SimilarityDBSCAN(0.6, 2);
 		Training ds = loadGroundtruth();
-		SparseMatrix simMatrix = loadSparseMatrixByRows(matrixLocation,ds.numInstances(),conf);
-		ClusterEvaluator<Photo, MEAnalysis> eval =
-			new ClusterEvaluator<Photo, MEAnalysis>(
-				new SimilarityMatrixDoubleDBSCANWrapper(simMatrix,dbsConf),
-				new MEClusterAnalyser(),
-				ds
+		SparseMatrix simMatrix = loadSparseMatrixByRows(matrixLocation,ds.numInstances());
+		ClusterEvaluator<SparseMatrix, MEAnalysis> eval =
+			new ClusterEvaluator<SparseMatrix, MEAnalysis>(
+				dbsConf,
+				simMatrix,
+				ds,
+				new MEClusterAnalyser()
 			);
 		int[][] evaluate = eval.evaluate();
 		MEAnalysis res = eval.analyse(evaluate);
@@ -59,7 +52,7 @@ public class SED2013SimilarityMatrixExperiment {
 		System.out.println(res.getSummaryReport());
 	}
 
-	private static SparseMatrix loadSparseMatrixByRows(String matrixLocation, int numInstances, DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf) throws IOException {
+	private static SparseMatrix loadSparseMatrixByRows(String matrixLocation, int numInstances) throws IOException {
 		SparseMatrix ret = new SparseMatrix(numInstances, numInstances);
 		logger.debug("Listing mat files in: " + matrixLocation);
 		File[] rowFiles = new File(matrixLocation).listFiles(new java.io.FileFilter() {

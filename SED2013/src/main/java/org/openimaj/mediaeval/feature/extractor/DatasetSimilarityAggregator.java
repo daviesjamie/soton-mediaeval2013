@@ -1,11 +1,12 @@
 package org.openimaj.mediaeval.feature.extractor;
 
-import gov.sandia.cognition.math.matrix.VectorEntry;
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
-import gov.sandia.cognition.math.matrix.mtj.SparseVector;
 
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
+
+import ch.akuhn.matrix.SparseMatrix;
+import ch.akuhn.matrix.Vector;
+import ch.akuhn.matrix.Vector.Entry;
 
 /**
  * A similarity aggregator uses an underlying {@link FeatureExtractor} which
@@ -34,9 +35,9 @@ public abstract class DatasetSimilarityAggregator<T> implements FeatureExtractor
 	 * @return aggregates the whole matrix by calling {@link #aggregate(SparseVector)} on each row
 	 */
 	public DoubleFV aggregate(SparseMatrix extractFeature) {
-		DoubleFV fv = new DoubleFV(extractFeature.getNumRows());
+		DoubleFV fv = new DoubleFV(extractFeature.rowCount());
 		for (int i = 0; i < fv.values.length; i++) {
-			fv.values[i] = aggregate(extractFeature.getRow(i));
+			fv.values[i] = aggregate(extractFeature.row(i));
 		}
 		return fv;
 	}
@@ -45,7 +46,7 @@ public abstract class DatasetSimilarityAggregator<T> implements FeatureExtractor
 	 * @param row
 	 * @return aggregates a row of similarity (i.e. the similarity to a specific document )
 	 */
-	public abstract double aggregate(SparseVector row) ;
+	public abstract double aggregate(Vector row) ;
 
 	/**
 	 * Produces the mean similarity, ignoring {@link Double#NaN} entries
@@ -63,11 +64,11 @@ public abstract class DatasetSimilarityAggregator<T> implements FeatureExtractor
 		}
 
 		@Override
-		public double aggregate(SparseVector row) {
+		public double aggregate(Vector row) {
 			double total = 0;
 			int seen = 0;
-			for (VectorEntry vectorEntry : row) {
-				double v = vectorEntry.getValue();
+			for (Entry vectorEntry : row.entries()) {
+				double v = vectorEntry.value;
 				if(!Double.isNaN(v)){
 					total += v;
 					seen ++;
