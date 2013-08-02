@@ -250,7 +250,7 @@ public class SED2013Index {
 //		logger.debug("qf: " + join(" ",rqfArray));
 //		logger.debug("sort: " + sort);
 //		logger.debug("SOLR Query URL:"  + q);
-		try{			
+		try{
 			return getSolrIndex().query(q);
 		} catch(SolrServerException e){
 			throw e;
@@ -275,7 +275,7 @@ public class SED2013Index {
 		}
 
 		public static IndexedPhoto fromDoc(SolrDocument doc){
-			long photoIndex = (long)(Long) doc.get("index");
+			long photoIndex = (Long) doc.get("index");
 			Photo p = PhotoUtils.createPhoto(doc);
 			return new IndexedPhoto(photoIndex, p);
 		}

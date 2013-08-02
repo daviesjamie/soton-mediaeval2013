@@ -52,6 +52,27 @@ import com.aetrion.flickr.photos.Photo;
  */
 public class SED2013ExpOne {
 	final static Logger logger = Logger.getLogger(SED2013ExpOne.class);
+
+
+	/**
+	 * @param csv the csv file
+	 * @return mapping from photo to cluster
+	 * @throws IOException
+	 * @throws NumberFormatException
+	 */
+	public static Map<String,Integer> photoClusters(File csv) throws NumberFormatException, IOException{
+		Map<String, Integer> ret = new HashMap<String, Integer>();
+		CSVParser parser = new CSVParser(new FileInputStream(csv), '\t');
+		String[] line;
+		logger.debug("Loading cluster CSV");
+		while((line = parser.getLine()) != null){
+			if(line[0].equals("cluster")) continue;
+			Integer clusterID = Integer.parseInt(line[0]);
+			String photoID = line[1];
+			ret.put(photoID, clusterID);
+		}
+		return ret;
+	}
 	/**
 	 * @author Sina Samangooei (ss@ecs.soton.ac.uk)
 	 *
@@ -206,6 +227,7 @@ public class SED2013ExpOne {
 	 */
 	public MEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleDBSCAN dbsConf)
 	{
+
 		ClusterEvaluator<Photo, MEAnalysis> eval =
 			new ClusterEvaluator<Photo, MEAnalysis>(
 				new PrecachedSimilarityDoubleDBSCANWrapper<Photo>(ds,fve,dbsConf),

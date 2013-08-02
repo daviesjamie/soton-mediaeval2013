@@ -3,6 +3,7 @@ package org.openimaj.mediaeval.evaluation.solr;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -17,6 +18,7 @@ import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.TrieDateField;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
 import org.openimaj.mediaeval.data.XMLCursorStream;
+import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne;
 import org.openimaj.util.function.Operation;
 import org.openimaj.util.function.Predicate;
 import org.openimaj.util.stream.Stream;
@@ -44,8 +46,8 @@ public class SED2013SolrIndexCreator {
 		public void addFieldToDoc(Photo p, SolrInputDocument doc);
 	}
 
-	private static final ArrayList<PhotoDocumentAppender> columns;
-	static {
+	private ArrayList<PhotoDocumentAppender> columns;
+	private void prepareAppenders(){
 		columns = new ArrayList<PhotoDocumentAppender>();
 		columns.add(new PhotoDocumentAppender() {
 			@Override
@@ -110,6 +112,14 @@ public class SED2013SolrIndexCreator {
 				doc.addField("index",count++);
 			}
 		});
+		if(this.csv!=null){
+			columns.add(new PhotoDocumentAppender() {
+				@Override
+				public void addFieldToDoc(Photo p, SolrInputDocument doc) {
+					doc.addField("cluster",csv.get(p.getId()));
+				}
+			});
+		}
 	}
 
 	/** Solr index */
@@ -119,15 +129,23 @@ public class SED2013SolrIndexCreator {
 
 	private Stream<Photo> photoStream;
 
+	private Map<String, Integer> csv;
+
 	/**
 	 * Basic constructor. Instantiate our reader and Solr.
 	 *
 	 * @param sourceFile
 	 *            The input file to read
+	 * @param csv
 	 * @throws Exception
 	 *             if any errors occur
 	 */
-	public SED2013SolrIndexCreator(File sourceFile) throws Exception {
+	public SED2013SolrIndexCreator(File sourceFile, File csv) throws Exception {
+
+		// Load the CSV groundtruth clusters if it exists
+		if(csv != null){
+			this.csv = SED2013ExpOne.photoClusters(csv);
+		}
 		this.photoStream = new XMLCursorStream(sourceFile,"photo")
 		.map(new CursorWrapperPhoto());
 
@@ -152,6 +170,11 @@ public class SED2013SolrIndexCreator {
 					);
 		}
 		solrServer = startSolr(solrHome);
+		prepareAppenders();
+	}
+
+	private SED2013SolrIndexCreator() {
+		prepareAppenders();
 	}
 
 	/**
@@ -262,9 +285,9 @@ public class SED2013SolrIndexCreator {
 	 * @return SolrInputDocument: The prepared document
 	 */
 	public static SolrInputDocument createSolrDoc(Photo p) {
-
+		SED2013SolrIndexCreator ret = new SED2013SolrIndexCreator();
 		SolrInputDocument doc = new SolrInputDocument();
-		for (PhotoDocumentAppender key : columns) {
+		for (PhotoDocumentAppender key : ret.columns) {
 			key.addFieldToDoc(p, doc);
 		}
 		return doc;
@@ -290,7 +313,7 @@ public class SED2013SolrIndexCreator {
 	public static void main(String[] args) throws IOException {
 		// Make we were given an appropriate parameter
 		if (args.length < 1) {
-			log.error("ERROR: Usage requires input file!");
+			log.error("ERROR: Usage requires xml file!");
 			return;
 		}
 
@@ -300,11 +323,19 @@ public class SED2013SolrIndexCreator {
 			log.error("ERROR: The input file does not exist!");
 			return;
 		}
+		File csv = null;
+		if(args.length > 1){
+			csv = new File(args[1]);
+			if(csv == null || !csv.exists()){
+				log.error("ERROR: CSV ground truth provided does not exist!");
+				return;
+			}
+		}
 
 		// Get ready to harvest
 		SED2013SolrIndexCreator harvester = null;
 		try {
-			harvester = new SED2013SolrIndexCreator(file);
+			harvester = new SED2013SolrIndexCreator(file,csv);
 		} catch (Exception ex) {
 			// A reason for death was logged in the constructor
 			log.error("Stack trace: ", ex);
