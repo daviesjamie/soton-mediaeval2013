@@ -92,6 +92,16 @@
 		  <artifactId>org.restlet</artifactId>
 		  <version>2.1.2</version>
 		</dependency>
+		<dependency>
+		  <groupId>org.imageterrier</groupId>
+		  <artifactId>ImageTerrier</artifactId>
+		  <version>3.5-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.imageterrier</groupId>
+		  <artifactId>ImageTerrierTools</artifactId>
+		  <version>3.5-SNAPSHOT</version>
+		</dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
