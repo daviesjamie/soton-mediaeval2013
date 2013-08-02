@@ -2,27 +2,26 @@ package org.openimaj.mediaeval.evaluation.cluster.processor;
 
 
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.openimaj.data.dataset.Dataset;
-import org.openimaj.experiment.evaluation.cluster.processor.ClustererWrapper;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparison;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.math.matrix.MatrixUtils;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
+import org.openimaj.ml.clustering.dbscan.DistanceDBSCAN;
+import org.openimaj.util.function.Function;
 
 import ch.akuhn.matrix.SparseMatrix;
 
 /**
- * Wraps the functionality of a {@link DoubleDBSCAN} called with a sparse similarity matrix
+ * Wraps the functionality of a {@link DistanceDBSCAN} called with a sparse similarity matrix
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
  * @param <T>
  */
-public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper {
-	Logger logger = Logger.getLogger(PrecachedSimilarityDoubleDBSCANWrapper.class);
+public class PrecachedSimilarityDoubleExtractor<T> implements Function<List<T>,SparseMatrix> {
+	Logger logger = Logger.getLogger(PrecachedSimilarityDoubleExtractor.class);
 
 	private final class ExtractedIterator implements Iterator<double[]> {
 		private final Iterator<T> dataIter;
@@ -49,23 +48,19 @@ public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapp
 		}
 	}
 	private FeatureExtractor<DoubleFV, T> extractor;
-	private DoubleDBSCAN dbscan;
-	private Dataset<T> data;
+	private double eps;
 	/**
-	 * @param data the data to be clustered
 	 * @param extractor
-	 * @param dbscan
+	 * @param eps 
 	 *
 	 */
-	public PrecachedSimilarityDoubleDBSCANWrapper(Dataset<T> data, FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
-	) {
-		this.data = data;
+	public PrecachedSimilarityDoubleExtractor(FeatureExtractor<DoubleFV, T> extractor, double eps) {
 		this.extractor = extractor;
-		this.dbscan = dbscan;
+		this.eps = eps;
 	}
 	@Override
-	public int[][] cluster() {
-		int numInstances = data.numInstances();
+	public SparseMatrix apply(List<T> data) {
+		int numInstances = data.size();
 		SparseMatrix mat = new SparseMatrix(numInstances,numInstances);
 		double[][] feats = new double[numInstances][];
 		int index = 0;
@@ -76,7 +71,7 @@ public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapp
 		for (int i = 0; i < feats.length; i++) {
 			for (int j = i; j < feats.length; j++) {
 				double d = DoubleFVComparison.SUM_SQUARE.compare(feats[i], feats[j]);
-				if(d > this.dbscan.getConfig().getEps())
+				if(d > eps)
 					continue;
 				if(d==0 && i!=j)
 					d=Double.MIN_VALUE;
@@ -85,8 +80,7 @@ public class PrecachedSimilarityDoubleDBSCANWrapper<T> implements ClustererWrapp
 			}
 		}
 		logger.info(String.format("Similarity matrix sparcity: %2.5f",MatrixUtils.sparcity(mat)));
-		DoubleDBSCANClusters res = dbscan.cluster(mat,true);
-		return res.getClusterMembers();
+		return mat;
 	}
 
 }

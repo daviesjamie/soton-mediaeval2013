@@ -16,9 +16,8 @@ import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
-import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleDBSCANWrapper;
-import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
+import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleExtractor;
+import org.openimaj.ml.clustering.dbscan.DoubleNNDBSCAN;
 
 /**
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
@@ -109,17 +108,14 @@ public class TestClusterEvaluator{
 	 */
 	@Test
 	public void test(){
-		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
-			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-					0.1, 2, new DoubleNearestNeighboursExact.Factory()
-			);
-		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
+		DoubleNNDBSCAN dbsConf = new DoubleNNDBSCAN(0.1, 2, new DoubleNearestNeighboursExact.Factory());
 
-		ClusterEvaluator<TestShape, MEAnalysis> eval =
-			new ClusterEvaluator<TestClusterEvaluator.TestShape, MEAnalysis>(
-				new SpatialDoubleDBSCANWrapper<TestShape>(correct,new TestShapeFV(),dbsConf),
+		ClusterEvaluator<double[][], MEAnalysis> eval =
+			new ClusterEvaluator<double[][], MEAnalysis>(
+				dbsConf,
 				new MEClusterAnalyser(),
-				correct
+				correct,
+				new SpatialDoubleExtractor<TestShape>(new TestShapeFV())
 			);
 		MEAnalysis res = eval.analyse(eval.evaluate());
 		assertTrue(Math.abs(res.purity - 0.71) < 0.01);
