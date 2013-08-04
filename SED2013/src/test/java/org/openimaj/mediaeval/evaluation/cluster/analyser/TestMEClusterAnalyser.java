@@ -40,6 +40,46 @@ public class TestMEClusterAnalyser {
 		};
 	}
 	
+	@Test
+	public void testsimple() throws Exception {
+		int[][] c = new int[][]{
+				new int[]{0,1},
+				new int[]{2,3},
+				new int[]{4,5}
+		};
+		int[][] e = new int[][]{
+				new int[]{0},
+				new int[]{1},
+				new int[]{2},
+				new int[]{3},
+				new int[]{4},
+				new int[]{5},
+//				new int[]{},
+//				new int[]{2},
+		};
+		MEClusterAnalyser ann = new MEClusterAnalyser();
+		MEAnalysis res = ann.analyse(c,e);
+		logger .debug(res.getSummaryReport());
+	}
+	
+	@Test
+	public void testAdjRandInd() throws Exception {
+		int[][] c = new int[][]{
+			new int[]{0,1},
+			new int[]{2,3,4,5},
+			new int[]{6,7,8,9}
+		};
+		int[][] e = new int[][]{
+			new int[]{0,2},
+			new int[]{1,3,4},
+			new int[]{5,6,7,8,9}
+		};
+		
+		MEClusterAnalyser ann = new MEClusterAnalyser();
+		MEAnalysis res = ann.analyse(c,e);
+		logger .debug(res.getSummaryReport());
+	}
+	
 	/**
 	 * 
 	 */
@@ -50,6 +90,7 @@ public class TestMEClusterAnalyser {
 		logger .debug(res.getSummaryReport());
 		assertTrue(Math.abs(res.purity - 0.71) < 0.01);
 		assertTrue(Math.abs(res.nmi - 0.36) < 0.01);
+		assertTrue(Math.abs(res.randIndex() - 0.68) < 0.01);
 	}
 	
 	

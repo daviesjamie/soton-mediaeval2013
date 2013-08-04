@@ -20,12 +20,10 @@ import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
-import org.openimaj.experiment.evaluation.cluster.analyser.ClusterAnalyser;
 import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
-import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.mediaeval.data.CursorDateFilter;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
@@ -210,9 +208,9 @@ public class SED2013ExpOne {
 		ClusterEvaluator<double[][], MEAnalysis> eval =
 			new ClusterEvaluator<double[][], MEAnalysis>(
 				dbs,
-				new MEClusterAnalyser(),
 				ds,
-				func 
+				func,
+				new MEClusterAnalyser() 
 			);
 		int[][] evaluate = eval.evaluate();
 		logger.debug("Expected Classes: " + ds.size());
@@ -228,20 +226,13 @@ public class SED2013ExpOne {
 	 */
 	public MEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DistanceDBSCAN dbs)
 	{
-<<<<<<< HEAD
-
-		ClusterEvaluator<Photo, MEAnalysis> eval =
-			new ClusterEvaluator<Photo, MEAnalysis>(
-				new PrecachedSimilarityDoubleDBSCANWrapper<Photo>(ds,fve,dbsConf),
-=======
 		Function<List<Photo>,SparseMatrix> func = new PrecachedSimilarityDoubleExtractor<Photo>(fve,dbs.getEps());
 		ClusterEvaluator<SparseMatrix, MEAnalysis> eval =
 			new ClusterEvaluator<SparseMatrix, MEAnalysis>(
 				dbs,
->>>>>>> b3b6440d523dbe3b2e5fa5259629cfb873ac22d4
-				new MEClusterAnalyser(),
 				ds,
-				func 
+				func,
+				new MEClusterAnalyser() 
 			);
 		int[][] evaluate = eval.evaluate();
 		logger.debug("Expected Classes: " + ds.size());

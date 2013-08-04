@@ -113,9 +113,9 @@ public class TestClusterEvaluator{
 		ClusterEvaluator<double[][], MEAnalysis> eval =
 			new ClusterEvaluator<double[][], MEAnalysis>(
 				dbsConf,
-				new MEClusterAnalyser(),
 				correct,
-				new SpatialDoubleExtractor<TestShape>(new TestShapeFV())
+				new SpatialDoubleExtractor<TestShape>(new TestShapeFV()),
+				new MEClusterAnalyser()
 			);
 		MEAnalysis res = eval.analyse(eval.evaluate());
 		assertTrue(Math.abs(res.purity - 0.71) < 0.01);
