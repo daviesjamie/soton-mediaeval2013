@@ -4,8 +4,10 @@ import static org.junit.Assert.*;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.AdjustedRandomIndexAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.AdjustedRandomIndexClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
 
 import twitter4j.internal.logging.Logger;
 
@@ -57,8 +59,8 @@ public class TestMEClusterAnalyser {
 //				new int[]{},
 //				new int[]{2},
 		};
-		MEClusterAnalyser ann = new MEClusterAnalyser();
-		MEAnalysis res = ann.analyse(c,e);
+		FullMEClusterAnalyser ann = new FullMEClusterAnalyser();
+		FullMEAnalysis res = ann.analyse(c,e);
 		logger .debug(res.getSummaryReport());
 	}
 	
@@ -75,9 +77,10 @@ public class TestMEClusterAnalyser {
 			new int[]{5,6,7,8,9}
 		};
 		
-		MEClusterAnalyser ann = new MEClusterAnalyser();
-		MEAnalysis res = ann.analyse(c,e);
+		AdjustedRandomIndexClusterAnalyser ann = new AdjustedRandomIndexClusterAnalyser();
+		AdjustedRandomIndexAnalysis res = ann.analyse(c,e);
 		logger .debug(res.getSummaryReport());
+		assertTrue(Math.abs(res.adjRandInd - 0.313)<0.001);
 	}
 	
 	/**
@@ -85,12 +88,12 @@ public class TestMEClusterAnalyser {
 	 */
 	@Test
 	public void test(){
-		MEClusterAnalyser ann = new MEClusterAnalyser();
-		MEAnalysis res = ann.analyse(correct, estimate);
+		FullMEClusterAnalyser ann = new FullMEClusterAnalyser();
+		FullMEAnalysis res = ann.analyse(correct, estimate);
 		logger .debug(res.getSummaryReport());
-		assertTrue(Math.abs(res.purity - 0.71) < 0.01);
-		assertTrue(Math.abs(res.nmi - 0.36) < 0.01);
-		assertTrue(Math.abs(res.randIndex() - 0.68) < 0.01);
+		assertTrue(Math.abs(res.purity.purity - 0.71) < 0.01);
+		assertTrue(Math.abs(res.nmi.nmi - 0.36) < 0.01);
+		assertTrue(Math.abs(res.decision.randIndex() - 0.68) < 0.01);
 	}
 	
 	

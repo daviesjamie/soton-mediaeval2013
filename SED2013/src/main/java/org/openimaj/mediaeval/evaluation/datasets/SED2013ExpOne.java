@@ -20,8 +20,8 @@ import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
@@ -179,16 +179,16 @@ public class SED2013ExpOne {
 	 * @param ds
 	 * @return the analysis
 	 */
-	public MEAnalysis evalPhotoTime(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds) {
+	public FullMEAnalysis evalPhotoTime(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds) {
 		return eval(ds,new PhotoTime());
 	}
 
 	/**
 	 * @param ds the dataset to be clustered
 	 * @param fve the feature extractor
-	 * @return the {@link MEAnalysis}
+	 * @return the {@link FullMEAnalysis}
 	 */
-	public MEAnalysis eval(
+	public FullMEAnalysis eval(
 			MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds,
 			FeatureExtractor<DoubleFV, Photo> fve) {
 		DoubleNNDBSCAN dbsConf = new DoubleNNDBSCAN(900000000000l, 2, new DoubleNearestNeighboursExact.Factory());
@@ -200,44 +200,44 @@ public class SED2013ExpOne {
 	 * @param ds the dataset to be clustered
 	 * @param fve the feature extractor
 	 * @param dbs 
-	 * @return a {@link MEAnalysis} of this experiment
+	 * @return a {@link FullMEAnalysis} of this experiment
 	 */
-	public MEAnalysis eval(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleNNDBSCAN dbs)
+	public FullMEAnalysis eval(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleNNDBSCAN dbs)
 	{
 		Function<List<Photo>, double[][]> func = new SpatialDoubleExtractor<Photo>(fve);
-		ClusterEvaluator<double[][], MEAnalysis> eval =
-			new ClusterEvaluator<double[][], MEAnalysis>(
+		ClusterEvaluator<double[][], FullMEAnalysis> eval =
+			new ClusterEvaluator<double[][], FullMEAnalysis>(
 				dbs,
 				ds,
 				func,
-				new MEClusterAnalyser() 
+				new FullMEClusterAnalyser() 
 			);
 		int[][] evaluate = eval.evaluate();
 		logger.debug("Expected Classes: " + ds.size());
 		logger.debug("Detected Classes: " + evaluate.length);
-		MEAnalysis res = eval.analyse(evaluate);
+		FullMEAnalysis res = eval.analyse(evaluate);
 		return res;
 	}
 	/**
 	 * @param ds the dataset to be clustered
 	 * @param fve the feature extractor
 	 * @param dbs
-	 * @return a {@link MEAnalysis} of this experiment
+	 * @return a {@link FullMEAnalysis} of this experiment
 	 */
-	public MEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DistanceDBSCAN dbs)
+	public FullMEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DistanceDBSCAN dbs)
 	{
 		Function<List<Photo>,SparseMatrix> func = new PrecachedSimilarityDoubleExtractor<Photo>(fve,dbs.getEps());
-		ClusterEvaluator<SparseMatrix, MEAnalysis> eval =
-			new ClusterEvaluator<SparseMatrix, MEAnalysis>(
+		ClusterEvaluator<SparseMatrix, FullMEAnalysis> eval =
+			new ClusterEvaluator<SparseMatrix, FullMEAnalysis>(
 				dbs,
 				ds,
 				func,
-				new MEClusterAnalyser() 
+				new FullMEClusterAnalyser() 
 			);
 		int[][] evaluate = eval.evaluate();
 		logger.debug("Expected Classes: " + ds.size());
 		logger.debug("Detected Classes: " + evaluate.length);
-		MEAnalysis res = eval.analyse(evaluate);
+		FullMEAnalysis res = eval.analyse(evaluate);
 		return res;
 	}
 
@@ -267,7 +267,7 @@ public class SED2013ExpOne {
 //		logger.info("Finished!");
 		logger.info("Starting Similarity Evaluation");
 		DistanceDBSCAN dbscan = new DistanceDBSCAN(0.6, 2);
-		MEAnalysis res = new SED2013ExpOne().evalSim(dataset, meanSim, dbscan);
+		FullMEAnalysis res = new SED2013ExpOne().evalSim(dataset, meanSim, dbscan);
 		System.out.println(res.getSummaryReport());
 		logger.info("Finished!");
 	}

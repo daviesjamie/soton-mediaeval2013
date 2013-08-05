@@ -26,8 +26,10 @@ import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.SimpleMEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.SimpleMEClusterAnalyser;
 import org.openimaj.experiment.evaluation.cluster.processor.Clusterer;
 import org.openimaj.io.IOUtils;
 import org.openimaj.math.matrix.MatlibMatrixUtils;
@@ -75,15 +77,16 @@ public class SolrSimilarityMatrixExperiment {
 			}
 		};
 		logger.debug("Preparing evaluation");
-		ClusterEvaluator<SparseMatrix, MEAnalysis> a = new ClusterEvaluator<SparseMatrix, MEAnalysis>(
+		ClusterEvaluator<SparseMatrix, SimpleMEAnalysis> a = new ClusterEvaluator<SparseMatrix, SimpleMEAnalysis>(
 			gen,
 			sub,
 			func,
 			ds,
-			new MEClusterAnalyser()
+			new SimpleMEClusterAnalyser()
 		);
 		logger.debug("Evaluating clusterer");
-		MEAnalysis analysis = a.analyse(a.evaluate());
+		SimpleMEAnalysis analysis = a.analyse(a.evaluate());
+		logger.debug("Done! Printing.");
 		System.out.println(analysis.getSummaryReport());
 	}
 

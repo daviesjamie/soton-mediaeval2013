@@ -10,11 +10,10 @@ import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
-import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleExtractor;
 import org.openimaj.ml.clustering.dbscan.DoubleNNDBSCAN;
@@ -110,20 +109,20 @@ public class TestClusterEvaluator{
 	public void test(){
 		DoubleNNDBSCAN dbsConf = new DoubleNNDBSCAN(0.1, 2, new DoubleNearestNeighboursExact.Factory());
 
-		ClusterEvaluator<double[][], MEAnalysis> eval =
-			new ClusterEvaluator<double[][], MEAnalysis>(
+		ClusterEvaluator<double[][], FullMEAnalysis> eval =
+			new ClusterEvaluator<double[][], FullMEAnalysis>(
 				dbsConf,
 				correct,
 				new SpatialDoubleExtractor<TestShape>(new TestShapeFV()),
-				new MEClusterAnalyser()
+				new FullMEClusterAnalyser()
 			);
-		MEAnalysis res = eval.analyse(eval.evaluate());
-		assertTrue(Math.abs(res.purity - 0.71) < 0.01);
-		assertTrue(Math.abs(res.nmi - 0.36) < 0.01);
-		assertTrue(res.precision == 0.5);
-		assertTrue(res.recall - 0.455 < 0.01);
-		assertTrue(Math.abs(res.fscore(1) - 0.48) < 0.01);
-		assertTrue(Math.abs(res.fscore(5) - 0.456) < 0.01);
+		FullMEAnalysis res = eval.analyse(eval.evaluate());
+		assertTrue(Math.abs(res.purity.purity - 0.71) < 0.01);
+		assertTrue(Math.abs(res.nmi.nmi - 0.36) < 0.01);
+		assertTrue(res.decision.precision() == 0.5);
+		assertTrue(res.decision.recall() - 0.455 < 0.01);
+		assertTrue(Math.abs(res.decision.fscore(1) - 0.48) < 0.01);
+		assertTrue(Math.abs(res.decision.fscore(5) - 0.456) < 0.01);
 		System.out.println(res.getSummaryReport());
 
 	}

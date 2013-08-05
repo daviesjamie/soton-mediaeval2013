@@ -7,7 +7,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.openimaj.experiment.evaluation.cluster.analyser.MEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
@@ -58,7 +58,7 @@ public class TestSED2013ExpOne {
 
 	@Test
 	public void testEval(){
-		MEAnalysis res = expOne.evalPhotoTime(ds);
+		FullMEAnalysis res = expOne.evalPhotoTime(ds);
 		System.out.println(res.getSummaryReport());
 	}
 
@@ -66,14 +66,14 @@ public class TestSED2013ExpOne {
 	public void testEvalSim(){
 		FeatureExtractor<SparseMatrix, Photo> dsSim = new DatasetSimilarity<Photo>(ds, PPK2012ExtractCompare.similarity(ds));
 		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
-		MEAnalysis res = expOne.eval(ds, meanSim, new DoubleNNDBSCAN(2, 2, new DoubleNearestNeighboursExact.Factory()));
+		FullMEAnalysis res = expOne.eval(ds, meanSim, new DoubleNNDBSCAN(2, 2, new DoubleNearestNeighboursExact.Factory()));
 		System.out.println(res.getSummaryReport());
 	}
 	@Test
 	public void testEvalSimStream(){
 		FeatureExtractor<SparseMatrix, Photo> dsSim = new DatasetSimilarity<Photo>(dsStream, PPK2012ExtractCompare.similarity(ds));
 		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
-		MEAnalysis res = expOne.eval(dsStream, meanSim, new DoubleNNDBSCAN(2, 2, new DoubleNearestNeighboursExact.Factory()));
+		FullMEAnalysis res = expOne.eval(dsStream, meanSim, new DoubleNNDBSCAN(2, 2, new DoubleNearestNeighboursExact.Factory()));
 		System.out.println(res.getSummaryReport());
 	}
 }
