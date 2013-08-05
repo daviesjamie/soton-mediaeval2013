@@ -51,8 +51,10 @@ public class GeoEvaluator implements Evaluator<TLongObjectHashMap<GeoLocationEst
 	public TLongObjectHashMap<GeoLocationEstimate> evaluate() {
 		final TLongObjectHashMap<GeoLocationEstimate> results = new TLongObjectHashMap<GeoLocationEstimate>();
 
+		int i = 0;
 		for (final QueryImageData q : queries) {
 			results.put(q.flickrId, engine.estimateLocation(q));
+			System.err.println(i++);
 		}
 
 		return results;

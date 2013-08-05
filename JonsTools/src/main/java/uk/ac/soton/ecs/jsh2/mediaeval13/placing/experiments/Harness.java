@@ -26,9 +26,12 @@ public class Harness {
 				.getResourceAsStream("/uk/ac/soton/ecs/jsh2/mediaeval13/placing/data/validation.csv"));
 
 		// final GeoPositioningEngine engine = new RandomPositioningEngine();
-		final GeoPositioningEngine engine = new
-				PriorRandomPositioningEngine(new File("/Users/jon/training_latlng"),
-						getSkipIds(queries));
+		// final GeoPositioningEngine engine = new
+		// PriorRandomPositioningEngine(new File("/Users/jon/training_latlng"),
+		// getSkipIds(queries));
+		final GeoPositioningEngine engine = new NaiveBayesTagEngine(
+				new File("/Users/jon/lucene-test-index"),
+				getSkipIds(queries));
 
 		final GeoEvaluator eval = new GeoEvaluator(groundTruth, engine, queries);
 		final GeoAnalysisResult result = eval.analyse(eval.evaluate());
