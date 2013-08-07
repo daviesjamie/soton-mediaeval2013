@@ -1,4 +1,4 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13;
+package uk.ac.soton.ecs.jsh2.mediaeval13.placing.playground;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,12 +19,18 @@ import org.apache.lucene.util.Version;
 import org.openimaj.image.DisplayUtilities;
 import org.openimaj.image.FImage;
 
-public class LuceneTests {
+/**
+ * Demonstrate simple Lucene search
+ * 
+ * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
+ * 
+ */
+public class LucenePlayground {
 	public static void main(String[] args) throws IOException, ParseException {
-		final Directory directory = new SimpleFSDirectory(new File("/Users/jon/lucene-test-index"));
+		final Directory directory = new SimpleFSDirectory(new File("/Volumes/SSD/mediaeval13/placing/places.lucene"));
 
 		final Query q = new QueryParser(Version.LUCENE_43, "tags", new StandardAnalyzer(Version.LUCENE_43))
-				.parse("+southampton +snow");
+				.parse("+snow");
 
 		// 3. search
 		final int hitsPerPage = 100000;

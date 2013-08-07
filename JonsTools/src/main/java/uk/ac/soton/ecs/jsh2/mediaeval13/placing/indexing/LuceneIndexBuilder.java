@@ -1,10 +1,11 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13;
+package uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing;
 
 import gnu.trove.list.array.TFloatArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Date;
@@ -43,21 +44,37 @@ import org.openimaj.util.parallel.partition.FixedSizeChunkPartitioner;
 import com.spatial4j.core.context.SpatialContext;
 import com.spatial4j.core.shape.Shape;
 
-public class LuceneIndexerTests {
-	private static final String FIELD_ID = "id";
-	private static final String FIELD_USER = "user";
-	private static final String FIELD_URL = "url";
-	private static final String FIELD_TAKEN = "taken";
-	private static final String FIELD_UPLOADED = "uploaded";
-	private static final String FIELD_VIEWS = "views";
-	private static final String FIELD_TAGS = "tags";
+/**
+ * Build a lucene index from all the metadata of all the geotagged (i.e.
+ * training) images
+ * 
+ * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
+ * 
+ */
+public class LuceneIndexBuilder {
+	public static final String FIELD_ID = "id";
+	public static final String FIELD_USER = "user";
+	public static final String FIELD_URL = "url";
+	public static final String FIELD_TAKEN = "taken";
+	public static final String FIELD_UPLOADED = "uploaded";
+	public static final String FIELD_VIEWS = "views";
+	public static final String FIELD_TAGS = "tags";
+	public static final String FIELD_LOCATION = "location";
 
-	final static String CSV_REGEX = ",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))";
+	private final static String CSV_REGEX = ",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))";
 
 	public static void main(String[] args) throws IOException {
-		final String latlngPath = "/Users/jon/training_latlng";
-		final String csvPath = "/Users/jon/all.csv";
+		final String latlngPath = "/Volumes/SSD/mediaeval13/training_latlng";
+		final String csvPath = "/Volumes/SSD/mediaeval13/placing/all.csv";
+		final String indexPath = "/Users/jon/lucene-test-index";
 
+		buildIndex(latlngPath, csvPath, indexPath);
+	}
+
+	private static void buildIndex(final String latlngPath, final String csvPath, final String indexPath)
+			throws FileNotFoundException,
+			IOException
+	{
 		final TLongArrayList ids = new TLongArrayList(7600000);
 		final TFloatArrayList lats = new TFloatArrayList(7600000);
 		final TFloatArrayList lons = new TFloatArrayList(7600000);
@@ -76,13 +93,13 @@ public class LuceneIndexerTests {
 
 		final SpatialContext ctx = SpatialContext.GEO;
 		final SpatialPrefixTree grid = new GeohashPrefixTree(ctx, 11);
-		final RecursivePrefixTreeStrategy strategy = new RecursivePrefixTreeStrategy(grid, "location");
+		final RecursivePrefixTreeStrategy strategy = new RecursivePrefixTreeStrategy(grid, FIELD_LOCATION);
 
 		final StandardAnalyzer a = new StandardAnalyzer(Version.LUCENE_43);
 		final IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_43, a);
 		iwc.setRAMBufferSizeMB(512);
 		Directory directory;
-		directory = new SimpleFSDirectory(new File("/Users/jon/lucene-test-index"));
+		directory = new SimpleFSDirectory(new File(indexPath));
 		final IndexWriter indexWriter = new IndexWriter(directory, iwc);
 
 		final AtomicInteger counter = new AtomicInteger();
@@ -126,7 +143,7 @@ public class LuceneIndexerTests {
 
 							bsize++;
 						}
-						synchronized (LuceneIndexerTests.class) {
+						synchronized (LuceneIndexBuilder.class) {
 							System.out.println(counter.addAndGet(bsize));
 						}
 					}
