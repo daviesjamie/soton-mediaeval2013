@@ -6,8 +6,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openimaj.experiment.evaluation.cluster.analyser.AdjustedRandomIndexAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.AdjustedRandomIndexClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.DecisionAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FScoreAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.NMIAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.PurityAnalysis;
 
 import twitter4j.internal.logging.Logger;
 
@@ -91,9 +95,12 @@ public class TestMEClusterAnalyser {
 		FullMEClusterAnalyser ann = new FullMEClusterAnalyser();
 		FullMEAnalysis res = ann.analyse(correct, estimate);
 		logger .debug(res.getSummaryReport());
-		assertTrue(Math.abs(res.purity.purity - 0.71) < 0.01);
-		assertTrue(Math.abs(res.nmi.nmi - 0.36) < 0.01);
-		assertTrue(Math.abs(res.decision.randIndex() - 0.68) < 0.01);
+		assertTrue(Math.abs(((PurityAnalysis)res.purity).purity - 0.71) < 0.01);
+		assertTrue(Math.abs(((NMIAnalysis)res.nmi).nmi - 0.36) < 0.01);
+		assertTrue(((DecisionAnalysis)res.decision).precision() == 0.5);
+		assertTrue(((DecisionAnalysis)res.decision).recall() - 0.455 < 0.01);
+		assertTrue(((FScoreAnalysis)res.fscore).fscore(1) - 0.48 < 0.01);
+		assertTrue(((FScoreAnalysis)res.fscore).fscore(5) - 0.456 < 0.01);
 	}
 	
 	

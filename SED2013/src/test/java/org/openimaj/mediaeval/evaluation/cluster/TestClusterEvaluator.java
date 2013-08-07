@@ -10,8 +10,13 @@ import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.RangedDBSCANClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.analyser.DecisionAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FScoreAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.NMIAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.PurityAnalysis;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
@@ -117,12 +122,12 @@ public class TestClusterEvaluator{
 				new FullMEClusterAnalyser()
 			);
 		FullMEAnalysis res = eval.analyse(eval.evaluate());
-		assertTrue(Math.abs(res.purity.purity - 0.71) < 0.01);
-		assertTrue(Math.abs(res.nmi.nmi - 0.36) < 0.01);
-		assertTrue(res.decision.precision() == 0.5);
-		assertTrue(res.decision.recall() - 0.455 < 0.01);
-		assertTrue(Math.abs(res.decision.fscore(1) - 0.48) < 0.01);
-		assertTrue(Math.abs(res.decision.fscore(5) - 0.456) < 0.01);
+		assertTrue(Math.abs(((PurityAnalysis)res.purity).purity - 0.71) < 0.01);
+		assertTrue(Math.abs(((NMIAnalysis)res.nmi).nmi - 0.36) < 0.01);
+		assertTrue(((DecisionAnalysis)res.decision).precision() == 0.5);
+		assertTrue(((DecisionAnalysis)res.decision).recall() - 0.455 < 0.01);
+		assertTrue(((FScoreAnalysis)res.fscore).fscore(1) - 0.48 < 0.01);
+		assertTrue(((FScoreAnalysis)res.fscore).fscore(5) - 0.456 < 0.01);
 		System.out.println(res.getSummaryReport());
 
 	}
