@@ -1,4 +1,4 @@
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.OLD;
 
 import java.io.File;
 import java.io.IOException;

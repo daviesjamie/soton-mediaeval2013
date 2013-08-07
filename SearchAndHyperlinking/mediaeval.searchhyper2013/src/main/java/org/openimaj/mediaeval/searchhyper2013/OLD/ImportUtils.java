@@ -1,4 +1,12 @@
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.OLD;
+
+import gov.sandia.cognition.learning.algorithm.clustering.AgglomerativeClusterer;
+import gov.sandia.cognition.learning.algorithm.clustering.cluster.Cluster;
+import gov.sandia.cognition.learning.algorithm.clustering.cluster.DefaultCluster;
+import gov.sandia.cognition.learning.algorithm.clustering.cluster.DefaultClusterCreator;
+import gov.sandia.cognition.learning.algorithm.clustering.divergence.ClusterToClusterDivergenceFunction;
+import gov.sandia.cognition.learning.algorithm.clustering.hierarchy.ClusterHierarchyNode;
+import gov.sandia.cognition.util.CloneableSerializable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -6,8 +14,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +32,20 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
+import org.openimaj.data.AbstractDataSource;
+import org.openimaj.data.DataSource;
+import org.openimaj.image.DisplayUtilities;
+import org.openimaj.image.MBFImage;
+import org.openimaj.image.colour.ColourSpace;
+import org.openimaj.image.colour.Transforms;
 import org.openimaj.io.FileUtils;
+import org.openimaj.io.IOUtils;
+import org.openimaj.knn.DoubleNearestNeighbours;
+import org.openimaj.knn.DoubleNearestNeighboursExact;
+import org.openimaj.math.geometry.shape.Rectangle;
+import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
+import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
+import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -206,8 +231,260 @@ public abstract class ImportUtils {
 		
 		return docs;
 	}
+    
+    public static List<SolrInputDocument> readLIUMFile(File liumFile) throws IOException {
+        System.out.println("(LIUM) " + liumFile.getName());
+        
+        List<SolrInputDocument> docs = new ArrayList<SolrInputDocument>();
+        
+        String[] lines = FileUtils.readlines(liumFile);
+       
+        if (lines.length == 0) {
+        	return docs;
+        }
+       
+        String prog = lines[0].split(" ", 2)[0];
+        
+        final List<LIUMWord> words = new ArrayList<LIUMWord>();
+        
+        for (String line : lines) {
+        	String[] components = line.split(" ");
+        	
+        	LIUMWord liumWord = new LIUMWord();
+        	liumWord.start = Float.parseFloat(components[2]);
+        	liumWord.end = liumWord.start;
+        	liumWord.word = components[4];
+        	liumWord.confidence = Float.parseFloat(components[5]);
+        	
+        	words.add(liumWord);
+        }
+        
+        /*DataSource<double[]> liumWordStartTimeDataSource = new AbstractDataSource<double[]>() {
+
+			@Override
+			public void getData(int startRow, int stopRow, double[][] data) {
+				for (int i = startRow; i < stopRow; i++) {
+					data[i][0] = words.get(i).start;
+				}
+			}
+
+			@Override
+			public double[] getData(int row) {
+				double[] arr = new double[1];
+				arr[0] = words.get(row).start;
+				return arr;
+			}
+
+			@Override
+			public int numDimensions() {
+				return 1;
+			}
+
+			@Override
+			public int numRows() {
+				return words.size() - 1;
+			}
+
+        };
+        
+        DBSCANConfiguration<DoubleNearestNeighbours, double[]> dbscanConfig = 
+        	new DBSCANConfiguration<DoubleNearestNeighbours, double[]>
+        		(1, 1.5, 2, new DoubleNearestNeighboursExact.Factory());
+        DoubleDBSCAN dbscan = new DoubleDBSCAN(dbscanConfig);
+        
+        DoubleDBSCANClusters dbscanClusters = dbscan.cluster(liumWordStartTimeDataSource);
+        
+        int[][] clusters = dbscanClusters.clusters();
+        
+        for (int i = 0; i < clusters.length; i++) {
+        	Arrays.sort(clusters[i]);
+        	
+        	Float start = Float.MAX_VALUE;
+        	Float end = 0f;
+        	Float confidence = 0f;
+        	String phrase = "";
+        	
+        	for (int j = 0; j < clusters[i].length; j++) {
+        		LIUMWord word = words.get(clusters[i][j]);
+        		
+        		if (start > word.start) {
+        			start = word.start;
+        		}
+        		
+        		if (end < word.start) {
+        			end = word.start;
+        		}
+        		
+        		confidence += word.confidence;
+        		
+        		phrase += word.word + " ";
+        	}
+        	
+        	confidence /= clusters[i].length;
+        	
+        	SolrInputDocument doc = new SolrInputDocument();
+        	doc.addField("id", prog + "_trans_lium_" + i);
+        	doc.addField("type", "trans");
+        	doc.addField("program", prog);
+        	doc.addField("start", start);
+        	doc.addField("end", end);
+        	doc.addField("source", "lium");
+        	doc.addField("phrase", phrase);
+        	
+        	docs.add(doc);
+        }*/
+        
+        ClusterToClusterDivergenceFunction<DefaultCluster<LIUMWord>, LIUMWord> divFunc = 
+        	new ClusterToClusterDivergenceFunction<DefaultCluster<LIUMWord>, LIUMWord>() {
+
+				@Override
+				public double evaluate(DefaultCluster<LIUMWord> first,
+						DefaultCluster<LIUMWord> second) {
+					LIUMWord firstWord = LIUMWord.collectionToLIUMWord(first.getMembers());
+					LIUMWord secondWord = LIUMWord.collectionToLIUMWord(second.getMembers());
+					
+					/*if (firstWord.start < secondWord.start) {
+						if (firstWord.end < secondWord.start) {
+							return secondWord.start - firstWord.end;
+						} else {
+							return 0;
+						}
+					} else {
+						if (secondWord.end < firstWord.start) {
+							return firstWord.start - secondWord.end;
+						} else {
+							return 0;
+						}
+					}*/
+					
+					return Math.pow(firstWord.start - secondWord.start, 2) +
+						   Math.pow(firstWord.end - secondWord.end, 2);
+				}
+				
+				public CloneableSerializable clone() {
+					return null;
+				}
+        	
+        };
+        
+        AgglomerativeClusterer<LIUMWord, DefaultCluster<LIUMWord>> clusterer = 
+        	new AgglomerativeClusterer<LIUMWord, DefaultCluster<LIUMWord>>
+        		(divFunc, new DefaultClusterCreator<LIUMWord>());
+        ClusterHierarchyNode<LIUMWord, DefaultCluster<LIUMWord>> root = 
+        	clusterer.clusterHierarchically(words);
+        
+        
+        
+        
+        
+                
+        
+        int maxDepth = DataUtils.clusterHierarchyDepth(root);
+		
+		int HEIGHT = 50;
+		int Y_DIM = HEIGHT;
+		int X_DIM = 800;
+		float programLength = 30*60;
+		
+		MBFImage vis = new MBFImage(X_DIM, Y_DIM, ColourSpace.HSV);
+		
+		int depth = 0;
+		
+		List<ClusterHierarchyNode<LIUMWord, DefaultCluster<LIUMWord>>> nextLevel = 
+			new ArrayList<ClusterHierarchyNode<LIUMWord, DefaultCluster<LIUMWord>>>();
+		nextLevel.add(root);
 	
-	public static List<SolrInputDocument> readMetadataFile(File metadataFile) throws IOException {
+		// We add child nodes for the current level to the nextLevel list so 
+		// that we can process the tree in a breadth-first manner.
+		while (!nextLevel.isEmpty()) {
+			List<ClusterHierarchyNode<LIUMWord, DefaultCluster<LIUMWord>>> newNextLevel =
+				new ArrayList<ClusterHierarchyNode<LIUMWord, DefaultCluster<LIUMWord>>>();
+			
+			for (ClusterHierarchyNode<LIUMWord, DefaultCluster<LIUMWord>> node : nextLevel) {
+				List<LIUMWord> thisLevel = new ArrayList<LIUMWord>(node.getMembers());
+				
+				if (node.getChildren() != null) {
+					for (ClusterHierarchyNode<LIUMWord, DefaultCluster<LIUMWord>> child : node.getChildren()) {
+						newNextLevel.add(child);
+					}
+				}
+				
+				LIUMWord clusterLIUMWord = LIUMWord.collectionToLIUMWord(thisLevel);
+				
+				int x0 = (int)((clusterLIUMWord.start / programLength) * X_DIM);
+				int x1 = (int)((clusterLIUMWord.end / programLength) * X_DIM);
+				int y = 0;
+				Float[] col = { Math.min(depth * (1f / maxDepth), 1f), 1f, 1f };
+
+				Rectangle rect = new Rectangle(x0, y, x1 - x0, HEIGHT - 2);
+				vis.drawShapeFilled(rect, col);
+			}
+			
+			nextLevel = newNextLevel;
+			depth++;
+		}
+		
+		DisplayUtilities.display(Transforms.HSV_TO_RGB(vis));
+        
+        
+        
+        
+        
+        return docs;
+    }
+    
+    private static class LIUMWord {
+       	Float start;
+       	Float end;
+       	String word;
+       	Float confidence;
+       	
+       	private static LIUMWord collectionToLIUMWord(Collection<LIUMWord> collection) {
+	   		LIUMWord word = new LIUMWord();
+	    		
+	   		word.start = Float.MAX_VALUE;
+	   		word.end = 0f;
+	   		word.word = "";
+	   		word.confidence = 0f;
+	   	
+	   		List<LIUMWord> clusterWords = new ArrayList<LIUMWord>(collection);
+	   		Collections.sort(clusterWords, new Comparator<LIUMWord>() {
+	
+				@Override
+				public int compare(LIUMWord arg0, LIUMWord arg1) {
+					if (arg1.start > arg0.start) {
+						return 1;
+					} else if (arg1.start < arg0.start) {
+						return -1;
+					} else {
+						return 0;
+					}
+				}
+	   			
+	   		});
+	   		
+	   		for (LIUMWord clusterWord : clusterWords) {
+	   			if (clusterWord.start < word.start) {
+	   				word.start = clusterWord.start;
+	   			}
+	   			
+	   			if (clusterWord.end > word.end) {
+	   				word.end = clusterWord.end;
+	   			}
+	   			
+	   			word.word += clusterWord.word;
+	   			word.confidence += clusterWord.confidence;
+	   		}
+	   		
+	   		word.confidence /= clusterWords.size();
+	   		
+	   		return word;
+	   	}
+    }
+  
+    
+
+    public static List<SolrInputDocument> readMetadataFile(File metadataFile) throws IOException {
 		System.out.println("(Meta) " + metadataFile.getName());
 		
 		Gson gson = new Gson();

@@ -1,4 +1,4 @@
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.OLD;
 
 import gov.sandia.cognition.learning.function.distance.CosineDistanceMetric;
 

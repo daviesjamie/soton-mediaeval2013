@@ -1,4 +1,4 @@
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.OLD;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,7 +29,7 @@ public class SolrImport {
 	private static final int CACHE_SIZE = 1000000;
 	
 	public static enum ImportType {
-		Subtitles, LIMSI, Metadata
+		Subtitles, LIMSI, Metadata, LIUM
 	}
 
 	/**
@@ -60,6 +60,8 @@ public class SolrImport {
 			importType = ImportType.LIMSI;
 		} else if (type.equals("meta")) {
 			importType = ImportType.Metadata;
+		} else if (type.equals("lium")) {
+			importType = ImportType.LIUM;
 		}
 		
 		importFiles(server, files, importType);
@@ -99,6 +101,7 @@ public class SolrImport {
 				case Subtitles: sourceDocs = ImportUtils.readSubtitlesFile(sourceFile); break;
 				case LIMSI: sourceDocs = ImportUtils.readLIMSIFile(sourceFile); break;
 				case Metadata: sourceDocs = ImportUtils.readMetadataFile(sourceFile); break;
+				case LIUM: sourceDocs = ImportUtils.readLIUMFile(sourceFile); break;
 				default: throw new Exception("Type not implemented!");
 			}
 			

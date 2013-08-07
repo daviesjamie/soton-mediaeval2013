@@ -1,4 +1,4 @@
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.OLD;
 
 import gov.sandia.cognition.learning.algorithm.clustering.cluster.Cluster;
 import gov.sandia.cognition.learning.algorithm.clustering.cluster.DefaultCluster;
@@ -295,7 +295,7 @@ public abstract class DataUtils {
 	 * @param programLength  Program length for calculating X values.
 	 * @return				 MBFImage of the visualisation.
 	 */
-	public static MBFImage visualiseDataClean(ClusterHierarchyNode<Result, DefaultCluster<Result>> root, float programLength) {
+	public static MBFImage visualiseData(ClusterHierarchyNode<Result, DefaultCluster<Result>> root, float programLength) {
 		int maxDepth = clusterHierarchyDepth(root);
 		
 		int HEIGHT = 50;
