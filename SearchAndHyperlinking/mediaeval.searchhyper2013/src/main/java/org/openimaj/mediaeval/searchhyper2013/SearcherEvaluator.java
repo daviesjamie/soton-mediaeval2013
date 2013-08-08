@@ -120,13 +120,10 @@ public class SearcherEvaluator {
 		List<Float> gap = new ArrayList<Float>();
 		List<Float> asp = new ArrayList<Float>();
 		
-		for (Query query : expectedResults.keySet()) {
-			System.out.println("Evaluating with query: " + query);
-			
+		for (Query query : expectedResults.keySet()) {			
 			String fileName = expectedResults.get(query).iterator().next().fileName;
 			float qRelStart = expectedResults.get(query).iterator().next().startTime;
 			float qRelEnd = expectedResults.get(query).iterator().next().endTime;
-			
 			
 			float totalLen = 0;
 			boolean relFlag = false;
@@ -139,9 +136,7 @@ public class SearcherEvaluator {
 				continue;
 			}
 			
-			System.out.println("Results: " + runResults);
-			
-			if (runResults == null) continue;
+			System.out.println("\nResults: \n" + runResults);
 			
 			for (int i = 0; i < runResults.size(); i++) {
 				Result result = runResults.get(i);

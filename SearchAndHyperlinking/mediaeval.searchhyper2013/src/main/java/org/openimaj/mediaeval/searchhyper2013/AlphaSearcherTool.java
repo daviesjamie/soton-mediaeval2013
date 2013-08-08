@@ -34,7 +34,7 @@ public class AlphaSearcherTool {
 		
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		AlphaSearcher alphaSearcher = new QueryExpandingAlphaSearcher("AlphaSearcher", indexReader);
+		AlphaSearcher alphaSearcher = new AlphaSearcher("AlphaSearcher", indexReader);
 		
 		Query q = new Query("CLI", query, null);
 		
@@ -57,5 +57,10 @@ public class AlphaSearcherTool {
 				eval.evaluateAgainstExpectedResults(expectedResults, WINDOW);
 		
 		System.out.println(results);
+	}
+	
+	private static double f1Score(Vector results) {
+		return 2 * results.getElement(0) * results.getElement(1) /
+			   (results.getElement(0) + results.getElement(1));
 	}
 }

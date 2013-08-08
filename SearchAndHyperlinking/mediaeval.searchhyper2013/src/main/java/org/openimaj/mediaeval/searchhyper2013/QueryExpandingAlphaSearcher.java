@@ -1,10 +1,13 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
@@ -24,15 +27,19 @@ import com.github.wcerfgba.adhocstructures.IdentifyRequestHandler;
 import com.github.wcerfgba.adhocstructures.SemanticTable;
 
 public class QueryExpandingAlphaSearcher extends AlphaSearcher {
-	public static final float ORIGINAL_QUERY_SCALE_FACTOR = 5f;
+	public static final float ORIGINAL_QUERY_SCALE_FACTOR = 0f;
 	public static final int MAX_EXPANSION_TERMS = 100;
 
 	public QueryExpandingAlphaSearcher(String runName, IndexReader indexReader) {
 		super(runName, indexReader);
 	}
-
+	
 	@Override
 	ResultList _search(Query q) throws Exception {
+		if (q == null) {
+			return null;
+		}
+		
 		System.out.println("Running QueryExpandingAlphaSearcher with query " + 
 						   "text: " + q.queryText);
 		
@@ -53,7 +60,7 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 												synopsisFilter,
 												NUM_SYNOPSIS_RESULTS);
 
-		ResultList results = new ResultList(q.queryID, runName);
+		Set<Result> resultSet = new HashSet<Result>();
 		
 		// 2. Find results within transcripts.
 		for (ScoreDoc synopsis : synopses.scoreDocs) {
@@ -67,7 +74,7 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 								  query,
 								  MAX_SUBS_HITS);
 			ResultList subsResults =
-					super.search(createExpandedQuery(q, subsHits));
+					super._search(createExpandedQuery(q, subsHits));
 			
 			Document limsiDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
@@ -79,7 +86,7 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 								  query,
 								  MAX_LIMSI_HITS);
 			ResultList limsiResults =
-					super.search(createExpandedQuery(q, limsiHits));
+					super._search(createExpandedQuery(q, limsiHits));
 			
 			Document liumDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
@@ -91,12 +98,25 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 								  query,
 								  MAX_LIUM_HITS);
 			ResultList liumResults =
-					super.search(createExpandedQuery(q, liumHits));
+					super._search(createExpandedQuery(q, liumHits));
 			
-			results.addAll(subsResults);
-			results.addAll(liumResults);
-			results.addAll(limsiResults);
+			if (subsResults != null) {
+				resultSet.addAll(subsResults);
+			}
+			
+			if (liumResults != null) {
+				resultSet.addAll(liumResults);
+			}
+			
+			if (limsiResults != null) {
+				resultSet.addAll(limsiResults);
+			}
 		}
+		
+		ResultList results = new ResultList(q.queryID, runName);
+		results.addAll(resultSet);
+		
+		Collections.sort(results);
 		
 		return results;
 	}
@@ -109,7 +129,7 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 		words.addAddHandler(new AddHandler<Object[]>() {
 			
 			public boolean handleAdd(Object[] row) {
-				String word = (String) row[0];
+				String word = ((String) row[0]).toLowerCase().trim();
 				Float confidence = (Float) row[1];
 				
 				Object[] wordRow = words.get(word);
@@ -136,12 +156,13 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 			public Integer handleIdentifyRequest(String identifier) {
 				Object[] wordsCol = words.getColumn(0);
 				
-				int row = 0;
-				while (!wordsCol[row].equals(identifier)) {
-					row++;
+				for (int i = 0; i < wordsCol.length; i++) {
+					if (wordsCol[i].equals(identifier)) {
+						return i;
+					}
 				}
 				
-				return row;
+				return -1;
 			}
 		});
 		
@@ -162,7 +183,13 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 
 			@Override
 			public int compare(Object[] arg0, Object[] arg1) {
-				float diff = (Float) arg0[2] - (Float) arg1[2];
+				if (arg0[2] == null) {
+					return 1;
+				} else if (arg1[2] == null) {
+					return -1;
+				}
+				
+				float diff = (Float) arg1[2] - (Float) arg0[2];
 				
 				if (diff < 0) {
 					return -1;
@@ -176,6 +203,10 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 		};
 		
 		words.sort(confidenceComparator);
+		
+		if (words.getRow(0)[2] == null) {
+			return null;
+		}
 		
 		float maxConf = (Float) words.getRow(0)[2];
 		
@@ -191,8 +222,10 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 		for (int i = 0; i < MAX_EXPANSION_TERMS && i < words.size(); i++) {
 			Object[] row = words.getRow(i);
 			
-			query.append(row[0] + "^" + ((Float) row[1] * (Float) row[2]) + " ");
+			query.append(row[0] + "^" + ((Integer) row[1] * (Float) row[2]) + " ");
 		}
+		
+		System.out.println(query.toString());
 		
 		return new Query(originalQuery.queryID + "_expanded",
 						 query.toString(),

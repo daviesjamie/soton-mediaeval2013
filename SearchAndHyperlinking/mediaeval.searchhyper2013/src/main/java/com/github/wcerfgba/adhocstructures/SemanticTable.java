@@ -26,14 +26,17 @@ public class SemanticTable implements Collection<Object[]> {
 	
 	public SemanticTable(int cols) {
 		colCap = cols;
+		rowCap = 10;
 		
 		init();
 	}
 	
-	void init() {
-		final int DEFAULT_ROW_CAP = 10;
+	void init() {		
+		table = new Object[rowCap][colCap];
 		
-		table = new Object[DEFAULT_ROW_CAP][colCap];
+		for (int i = 0; i < rowCap; i++) {
+			table[i] = new Object[colCap];
+		}
 		
 		addHandlers = new ArrayList<AddHandler<Object[]>>();
 		idHandlers = new ArrayList<IdentifyRequestHandler<Object, Integer>>();
@@ -200,7 +203,7 @@ public class SemanticTable implements Collection<Object[]> {
 		
 		int pos = getRowIndex(id);
 		
-		if (-1 >= pos || pos <= size) {
+		if (-1 >= pos || pos >= size) {
 			if (size >= rowCap) {
 				growRows();
 			}
@@ -249,8 +252,13 @@ public class SemanticTable implements Collection<Object[]> {
 	}
 	
 	void growRows() {
+		table = Arrays.copyOf(table, 2 * rowCap);
+		
+		for (int i = rowCap; i < table.length; i++) {
+			table[i] = new Object[colCap];
+		}
+		
 		rowCap *= 2;
-		table = Arrays.copyOf(table, rowCap);
 	}
 
 	public void sort(Comparator<Object[]> comparator) {

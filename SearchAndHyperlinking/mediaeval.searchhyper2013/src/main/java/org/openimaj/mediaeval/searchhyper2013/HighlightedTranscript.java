@@ -1,6 +1,7 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +37,18 @@ public class HighlightedTranscript extends ArrayList<PositionWord> {
 		}
 	}
 	
+	public HighlightedTranscript(HighlightedTranscript other) {
+		super(other);
+		
+		transcript = other.transcript;
+		times = Arrays.copyOf(other.times, other.times.length);
+	}
+	
+	public HighlightedTranscript(String transcript, float[] times) {
+		this.transcript = transcript;
+		this.times = times;
+	}
+
 	private TimedWord positionWordToTimedWord(PositionWord word) {
 		TimedWord timedWord = new TimedWord();
 		
@@ -68,7 +81,11 @@ public class HighlightedTranscript extends ArrayList<PositionWord> {
 	}
 
 	public float length() {
-		return endTime() - startTime();
+		if (size() == 0) {
+			return 0f;
+		} else {
+			return endTime() - startTime();
+		}
 	}
 	
 	public Iterator<TimedWord> timedWordsIterator() {
@@ -91,5 +108,31 @@ public class HighlightedTranscript extends ArrayList<PositionWord> {
 			}
 			
 		};
+	}
+	
+	public List<HighlightedTranscript> splitByMaxLength(float maxLength) {
+		List<HighlightedTranscript> splits = 
+				new ArrayList<HighlightedTranscript>();
+		
+		HighlightedTranscript current = null;
+		
+		for (PositionWord word : this) {
+			if (current == null) {
+				current = new HighlightedTranscript(transcript, times);
+			}
+			
+			if (current.length() < maxLength) {
+				current.add(word);
+			} else {
+				splits.add(current);
+				current = null;
+			}
+		}
+		
+		if (current != null) {
+			splits.add(current);
+		}
+		
+		return splits;
 	}
 }

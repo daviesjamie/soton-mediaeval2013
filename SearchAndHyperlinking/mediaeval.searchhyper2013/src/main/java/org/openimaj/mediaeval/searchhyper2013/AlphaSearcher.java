@@ -2,7 +2,9 @@ package org.openimaj.mediaeval.searchhyper2013;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -55,6 +57,9 @@ public class AlphaSearcher implements Searcher {
 	static final int MAX_SUBS_HITS = 100;
 	static final int MAX_LIMSI_HITS = 100;
 	static final int MAX_LIUM_HITS = 100;
+	static final float SUBS_SCALE_FACTOR = 0.3f;
+	static final float LIMSI_SCALE_FACTOR = 1f;
+	static final float LIUM_SCALE_FACTOR = 1f;
 	
 	IndexReader indexReader;
 	String runName;
@@ -74,6 +79,10 @@ public class AlphaSearcher implements Searcher {
 	}
 	
 	ResultList _search(Query q) throws Exception {
+		if (q == null) {
+			return null;
+		}
+		
 		System.out.println("Running AlphaSearcher with query text: " + 
 						   q.queryText);
 		
@@ -94,7 +103,7 @@ public class AlphaSearcher implements Searcher {
 												synopsisFilter,
 												NUM_SYNOPSIS_RESULTS);
 
-		ResultList results = new ResultList(q.queryID, runName);
+		Set<Result> resultSet = new HashSet<Result>();
 		
 		// 2. Find results within transcripts.
 		for (ScoreDoc synopsis : synopses.scoreDocs) {
@@ -111,7 +120,8 @@ public class AlphaSearcher implements Searcher {
 					ResultList.fromHighlightedTranscripts(q.queryID,
 														  runName,
 														  subsDoc.get(Field.Program.toString()),
-														  subsHits);
+														  subsHits,
+														  SUBS_SCALE_FACTOR);
 			
 			Document limsiDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
@@ -126,7 +136,8 @@ public class AlphaSearcher implements Searcher {
 					ResultList.fromHighlightedTranscripts(q.queryID,
 														  runName,
 														  limsiDoc.get(Field.Program.toString()),
-														  limsiHits);
+														  limsiHits,
+														  LIMSI_SCALE_FACTOR);
 			
 			Document liumDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
@@ -141,12 +152,18 @@ public class AlphaSearcher implements Searcher {
 					ResultList.fromHighlightedTranscripts(q.queryID,
 														  runName,
 														  liumDoc.get(Field.Program.toString()),
-														  liumHits);
+														  liumHits,
+														  LIUM_SCALE_FACTOR);
 			
-			results.addAll(subsResults);
-			results.addAll(liumResults);
-			results.addAll(limsiResults);
+			resultSet.addAll(subsResults);
+			resultSet.addAll(liumResults);
+			resultSet.addAll(limsiResults);
 		}
+		
+		ResultList results = new ResultList(q.queryID, runName);
+		results.addAll(resultSet);
+		
+		Collections.sort(results);
 		
 		return results;
 	}
@@ -169,8 +186,7 @@ public class AlphaSearcher implements Searcher {
 		String[] frags = 
 			highlighter.getBestFragments(new EnglishAnalyzer(LUCENE_VERSION),
 										 Field.Text.toString(),
-										 doc.get(
-											Field.Text.toString()),
+										 doc.get(Field.Text.toString()),
 										 maxHits);
 		
 		List<HighlightedTranscript> hits = 
