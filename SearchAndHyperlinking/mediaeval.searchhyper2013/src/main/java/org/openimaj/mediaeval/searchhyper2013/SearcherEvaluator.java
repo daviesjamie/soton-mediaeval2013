@@ -121,6 +121,8 @@ public class SearcherEvaluator {
 		List<Float> asp = new ArrayList<Float>();
 		
 		for (Query query : expectedResults.keySet()) {
+			System.out.println("Evaluating with query: " + query);
+			
 			String fileName = expectedResults.get(query).iterator().next().fileName;
 			float qRelStart = expectedResults.get(query).iterator().next().startTime;
 			float qRelEnd = expectedResults.get(query).iterator().next().endTime;
@@ -136,6 +138,8 @@ public class SearcherEvaluator {
 				e.printStackTrace();
 				continue;
 			}
+			
+			System.out.println("Results: " + runResults);
 			
 			if (runResults == null) continue;
 			

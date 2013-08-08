@@ -34,7 +34,7 @@ public class AlphaSearcherTool {
 		
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		AlphaSearcher alphaSearcher = new AlphaSearcher("AlphaSearcher", indexReader);
+		AlphaSearcher alphaSearcher = new QueryExpandingAlphaSearcher("AlphaSearcher", indexReader);
 		
 		Query q = new Query("CLI", query, null);
 		

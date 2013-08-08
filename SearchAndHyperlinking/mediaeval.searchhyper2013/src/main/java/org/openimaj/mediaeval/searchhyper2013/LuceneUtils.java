@@ -29,7 +29,6 @@ import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.Spans;
 import org.apache.lucene.util.Bits;
-import org.openimag.mediaeval.searchandhyperlinking.DocumentFilteredAtomicIndexReader;
 
 public abstract class LuceneUtils {
 	public static ScoredDocuments retreiveTopDocs(TopDocs topDocs, 
@@ -77,67 +76,6 @@ public abstract class LuceneUtils {
 		return spanQuery.getSpans(context, acceptDocs, termContexts);
 	}
 	
-	public static AtomicReader filterAtomicReader(AtomicReader atomicReader,
-												  final Set<Integer> docIDs) throws IOException {
-		Filter docIDFilter = new Filter() {
-
-			@Override
-			public DocIdSet getDocIdSet(AtomicReaderContext context,
-					Bits acceptDocs) throws IOException {
-				return new DocIdSet() {
-
-					@Override
-					public DocIdSetIterator iterator() throws IOException {
-						return new DocIdSetIterator() {
-							Iterator<Integer> iter = docIDs.iterator();
-							int docID = NO_MORE_DOCS;
-							
-							@Override
-							public int docID() {
-								return docID;
-							}
-
-							@Override
-							public int nextDoc() throws IOException {
-								if (iter.hasNext()) {
-									docID = iter.next();
-									return docID;
-								}
-								
-								return NO_MORE_DOCS;
-							}
-
-							@Override
-							public int advance(int target) throws IOException {
-								while (iter.hasNext()) {
-									docID = iter.next();
-									
-									if (docID >= target) {
-										return docID;
-									}
-								}
-								
-								return NO_MORE_DOCS;
-							}
-
-							@Override
-							public long cost() {
-								return 0;
-							}
-							
-						};
-					}
-					
-				};
-			}
-			
-		};
-		
-		return new DocumentFilteredAtomicIndexReader(atomicReader.getContext(),
-													 docIDFilter,
-													 false);
-	}
-
 	public static Document resolveOtherFromProgram(int doc, Type type, IndexSearcher searcher) throws IOException {
 		Document baseDoc = searcher.doc(doc);
 		

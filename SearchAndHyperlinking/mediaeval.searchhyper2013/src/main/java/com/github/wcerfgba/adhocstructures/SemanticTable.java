@@ -3,6 +3,7 @@ package com.github.wcerfgba.adhocstructures;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -250,5 +251,13 @@ public class SemanticTable implements Collection<Object[]> {
 	void growRows() {
 		rowCap *= 2;
 		table = Arrays.copyOf(table, rowCap);
+	}
+
+	public void sort(Comparator<Object[]> comparator) {
+		Arrays.sort(table, comparator);
+	}
+
+	public Object[] getRow(int row) {
+		return table[row];
 	}
 }

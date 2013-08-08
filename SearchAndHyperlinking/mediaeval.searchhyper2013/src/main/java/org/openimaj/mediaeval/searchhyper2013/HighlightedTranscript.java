@@ -2,6 +2,7 @@ package org.openimaj.mediaeval.searchhyper2013;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.lucene.analysis.Token;
@@ -35,86 +36,25 @@ public class HighlightedTranscript extends ArrayList<PositionWord> {
 		}
 	}
 	
-	/*public String toString() {
-		String string = "";
+	private TimedWord positionWordToTimedWord(PositionWord word) {
+		TimedWord timedWord = new TimedWord();
 		
-		for (PositionWord word : this) {
-			string += word.toString() + SEP;
-		}
+		timedWord.score = word.score;
+		timedWord.time = times[transcript.subSequence(0, word.position)
+		                       			 .toString()
+		                       			 .split(" ")
+		                       			 .length - 1];
+		timedWord.word = word.word;
 		
-		if (string.length() != 0) {
-			string = string.substring(0, string.length() - SEP.length() - 1);
-		}
-		
-		return string;
-	}*/
-	
-	/*public static HighlightedTranscript fromString(String string) {
-		String[] components = string.split(SEP);
-		
-		HighlightedTranscript transcript = new HighlightedTranscript();
-		
-		for (String component : components) {
-			transcript.add(PositionWord.fromString(component));
-		}
-		
-		return transcript;
-	}*/
-	
-	/*public List<TimedWord> resolveTimes(String transcript, String timesString) {
-		String[] timesStrings = timesString.split(" ");
-		
-		float[] times = new float[timesStrings.length];
-		
-		for (int i = 0; i < times.length; i++) {
-			times[i] = Float.parseFloat(timesStrings[i]);
-		}
-		
-		List<TimedWord> words = new ArrayList<TimedWord>(this.size());
-		
-		for (PositionWord word : this) {
-			String[] cutTrans = transcript.substring(0, word.position).split(" ");
-			
-			TimedWord tWord = new TimedWord();
-			
-			tWord.word = word.word;
-			tWord.score = word.score;
-			tWord.time = times[cutTrans.length - 1];
-			
-			words.add(tWord);
-		}
-		
-		return words;
-	}*/
-
-	/*public static List<HighlightedTranscript> fromStrings(String[] strings) {
-		List<HighlightedTranscript> list = 
-				new ArrayList<HighlightedTranscript>(strings.length);
-		
-		for (String string : strings) {
-			list.add(fromString(string));
-		}
-		
-		return list;
-	}*/
-
-	private float resolveTime(int index) {
-		PositionWord pWord = get(index);
-		
-		int wordNo = transcript.subSequence(0, pWord.position)
-							   .toString()
-							   .split(" ")
-							   .length - 1;
-		
-		return times[wordNo];
+		return timedWord;
 	}
 	
 	public float startTime() {
-		return resolveTime(0);
+		return positionWordToTimedWord(get(0)).time;
 	}
 	
 	public float endTime() {
-		return resolveTime(size() - 1);
+		return positionWordToTimedWord(get(size() - 1)).time;
 	}
 	
 	public float confidence() {
@@ -131,5 +71,25 @@ public class HighlightedTranscript extends ArrayList<PositionWord> {
 		return endTime() - startTime();
 	}
 	
-	
+	public Iterator<TimedWord> timedWordsIterator() {
+		return new Iterator<TimedWord>() {
+			Iterator<PositionWord> iter = iterator();
+			
+			@Override
+			public boolean hasNext() {
+				return iter.hasNext();
+			}
+
+			@Override
+			public TimedWord next() {
+				return positionWordToTimedWord(iter.next());
+			}
+
+			@Override
+			public void remove() {
+				iter.remove();
+			}
+			
+		};
+	}
 }

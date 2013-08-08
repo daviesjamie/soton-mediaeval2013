@@ -1,6 +1,8 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +24,8 @@ import com.github.wcerfgba.adhocstructures.IdentifyRequestHandler;
 import com.github.wcerfgba.adhocstructures.SemanticTable;
 
 public class QueryExpandingAlphaSearcher extends AlphaSearcher {
+	public static final float ORIGINAL_QUERY_SCALE_FACTOR = 5f;
+	public static final int MAX_EXPANSION_TERMS = 100;
 
 	public QueryExpandingAlphaSearcher(String runName, IndexReader indexReader) {
 		super(runName, indexReader);
@@ -99,6 +103,7 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 	
 	static Query createExpandedQuery(Query originalQuery,
 							  List<HighlightedTranscript> expansionBase) {
+		// Set up ad-hoc data structure.
 		final SemanticTable words = new SemanticTable(3);
 		
 		words.addAddHandler(new AddHandler<Object[]>() {
@@ -140,6 +145,57 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 			}
 		});
 		
+		// Add words from transcripts.
+		for (HighlightedTranscript transcript : expansionBase) {
+			Iterator<TimedWord> timedWords = transcript.timedWordsIterator();
+			
+			while (timedWords.hasNext()) {
+				TimedWord timedWord = timedWords.next();
+				
+				words.add(new Object[] { timedWord.word, timedWord.score });
+			}
+		}
 		
+		// Sort table by confidence so we can calculate the weight for the 
+		// words in the original query.
+		Comparator<Object[]> confidenceComparator = new Comparator<Object[]>() {
+
+			@Override
+			public int compare(Object[] arg0, Object[] arg1) {
+				float diff = (Float) arg0[2] - (Float) arg1[2];
+				
+				if (diff < 0) {
+					return -1;
+				} else if (diff > 0) {
+					return 1;
+				} else {
+					return 0;
+				}
+			}
+			
+		};
+		
+		words.sort(confidenceComparator);
+		
+		float maxConf = (Float) words.getRow(0)[2];
+		
+		for (String word : originalQuery.queryText.split(" ")) {
+			words.add(new Object[] { word, ORIGINAL_QUERY_SCALE_FACTOR * maxConf });
+		}
+		
+		words.sort(confidenceComparator);
+		
+		// Build expansion query.
+		StringBuilder query = new StringBuilder();
+		
+		for (int i = 0; i < MAX_EXPANSION_TERMS && i < words.size(); i++) {
+			Object[] row = words.getRow(i);
+			
+			query.append(row[0] + "^" + ((Float) row[1] * (Float) row[2]) + " ");
+		}
+		
+		return new Query(originalQuery.queryID + "_expanded",
+						 query.toString(),
+						 originalQuery.visualCues);
 	}
 }
