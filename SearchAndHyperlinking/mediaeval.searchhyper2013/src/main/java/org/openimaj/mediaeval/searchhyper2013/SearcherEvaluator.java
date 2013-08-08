@@ -136,7 +136,7 @@ public class SearcherEvaluator {
 				continue;
 			}
 			
-			System.out.println("\nResults: \n" + runResults);
+			//System.out.println("\nResults: \n" + runResults);
 			
 			for (int i = 0; i < runResults.size(); i++) {
 				Result result = runResults.get(i);

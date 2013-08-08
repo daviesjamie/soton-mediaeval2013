@@ -60,6 +60,8 @@ public class AlphaSearcher implements Searcher {
 	static final float SUBS_SCALE_FACTOR = 0.3f;
 	static final float LIMSI_SCALE_FACTOR = 1f;
 	static final float LIUM_SCALE_FACTOR = 1f;
+	float MIN_LENGTH = 60 * 3;
+	float MAX_LENGTH = 60 * 15;
 	
 	IndexReader indexReader;
 	String runName;
@@ -83,8 +85,8 @@ public class AlphaSearcher implements Searcher {
 			return null;
 		}
 		
-		System.out.println("Running AlphaSearcher with query text: " + 
-						   q.queryText);
+		//System.out.println("Running AlphaSearcher with query text: " + 
+		//				   q.queryText);
 		
 		IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 		EnglishAnalyzer englishAnalyzer = new EnglishAnalyzer(LUCENE_VERSION);
@@ -121,7 +123,9 @@ public class AlphaSearcher implements Searcher {
 														  runName,
 														  subsDoc.get(Field.Program.toString()),
 														  subsHits,
-														  SUBS_SCALE_FACTOR);
+														  SUBS_SCALE_FACTOR,
+														  MIN_LENGTH,
+														  MAX_LENGTH);
 			
 			Document limsiDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
@@ -137,7 +141,9 @@ public class AlphaSearcher implements Searcher {
 														  runName,
 														  limsiDoc.get(Field.Program.toString()),
 														  limsiHits,
-														  LIMSI_SCALE_FACTOR);
+														  LIMSI_SCALE_FACTOR,
+														  MIN_LENGTH,
+														  MAX_LENGTH);
 			
 			Document liumDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
@@ -153,7 +159,9 @@ public class AlphaSearcher implements Searcher {
 														  runName,
 														  liumDoc.get(Field.Program.toString()),
 														  liumHits,
-														  LIUM_SCALE_FACTOR);
+														  LIUM_SCALE_FACTOR,
+														  MIN_LENGTH,
+														  MAX_LENGTH);
 			
 			resultSet.addAll(subsResults);
 			resultSet.addAll(liumResults);
@@ -173,9 +181,9 @@ public class AlphaSearcher implements Searcher {
 													  org.apache.lucene.search.Query query,
 													  int maxHits) 
 												throws IOException, InvalidTokenOffsetsException {
-		System.out.println("Getting highlights for: " + 
-						   doc.get(Field.Program.toString()) + 
-						   " (" + doc.get(Field.Type.toString()) + ")");
+		//System.out.println("Getting highlights for: " + 
+		//				   doc.get(Field.Program.toString()) + 
+		//				   " (" + doc.get(Field.Type.toString()) + ")");
 		
 		Highlighter highlighter =
 				new Highlighter(

@@ -27,7 +27,7 @@ import com.github.wcerfgba.adhocstructures.IdentifyRequestHandler;
 import com.github.wcerfgba.adhocstructures.SemanticTable;
 
 public class QueryExpandingAlphaSearcher extends AlphaSearcher {
-	public static final float ORIGINAL_QUERY_SCALE_FACTOR = 0f;
+	public static final float ORIGINAL_QUERY_SCALE_FACTOR = 1.5f;
 	public static final int MAX_EXPANSION_TERMS = 100;
 
 	public QueryExpandingAlphaSearcher(String runName, IndexReader indexReader) {
@@ -40,8 +40,8 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 			return null;
 		}
 		
-		System.out.println("Running QueryExpandingAlphaSearcher with query " + 
-						   "text: " + q.queryText);
+		//System.out.println("Running QueryExpandingAlphaSearcher with query " + 
+		//				   "text: " + q.queryText);
 		
 		IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 		EnglishAnalyzer englishAnalyzer = new EnglishAnalyzer(LUCENE_VERSION);
@@ -225,7 +225,7 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 			query.append(row[0] + "^" + ((Integer) row[1] * (Float) row[2]) + " ");
 		}
 		
-		System.out.println(query.toString());
+		//System.out.println(query.toString());
 		
 		return new Query(originalQuery.queryID + "_expanded",
 						 query.toString(),

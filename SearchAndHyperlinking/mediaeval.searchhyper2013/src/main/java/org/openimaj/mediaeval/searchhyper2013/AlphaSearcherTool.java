@@ -46,17 +46,27 @@ public class AlphaSearcherTool {
 		
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		AlphaSearcher alphaSearcher = new AlphaSearcher("AlphaSearcher", indexReader);
+		AlphaSearcher alphaSearcher = new QueryExpandingAlphaSearcher("AlphaSearcher", indexReader);
 		
 		SearcherEvaluator eval = new SearcherEvaluator(alphaSearcher);
 		
 		Map<Query, Set<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
-		Vector results =
-				eval.evaluateAgainstExpectedResults(expectedResults, WINDOW);
+		for (float min = 60 * 1; min < 60 * 10; min += 60 * 1) {
+			for (float max = 60 * 5; max < 60 * 30; max += 60 * 5) {
+				Vector results =
+						eval.evaluateAgainstExpectedResults(expectedResults, WINDOW);
+				
+				System.out.println(min + ", " +
+								   max + ", " +
+								   results.getElement(0) + ", " +
+								   results.getElement(1) + ", " +
+								   results.getElement(2) + ", " +
+								   f1Score(results));
+			}
+		}
 		
-		System.out.println(results);
 	}
 	
 	private static double f1Score(Vector results) {

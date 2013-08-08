@@ -25,10 +25,6 @@ import org.openimaj.util.pair.Pair;
  *
  */
 public class ResultList extends ArrayList<Result> {
-	
-	private static final float MIN_RESULT_LENGTH = 60 * 3;
-	private static final float MAX_RESULT_LENGTH = 60 * 15;
-	
 	private String queryID;
 	private String runName;
 
@@ -69,8 +65,11 @@ public class ResultList extends ArrayList<Result> {
 														String runName, 
 														String fileName, 
 														Collection<? extends HighlightedTranscript> transcripts,
-														float confidenceScale) {
-		Set<HighlightedTranscript> splitTrans = splitLongTranscripts(transcripts);
+														float confidenceScale,
+														float minLength,
+														float maxLength) {
+		Set<HighlightedTranscript> splitTrans =
+				splitLongTranscripts(transcripts, minLength, maxLength);
 		
 		ResultList results = new ResultList(queryID, runName);
 		
@@ -92,16 +91,20 @@ public class ResultList extends ArrayList<Result> {
 			results.add(result);
 		}
 
-		return mergeShortResults(results);
+		return mergeShortResults(results, minLength, maxLength);
 	}
 	
-	private static Set<HighlightedTranscript> splitLongTranscripts(Collection<? extends HighlightedTranscript> transcripts) {
+	private static Set<HighlightedTranscript> splitLongTranscripts
+					(Collection<? extends HighlightedTranscript> transcripts,
+					 float minLength,
+					 float maxLength) {
+		
 		Set<HighlightedTranscript> splitTranscripts =
 				new HashSet<HighlightedTranscript>();
 		
 		for (HighlightedTranscript transcript : transcripts) {
-			for (HighlightedTranscript splitTrans : transcript.splitByMaxLength(MAX_RESULT_LENGTH)) {
-				if (splitTrans.length() < MAX_RESULT_LENGTH) {
+			for (HighlightedTranscript splitTrans : transcript.splitByMaxLength(maxLength)) {
+				if (splitTrans.length() < maxLength) {
 					splitTranscripts.add(splitTrans);
 				}
 			}
@@ -110,7 +113,9 @@ public class ResultList extends ArrayList<Result> {
 		return splitTranscripts;
 	}
 	
-	private static ResultList mergeShortResults(ResultList results) {
+	private static ResultList mergeShortResults(ResultList results,
+												float minLength,
+												float maxLength) {
 		Result[] array = results.toArray(new Result[0]);
 		
 		Pair<Result> nearest = null;
@@ -119,14 +124,14 @@ public class ResultList extends ArrayList<Result> {
 		for (int i = 0; i < array.length - 1; i++) {
 			Result a = array[i];
 			
-			if (a.length() > MIN_RESULT_LENGTH) {
+			if (a.length() > minLength) {
 				continue;
 			}
 			
 			for (int j = i + 1; j < array.length; j++) {
 				Result b = array[j];
 				
-				if (b.length() > MIN_RESULT_LENGTH) {
+				if (b.length() > minLength) {
 					continue;
 				}
 				
@@ -150,7 +155,7 @@ public class ResultList extends ArrayList<Result> {
 			mergedResult.confidenceScore = Math.max(nearest.firstObject().confidenceScore,
 												    nearest.secondObject().confidenceScore);
 			
-			if (mergedResult.length() > MAX_RESULT_LENGTH) {
+			if (mergedResult.length() > maxLength) {
 				return results;
 			}
 		
@@ -165,7 +170,7 @@ public class ResultList extends ArrayList<Result> {
 				}
 			}
 			
-			return mergeShortResults(merged);
+			return mergeShortResults(merged, minLength, maxLength);
 		} else {
 			return results;
 		}
