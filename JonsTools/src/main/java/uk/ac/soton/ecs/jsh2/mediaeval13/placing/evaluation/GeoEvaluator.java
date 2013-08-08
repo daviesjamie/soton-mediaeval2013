@@ -15,7 +15,9 @@ import java.util.Collection;
 import java.util.List;
 
 import org.openimaj.experiment.evaluation.Evaluator;
+import org.openimaj.util.function.Operation;
 import org.openimaj.util.pair.DoubleDoublePair;
+import org.openimaj.util.parallel.Parallel;
 
 /**
  * Implementation of an {@link Evaluator} for testing predicted geolocations
@@ -51,11 +53,20 @@ public class GeoEvaluator implements Evaluator<TLongObjectHashMap<GeoLocationEst
 	public TLongObjectHashMap<GeoLocationEstimate> evaluate() {
 		final TLongObjectHashMap<GeoLocationEstimate> results = new TLongObjectHashMap<GeoLocationEstimate>();
 
-		int i = 0;
-		for (final QueryImageData q : queries) {
-			results.put(q.flickrId, engine.estimateLocation(q));
-			System.err.println(i++);
-		}
+		// for (final QueryImageData q : queries) {
+		// results.put(q.flickrId, engine.estimateLocation(q));
+		// }
+
+		Parallel.forEach(queries, new Operation<QueryImageData>() {
+			@Override
+			public void perform(QueryImageData q) {
+				final GeoLocationEstimate location = engine.estimateLocation(q);
+				synchronized (results) {
+					results.put(q.flickrId, location);
+					System.out.println(results.size());
+				}
+			}
+		});
 
 		return results;
 	}

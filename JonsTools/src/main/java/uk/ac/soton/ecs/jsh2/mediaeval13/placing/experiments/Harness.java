@@ -29,9 +29,10 @@ public class Harness {
 		// final GeoPositioningEngine engine = new
 		// PriorRandomPositioningEngine(new File("/Users/jon/training_latlng"),
 		// getSkipIds(queries));
-		final GeoPositioningEngine engine = new NaiveBayesTagEngine(
-				new File("/Users/jon/lucene-test-index"),
-				getSkipIds(queries));
+		final GeoPositioningEngine engine = new NaiveBayesFilteredTagEngine(
+				new File("/Volumes/SSD/mediaeval13/placing/places.lucene"),
+				getSkipIds(queries),
+				new File("/Volumes/SSD/mediaeval13/placing/training_latlng"));
 
 		final GeoEvaluator eval = new GeoEvaluator(groundTruth, engine, queries);
 		final GeoAnalysisResult result = eval.analyse(eval.evaluate());
@@ -47,7 +48,7 @@ public class Harness {
 		return ids;
 	}
 
-	private static List<QueryImageData> readQueries(InputStream is) throws IOException {
+	static List<QueryImageData> readQueries(InputStream is) throws IOException {
 		final List<QueryImageData> data = new ArrayList<QueryImageData>();
 		BufferedReader br = null;
 
