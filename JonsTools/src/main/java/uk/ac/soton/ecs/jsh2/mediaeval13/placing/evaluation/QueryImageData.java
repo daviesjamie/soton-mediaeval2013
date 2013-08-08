@@ -40,6 +40,12 @@ public class QueryImageData {
 		data.dateUploaded = new Date(Long.parseLong(parts[6]));
 		data.numberOfViews = Integer.parseInt(parts[7]);
 
+		if (data.tags.startsWith("\""))
+			data.tags = data.tags.substring(1);
+
+		if (data.tags.endsWith("\""))
+			data.tags = data.tags.substring(0, data.tags.length() - 1);
+
 		return data;
 	}
 }
