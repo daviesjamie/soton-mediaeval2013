@@ -49,15 +49,15 @@ import org.apache.lucene.util.Version;
  *
  */
 public class AlphaSearcher implements Searcher {
-	private static final Version LUCENE_VERSION = Version.LUCENE_43;
+	static final Version LUCENE_VERSION = Version.LUCENE_43;
 	
-	private static final int NUM_SYNOPSIS_RESULTS = 3;
-	private static final int MAX_SUBS_HITS = 100;
-	private static final int MAX_LIMSI_HITS = 100;
-	private static final int MAX_LIUM_HITS = 100;
+	static final int NUM_SYNOPSIS_RESULTS = 3;
+	static final int MAX_SUBS_HITS = 100;
+	static final int MAX_LIMSI_HITS = 100;
+	static final int MAX_LIUM_HITS = 100;
 	
-	private IndexReader indexReader;
-	private String runName;
+	IndexReader indexReader;
+	String runName;
 	
 	public AlphaSearcher(String runName, IndexReader indexReader) {
 		this.indexReader = indexReader;
@@ -73,7 +73,7 @@ public class AlphaSearcher implements Searcher {
 		}
 	}
 	
-	private ResultList _search(Query q) throws Exception {
+	ResultList _search(Query q) throws Exception {
 		System.out.println("Running AlphaSearcher with query text: " + 
 						   q.queryText);
 		
@@ -151,7 +151,7 @@ public class AlphaSearcher implements Searcher {
 		return results;
 	}
 
-	private List<HighlightedTranscript> getHighlights(IndexSearcher indexSearcher,
+	List<HighlightedTranscript> getHighlights(IndexSearcher indexSearcher,
 													  Document doc,
 													  org.apache.lucene.search.Query query,
 													  int maxHits) 
