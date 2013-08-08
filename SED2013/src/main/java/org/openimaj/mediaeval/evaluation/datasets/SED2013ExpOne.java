@@ -19,7 +19,7 @@ import javax.xml.stream.XMLStreamException;
 import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
-import org.openimaj.experiment.evaluation.cluster.RangedDBSCANClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
 import org.openimaj.feature.DoubleFV;
@@ -205,8 +205,8 @@ public class SED2013ExpOne {
 	public FullMEAnalysis eval(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleNNDBSCAN dbs)
 	{
 		Function<List<Photo>, double[][]> func = new SpatialDoubleExtractor<Photo>(fve);
-		RangedDBSCANClusterEvaluator<double[][], FullMEAnalysis> eval =
-			new RangedDBSCANClusterEvaluator<double[][], FullMEAnalysis>(
+		ClusterEvaluator<double[][], FullMEAnalysis> eval =
+			new ClusterEvaluator<double[][], FullMEAnalysis>(
 				dbs,
 				ds,
 				func,
@@ -227,8 +227,8 @@ public class SED2013ExpOne {
 	public FullMEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DistanceDBSCAN dbs)
 	{
 		Function<List<Photo>,SparseMatrix> func = new PrecachedSimilarityDoubleExtractor<Photo>(fve,dbs.getEps());
-		RangedDBSCANClusterEvaluator<SparseMatrix, FullMEAnalysis> eval =
-			new RangedDBSCANClusterEvaluator<SparseMatrix, FullMEAnalysis>(
+		ClusterEvaluator<SparseMatrix, FullMEAnalysis> eval =
+			new ClusterEvaluator<SparseMatrix, FullMEAnalysis>(
 				dbs,
 				ds,
 				func,

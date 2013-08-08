@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.Comparator;
 
 import org.apache.log4j.Logger;
-import org.openimaj.experiment.evaluation.cluster.RangedDBSCANClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
 import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
@@ -39,8 +39,8 @@ public class SED2013SimilarityMatrixExperiment {
 		SimilarityDBSCAN dbsConf = new SimilarityDBSCAN(0.6, 2);
 		Training ds = loadGroundtruth();
 		SparseMatrix simMatrix = loadSparseMatrixByRows(matrixLocation,ds.numInstances());
-		RangedDBSCANClusterEvaluator<SparseMatrix, FullMEAnalysis> eval =
-			new RangedDBSCANClusterEvaluator<SparseMatrix, FullMEAnalysis>(
+		ClusterEvaluator<SparseMatrix, FullMEAnalysis> eval =
+			new ClusterEvaluator<SparseMatrix, FullMEAnalysis>(
 				dbsConf,
 				simMatrix,
 				ds,
