@@ -100,7 +100,7 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	private Clusterer<SparseMatrix> gen;
 	
 	@IndependentVariable
-	private SimilarityMatrixWrapper similarityMatrix;
+	protected SimilarityMatrixWrapper similarityMatrix;
 	
 	@IndependentVariable
 	private Function<IndexedPhoto, Integer> transformFunction;
@@ -179,12 +179,12 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	public void perform() {	
 		logger.debug("Preparing evaluation");
 		ClusterEvaluator<SparseMatrix, RandomBaselineSMEAnalysis> a = new ClusterEvaluator<SparseMatrix, RandomBaselineSMEAnalysis>(
-				gen,
-				similarityMatrix.matrix(),
-				transformFunction,
-				groundtruth,
-				new RandomBaselineSMEClusterAnalyser()
-				);
+			gen,
+			similarityMatrix.matrix(),
+			transformFunction,
+			groundtruth,
+			new RandomBaselineSMEClusterAnalyser()
+		);
 		logger.debug("Evaluating clusterer");
 		this.analysis = a.analyse(a.evaluate());
 	}

@@ -29,9 +29,14 @@ import org.openimaj.ml.clustering.SpatialClusterer;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
 import org.openimaj.ml.clustering.dbscan.DoubleNNDBSCAN;
 import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
+import org.openimaj.ml.clustering.spectral.AutoSelectingEigenChooser;
 import org.openimaj.ml.clustering.spectral.DoubleSpectralClustering;
 import org.openimaj.ml.clustering.spectral.GraphLaplacian;
+import org.openimaj.ml.clustering.spectral.HardCodedEigenChooser;
 import org.openimaj.ml.clustering.spectral.SpectralClusteringConf;
+import org.openimaj.ml.clustering.spectral.SpectralIndexedClusters;
+import org.openimaj.vis.general.BarVisualisation;
+import org.openimaj.vis.general.BarVisualisationBasic;
 
 import ch.akuhn.matrix.SparseMatrix;
 
@@ -54,10 +59,21 @@ public class SpectralSolrSimilarityExperiment extends SolrSimilarityMatrixCluste
 	@Override
 	public Clusterer<SparseMatrix> prepareClusterer() {
 		SpatialClusterer<DoubleDBSCANClusters,double[]> inner = new DoubleNNDBSCAN(
-			0.2, 2, new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.EUCLIDEAN)
+			1, 2, new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.EUCLIDEAN)
 		);
 		SpectralClusteringConf<double[]> conf = new SpectralClusteringConf<double[]>(inner, new GraphLaplacian.Normalised());
-		return new DoubleSpectralClustering(conf);
+		conf.eigenChooser = new AutoSelectingEigenChooser(200, 0.05);
+//		conf.eigenChooser = new HardCodedEigenChooser((int) (this.similarityMatrix.matrix().rowCount() * 0.05));
+		return new DoubleSpectralClustering(conf){
+			@Override
+			public SpectralIndexedClusters cluster(SparseMatrix data) {
+				SpectralIndexedClusters ret = super.cluster(data);
+				BarVisualisationBasic vis = new BarVisualisationBasic(800, 200);
+				vis.setData(ret.eigenValues());
+				vis.showWindow("Cluster Eigen Values");
+				return ret;
+			}
+		};
 	}
 
 	/**
@@ -84,6 +100,7 @@ public class SpectralSolrSimilarityExperiment extends SolrSimilarityMatrixCluste
 			SpectralSolrSimilarityExperiment exp = new SpectralSolrSimilarityExperiment(similarityMatrix, indexFile, start, end);
 			ExperimentContext c = ExperimentRunner.runExperiment(exp);
 			reportWriter.println(c);
+			System.out.println(c);
 			reportWriter.flush();
 		}
 		reportWriter.close();

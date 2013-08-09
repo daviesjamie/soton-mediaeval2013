@@ -62,7 +62,7 @@ public class DBSCANSolrSimilarityExperiment extends SolrSimilarityMatrixClustere
 		}
 		String indexFile = args[3];
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-		DoubleRange r = new DoubleRange(0.4,0.05,0.9);
+		DoubleRange r = new DoubleRange(0.5,0.05,0.7);
 		PrintWriter reportWriter = new PrintWriter(new File(expOut,"report.txt"));
 		
 		for (int i = 4; i < args.length; i++) {
