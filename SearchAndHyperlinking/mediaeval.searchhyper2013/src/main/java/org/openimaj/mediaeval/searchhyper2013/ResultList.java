@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.openimaj.io.IOUtils;
 import org.openimaj.util.pair.Pair;
@@ -64,11 +65,11 @@ public class ResultList extends ArrayList<Result> {
 	public static ResultList fromHighlightedTranscripts(String queryID,
 														String runName, 
 														String fileName, 
-														Collection<? extends HighlightedTranscript> transcripts,
+														List<HighlightedTranscript> transcripts,
 														float confidenceScale,
 														float minLength,
 														float maxLength) {
-		Set<HighlightedTranscript> splitTrans =
+		List<HighlightedTranscript> splitTrans =
 				splitLongTranscripts(transcripts, minLength, maxLength);
 		
 		ResultList results = new ResultList(queryID, runName);
@@ -94,13 +95,13 @@ public class ResultList extends ArrayList<Result> {
 		return mergeShortResults(results, minLength, maxLength);
 	}
 	
-	private static Set<HighlightedTranscript> splitLongTranscripts
-					(Collection<? extends HighlightedTranscript> transcripts,
+	private static List<HighlightedTranscript> splitLongTranscripts
+					(List<HighlightedTranscript> transcripts,
 					 float minLength,
 					 float maxLength) {
 		
-		Set<HighlightedTranscript> splitTranscripts =
-				new HashSet<HighlightedTranscript>();
+		List<HighlightedTranscript> splitTranscripts =
+				new ArrayList<HighlightedTranscript>();
 		
 		for (HighlightedTranscript transcript : transcripts) {
 			for (HighlightedTranscript splitTrans : transcript.splitByMaxLength(maxLength)) {
@@ -166,7 +167,7 @@ public class ResultList extends ArrayList<Result> {
 			for (Result result : results) {
 				if (!result.equals(nearest.firstObject()) &&
 					!result.equals(nearest.secondObject())) {
-					merged.add(result);
+						merged.add(result);
 				}
 			}
 			

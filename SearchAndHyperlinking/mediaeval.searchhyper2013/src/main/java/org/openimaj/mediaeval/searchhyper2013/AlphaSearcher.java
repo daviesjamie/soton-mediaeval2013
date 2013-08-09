@@ -1,7 +1,9 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,11 +59,11 @@ public class AlphaSearcher implements Searcher {
 	static final int MAX_SUBS_HITS = 100;
 	static final int MAX_LIMSI_HITS = 100;
 	static final int MAX_LIUM_HITS = 100;
-	static final float SUBS_SCALE_FACTOR = 0.3f;
-	static final float LIMSI_SCALE_FACTOR = 1f;
-	static final float LIUM_SCALE_FACTOR = 1f;
-	float MIN_LENGTH = 60 * 3;
-	float MAX_LENGTH = 60 * 15;
+	float SUBS_SCALE_FACTOR = 0.3f;
+	float LIMSI_SCALE_FACTOR = 1f;
+	float LIUM_SCALE_FACTOR = 1f;
+	float MIN_LENGTH = 60 * 5;
+	float MAX_LENGTH = 60 * 25;
 	
 	IndexReader indexReader;
 	String runName;
@@ -105,10 +107,28 @@ public class AlphaSearcher implements Searcher {
 												synopsisFilter,
 												NUM_SYNOPSIS_RESULTS);
 
+		ScoreDoc[] scoreDocs = synopses.scoreDocs;
+		Arrays.sort(scoreDocs, new Comparator<ScoreDoc>() {
+
+			@Override
+			public int compare(ScoreDoc arg0, ScoreDoc arg1) {
+				float diff = arg0.score - arg1.score;
+				
+				if (diff < 0) {
+					return -1;
+				} else if (diff > 0) {
+					return 1;
+				} else {
+					return 0;
+				}
+			}
+			
+		});
+		
 		Set<Result> resultSet = new HashSet<Result>();
 		
 		// 2. Find results within transcripts.
-		for (ScoreDoc synopsis : synopses.scoreDocs) {
+		for (ScoreDoc synopsis : scoreDocs) {
 			Document subsDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
 														Type.Subtitles,
@@ -177,10 +197,10 @@ public class AlphaSearcher implements Searcher {
 	}
 
 	List<HighlightedTranscript> getHighlights(IndexSearcher indexSearcher,
-													  Document doc,
-													  org.apache.lucene.search.Query query,
-													  int maxHits) 
-												throws IOException, InvalidTokenOffsetsException {
+											  Document doc,
+											  org.apache.lucene.search.Query query,
+											  int maxHits) 
+									throws IOException, InvalidTokenOffsetsException {
 		//System.out.println("Getting highlights for: " + 
 		//				   doc.get(Field.Program.toString()) + 
 		//				   " (" + doc.get(Field.Type.toString()) + ")");
@@ -203,5 +223,14 @@ public class AlphaSearcher implements Searcher {
 															   frags);
 		
 		return hits;
+	}
+
+	@Override
+	public void configure(Float[] settings) {
+		SUBS_SCALE_FACTOR = settings[0];
+		LIMSI_SCALE_FACTOR = settings[1];
+		LIUM_SCALE_FACTOR = settings[2];
+		MIN_LENGTH = settings[3];
+		MAX_LENGTH = settings[4];
 	}
 }

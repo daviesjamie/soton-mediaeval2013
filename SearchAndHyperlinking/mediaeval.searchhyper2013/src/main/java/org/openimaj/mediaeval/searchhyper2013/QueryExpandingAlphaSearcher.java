@@ -27,7 +27,7 @@ import com.github.wcerfgba.adhocstructures.IdentifyRequestHandler;
 import com.github.wcerfgba.adhocstructures.SemanticTable;
 
 public class QueryExpandingAlphaSearcher extends AlphaSearcher {
-	public static final float ORIGINAL_QUERY_SCALE_FACTOR = 1.5f;
+	float ORIGINAL_QUERY_SCALE_FACTOR = 1f;
 	public static final int MAX_EXPANSION_TERMS = 100;
 
 	public QueryExpandingAlphaSearcher(String runName, IndexReader indexReader) {
@@ -121,7 +121,7 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 		return results;
 	}
 	
-	static Query createExpandedQuery(Query originalQuery,
+	Query createExpandedQuery(Query originalQuery,
 							  List<HighlightedTranscript> expansionBase) {
 		// Set up ad-hoc data structure.
 		final SemanticTable words = new SemanticTable(3);
@@ -230,5 +230,12 @@ public class QueryExpandingAlphaSearcher extends AlphaSearcher {
 		return new Query(originalQuery.queryID + "_expanded",
 						 query.toString(),
 						 originalQuery.visualCues);
+	}
+	
+	@Override
+	public void configure(Float[] settings) {
+		super.configure(settings);
+		
+		ORIGINAL_QUERY_SCALE_FACTOR = settings[5];
 	}
 }

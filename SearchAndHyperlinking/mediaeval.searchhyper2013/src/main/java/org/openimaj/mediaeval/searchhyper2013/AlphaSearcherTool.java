@@ -4,6 +4,7 @@ import gov.sandia.cognition.math.matrix.Vector;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,31 +47,39 @@ public class AlphaSearcherTool {
 		
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		AlphaSearcher alphaSearcher = new QueryExpandingAlphaSearcher("AlphaSearcher", indexReader);
+		AlphaSearcher alphaSearcher = new AlphaSearcher("AlphaSearcher", indexReader);
 		
 		SearcherEvaluator eval = new SearcherEvaluator(alphaSearcher);
 		
-		Map<Query, Set<Result>> expectedResults = 
+		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
-		for (float min = 60 * 1; min < 60 * 10; min += 60 * 1) {
-			for (float max = 60 * 5; max < 60 * 30; max += 60 * 5) {
-				Vector results =
-						eval.evaluateAgainstExpectedResults(expectedResults, WINDOW);
-				
-				System.out.println(min + ", " +
-								   max + ", " +
-								   results.getElement(0) + ", " +
-								   results.getElement(1) + ", " +
-								   results.getElement(2) + ", " +
-								   f1Score(results));
-			}
-		}
+		Float[] initial = { 0f, 0f, 0f, 60 * 1f, 60 * 5f };
+		Float[] increment = { 0.1f, 0.1f, 0.1f, 60 * 1f, 60 * 5f };
+		Float[] termination = { 1f, 1f, 1f, 60 * 15f, 60 * 60f };
 		
+		List<Float[]> evaluation = eval.evaluateOverSettings(expectedResults,
+															 WINDOW,
+															 initial, 
+															 increment, 
+															 termination);
+		
+		//System.out.println(listToCSV(evaluation));
 	}
 	
-	private static double f1Score(Vector results) {
-		return 2 * results.getElement(0) * results.getElement(1) /
-			   (results.getElement(0) + results.getElement(1));
+	public static String listToCSV(List<Float[]> list) {
+		StringBuilder string = new StringBuilder();
+		
+		for (Object[] line : list) {
+			for (Object item : line) {
+				string.append(item.toString() + ", ");
+			}
+			
+			string.replace(string.length() - 2, string.length(), "");
+			
+			string.append("\n");
+		}
+		
+		return string.toString();
 	}
 }

@@ -40,7 +40,7 @@ public class LIUMFileDocumentConverter implements FileDocumentConverter {
         	String[] components = line.split(" ");
         	
         	timesBuilder.append(Float.parseFloat(components[2]) + " ");
-        	wordsBuilder.append(components[4]);
+        	wordsBuilder.append(components[4] + " ");
         }
         
         doc.add(new TextField(Field.Text.toString(),

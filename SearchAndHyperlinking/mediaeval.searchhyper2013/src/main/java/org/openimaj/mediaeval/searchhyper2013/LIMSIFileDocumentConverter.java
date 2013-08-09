@@ -85,7 +85,7 @@ public class LIMSIFileDocumentConverter implements FileDocumentConverter {
 										if (wordElement.getTagName().equals("Word")) {
 											String word = wordElement.getTextContent().trim();
 											
-											if (word.equals(" {fw} ")) {
+											if (word.contains("{fw}")) {
 												continue;
 											}
 											
