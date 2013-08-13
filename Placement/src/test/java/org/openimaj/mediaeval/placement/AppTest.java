@@ -1,4 +1,4 @@
-package org.openimag.mediaeval.placement;
+package org.openimaj.mediaeval.placement;
 
 import static org.junit.Assert.*;
 
