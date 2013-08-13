@@ -1,4 +1,4 @@
-package org.openimaj.mediaeval.placement.experiments;
+package org.openimaj.mediaeval.placement.playground;
 
 import java.awt.RenderingHints;
 import java.io.File;
@@ -25,7 +25,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.FastScatterPlot;
 import org.jfree.ui.ApplicationFrame;
 
-public class LuceneTagPlotter {
+public class TagCountPlotter {
     public static void main(String[] args) throws IOException, ParseException {
         final Directory directory = new SimpleFSDirectory(new File("data/lucene-test-index"));
 

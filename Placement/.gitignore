@@ -3,6 +3,4 @@ target
 .project
 .classpath
 data/*
-!data/fix_dups.py
-!data/importmongo
 solr/placementimages/data/
