@@ -26,8 +26,8 @@ import org.openimaj.util.pair.Pair;
  *
  */
 public class ResultList extends ArrayList<Result> {
-	private String queryID;
-	private String runName;
+	String queryID;
+	String runName;
 
 	public ResultList(String queryID, String runName) {
 		this.queryID = queryID;
@@ -92,7 +92,7 @@ public class ResultList extends ArrayList<Result> {
 			results.add(result);
 		}
 
-		return mergeShortResults(results, minLength, maxLength);
+		return results.mergeShortResults(minLength, maxLength);
 	}
 	
 	private static List<HighlightedTranscript> splitLongTranscripts
@@ -114,10 +114,8 @@ public class ResultList extends ArrayList<Result> {
 		return splitTranscripts;
 	}
 	
-	private static ResultList mergeShortResults(ResultList results,
-												float minLength,
-												float maxLength) {
-		Result[] array = results.toArray(new Result[0]);
+	public ResultList mergeShortResults(float minLength, float maxLength) {
+		Result[] array = toArray(new Result[0]);
 		
 		Pair<Result> nearest = null;
 		float nearestDist = Float.MAX_VALUE;
@@ -157,23 +155,24 @@ public class ResultList extends ArrayList<Result> {
 												    nearest.secondObject().confidenceScore);
 			
 			if (mergedResult.length() > maxLength) {
-				return results;
+				return this;
 			}
 		
-			ResultList merged = new ResultList(results.queryID, results.runName);
+			ResultList merged = new ResultList(queryID, runName);
 			
 			merged.add(mergedResult);
 			
-			for (Result result : results) {
+			for (Result result : this) {
 				if (!result.equals(nearest.firstObject()) &&
 					!result.equals(nearest.secondObject())) {
 						merged.add(result);
 				}
 			}
 			
-			return mergeShortResults(merged, minLength, maxLength);
+			return merged.mergeShortResults(minLength, maxLength);
 		} else {
-			return results;
+			return this;
 		}
 	}
+
 }

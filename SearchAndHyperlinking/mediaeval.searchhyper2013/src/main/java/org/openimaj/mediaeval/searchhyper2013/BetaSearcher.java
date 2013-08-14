@@ -26,11 +26,17 @@ import com.github.wcerfgba.adhocstructures.AddHandler;
 import com.github.wcerfgba.adhocstructures.IdentifyRequestHandler;
 import com.github.wcerfgba.adhocstructures.SemanticTable;
 
-public class QueryExpandingAlphaSearcher extends AlphaSearcher {
+/**
+ * AlphaSearcher with textual query expansion.
+ * 
+ * @author John Preston (jlp1g11@ecs.soton.ac.uk)
+ *
+ */
+public class BetaSearcher extends AlphaSearcher {
 	float ORIGINAL_QUERY_SCALE_FACTOR = 1f;
 	public static final int MAX_EXPANSION_TERMS = 100;
 
-	public QueryExpandingAlphaSearcher(String runName, IndexReader indexReader) {
+	public BetaSearcher(String runName, IndexReader indexReader) {
 		super(runName, indexReader);
 	}
 	
