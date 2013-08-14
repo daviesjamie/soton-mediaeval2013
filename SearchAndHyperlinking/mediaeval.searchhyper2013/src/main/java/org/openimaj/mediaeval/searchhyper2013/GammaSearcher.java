@@ -13,12 +13,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
@@ -32,7 +34,6 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
-import org.openimaj.io.FileUtils;
 import org.openimaj.io.IOUtils;
 import org.openimaj.mediaeval.searchhyper2013.ImageTerrierSearcher.SearchResult;
 
@@ -53,7 +54,7 @@ public class GammaSearcher extends AlphaSearcher {
 	
 	ImageTerrierSearcher imageSearcher;
 	File shotsDirectory;
-	Map<String, Map<Integer, File>> shotsDirectoryCache;
+	Map<String, Map<Integer, String>> shotsDirectoryCache;
 	
 	public GammaSearcher(String runName,
 						 IndexReader indexReader,
@@ -112,11 +113,11 @@ public class GammaSearcher extends AlphaSearcher {
 		
 		List<File> framesFiles = new ArrayList<File>();
 		
-		Map<Integer, File> frames = shotsDirectoryCache.get(result.fileName);
+		Map<Integer, String> frames = shotsDirectoryCache.get(result.fileName);
 		
 		for (Integer frame : frames.keySet()) {
 			if (firstFrame <= frame && frame <= lastFrame) {
-				framesFiles.add(frames.get(frame));
+				framesFiles.add(new File(frames.get(frame)));
 			}
 		}
 		
@@ -153,41 +154,36 @@ public class GammaSearcher extends AlphaSearcher {
 		return results;
 	}
 	
-	static Map<String, Map<Integer, File>> cacheDirectory(File dir) throws IOException {
-		final Map<String, Map<Integer, File>> cache = 
-				new HashMap<String, Map<Integer, File>>();
+	static Map<String, Map<Integer, String>> cacheDirectory(File dir) throws IOException {
+		final Map<String, Map<Integer, String>> cache = 
+				new HashMap<String, Map<Integer, String>>();
 		
-		Files.walkFileTree(dir.toPath(), new SimpleFileVisitor<Path>() {
-
-			@Override
-			public FileVisitResult visitFile(Path arg0, BasicFileAttributes arg1)
-					throws IOException {
-				String program = arg0.getParent()
-									 .getParent()
-									 .getParent()
-									 .getFileName()
-									 .toString();
-				
-				Integer frame = Integer.parseInt(arg0.getFileName()
-													 .toString()
-													 .split("\\.")[0]);
-				
-				Map<Integer, File> programFrames = cache.get(program);
-				
-				if (programFrames == null) {
-					programFrames = new HashMap<Integer, File>();
-					
-					programFrames.put(frame, arg0.toFile());
-				
-					cache.put(program, programFrames);
-				} else {
-					programFrames.put(frame,  arg0.toFile());
-				}
-				
-				return FileVisitResult.CONTINUE;
-			}
+		Iterator<File> files = FileUtils.iterateFiles(dir,
+													  new String[] { "jpg" },
+													  true);
+		
+		while (files.hasNext()) {
+			File file = files.next();
 			
-		});
+			String program = file.getParentFile()
+								 .getParentFile()
+								 .getParentFile()
+								 .getName();
+			Integer frame = Integer.parseInt(file.getName()
+												 .split("\\.")[0]);
+			
+			Map<Integer, String> programFrames = cache.get(program);
+			
+			if (programFrames == null) {
+				programFrames = new HashMap<Integer, String>();
+				
+				programFrames.put(frame, file.getAbsolutePath());
+			
+				cache.put(program, programFrames);
+			} else {
+				programFrames.put(frame,  file.getAbsolutePath());
+			}
+		}
 		
 		return cache;
 	}
