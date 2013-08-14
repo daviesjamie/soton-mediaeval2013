@@ -138,7 +138,7 @@ public class LireExtractor {
     }
 
     public static void main( String args[] ) throws IOException {
-        File input = new File( "data/lireskipped.txt" );
+        File input = new File( "data/skippedfeatures" );
         BufferedReader br = new BufferedReader( new FileReader( input ) );
         
         String line = null;
@@ -147,7 +147,7 @@ public class LireExtractor {
         
         final IndexReader ir = DirectoryReader.open( new SimpleFSDirectory( new File( "data/lucene-test-index" ) ) );
         final IndexSearcher metadata = new IndexSearcher( ir );
-        LireExtractor lireExtractor = new LireExtractor( "data/lire-feature-index-new", metadata );
+        LireExtractor lireExtractor = new LireExtractor( "data/lire-feature-index", metadata );
         
         while( ( line = br.readLine() ) != null ) {
             try {
