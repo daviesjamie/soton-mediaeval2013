@@ -20,37 +20,37 @@ public class GammaSearcherTool {
 
 	public static void main(String[] args) throws IOException, SearcherException, ParserConfigurationException, SAXException {
 		if (args[0].equalsIgnoreCase("Search")) {
-			search(new File(args[1]), args[2], new File(args[3]), new File(args[4]), new File(args[5]));
+			search(new File(args[1]), args[2], new File(args[3]), new File(args[4]), new File(args[5]), new File(args[6]));
 		} else if (args[0].equalsIgnoreCase("Evaluate")) {
-			evaluate(new File(args[1]), new File(args[2]), new File(args[3]), new File(args[4]), new File(args[5]), new File(args[6]));
+			evaluate(new File(args[1]), new File(args[2]), new File(args[3]), new File(args[4]), new File(args[5]), new File(args[6]), new File(args[7]));
 		} else {
 			System.err.println("Unrecognised mode. Recognised modes are " + 
 							   "'Search' and 'Evaluate'.");
 		}
 	}
 	
-	private static void search(File index, String query, File imageIndex, File centroids, File shotsDir) throws IOException, SearcherException {
+	private static void search(File index, String query, File imageIndex, File centroids, File shotsDir, File shotsDirCacheFile) throws IOException, SearcherException {
 		Directory indexDir = FSDirectory.open(index);
 		
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
 		ImageTerrierSearcher imageSearcher = new ImageTerrierSearcher(imageIndex, centroids);
 		
-		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageSearcher, shotsDir);
+		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageSearcher, shotsDir, shotsDirCacheFile);
 		
 		Query q = new Query("CLI", query, null);
 		
 		System.out.println(gammaSearcher.search(q));
 	}
 	
-	private static void evaluate(File index, File queriesFile, File resultsFile, File imageIndex, File centroids, File shotsDir) throws IOException, ParserConfigurationException, SAXException {
+	private static void evaluate(File index, File queriesFile, File resultsFile, File imageIndex, File centroids, File shotsDir, File shotsDirCacheFile) throws IOException, ParserConfigurationException, SAXException {
 		Directory indexDir = FSDirectory.open(index);
 		
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
 		ImageTerrierSearcher imageSearcher = new ImageTerrierSearcher(imageIndex, centroids);
 		
-		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageSearcher, shotsDir);
+		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageSearcher, shotsDir, shotsDirCacheFile);
 		
 		SearcherEvaluator eval = new SearcherEvaluator(gammaSearcher);
 		

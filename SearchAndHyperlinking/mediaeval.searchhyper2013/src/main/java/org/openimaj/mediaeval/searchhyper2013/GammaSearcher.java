@@ -37,6 +37,8 @@ import org.openimaj.image.MBFImage;
 import org.openimaj.io.IOUtils;
 import org.openimaj.mediaeval.searchhyper2013.ImageTerrierSearcher.SearchResult;
 
+import ch.qos.logback.core.util.FileUtil;
+
 /**
  * Extends AlphaSearcher by expanding the query using similar frames in an 
  * ImageTerrier database.
@@ -59,13 +61,14 @@ public class GammaSearcher extends AlphaSearcher {
 	public GammaSearcher(String runName,
 						 IndexReader indexReader,
 						 ImageTerrierSearcher imageSearcher,
-						 File shotsDirectory) throws IOException {
+						 File shotsDirectory,
+						 File shotsDirectoryCacheFile) throws IOException {
 		super(runName, indexReader);
 		
 		this.imageSearcher = imageSearcher;
-		this.shotsDirectory = shotsDirectory;
+		this.shotsDirectory = shotsDirectory;		
 		
-		shotsDirectoryCache = cacheDirectory(shotsDirectory);
+		shotsDirectoryCache = IOUtils.readFromFile(shotsDirectoryCacheFile);
 	}
 	
 	@Override
@@ -117,7 +120,10 @@ public class GammaSearcher extends AlphaSearcher {
 		
 		for (Integer frame : frames.keySet()) {
 			if (firstFrame <= frame && frame <= lastFrame) {
-				framesFiles.add(new File(frames.get(frame)));
+				String path = shotsDirectory.getAbsolutePath() + "/" +
+							  frames.get(frame);
+				System.out.println(path);
+				framesFiles.add(new File(path));
 			}
 		}
 		
@@ -171,17 +177,20 @@ public class GammaSearcher extends AlphaSearcher {
 								 .getName();
 			Integer frame = Integer.parseInt(file.getName()
 												 .split("\\.")[0]);
+			String fileName = file.getAbsolutePath()
+								  .replaceAll(".*/(.*?)/shots/(.*)$",
+										      "$1/shots/$2");
 			
 			Map<Integer, String> programFrames = cache.get(program);
 			
 			if (programFrames == null) {
 				programFrames = new HashMap<Integer, String>();
 				
-				programFrames.put(frame, file.getAbsolutePath());
+				programFrames.put(frame, fileName);
 			
 				cache.put(program, programFrames);
 			} else {
-				programFrames.put(frame,  file.getAbsolutePath());
+				programFrames.put(frame,  fileName);
 			}
 		}
 		
