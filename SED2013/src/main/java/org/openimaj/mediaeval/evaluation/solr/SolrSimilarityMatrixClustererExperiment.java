@@ -2,6 +2,7 @@ package org.openimaj.mediaeval.evaluation.solr;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -61,7 +62,15 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		this.indexFile = indexFile;
 	}
 
-	private static MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto> datasetFromSolr(String indexFile, int start, int end) throws CorruptIndexException, IOException {
+	/**
+	 * @param indexFile
+	 * @param start
+	 * @param end
+	 * @return dataset from a solr index
+	 * @throws CorruptIndexException
+	 * @throws IOException
+	 */
+	public static MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto> datasetFromSolr(String indexFile, int start, int end) throws CorruptIndexException, IOException {
 //		Query q = NumericRangeQuery.newLongRange("index", 0l, 0l, true, true);
 ////		final Query q = new QueryParser(Version.LUCENE_40, "tag", new StandardAnalyzer(Version.LUCENE_40)).parse("cheese");
 		final Directory directory = new SimpleFSDirectory(new File(indexFile));
@@ -118,7 +127,7 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	private int end = 1000;
 	
 //	@DependentVariable
-	private RandomBaselineSMEAnalysis analysis;
+	public RandomBaselineSMEAnalysis analysis;
 	@DependentVariable
 	protected RandomBaselineClusterAnalysis<FScoreAnalysis> f1score;
 	@DependentVariable
@@ -196,5 +205,27 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		this.randIndex = this.analysis.randIndex;
 		this.stats = this.analysis.stats;
 		this.decision = this.f1score.getUnmodified().getDecisionAnalysis();
+	}
+
+	/**
+	 * Write the index in each cluster in the format:
+	 * index1 cluster1
+	 * index2 cluster1
+	 * ...
+	 * indexk cluster2
+	 * ...
+	 * indexm clustern
+	 * 
+	 * @param clusterWriter
+	 * @param clusters
+	 */
+	public void writeIndexClusters(PrintWriter clusterWriter, int[][] clusters) {
+		for (int i = 0; i < clusters.length; i++) {
+			int[] cluster = clusters[i];
+			for (int j = 0; j < cluster.length; j++) {
+				clusterWriter.printf("%d %d\n",cluster[j],i);
+			}
+		}
+		clusterWriter.flush();
 	}
 }

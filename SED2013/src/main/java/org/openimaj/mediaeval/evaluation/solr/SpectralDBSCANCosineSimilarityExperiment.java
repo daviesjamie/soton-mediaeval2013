@@ -31,21 +31,21 @@ import ch.akuhn.matrix.SparseMatrix;
  *
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  */
-public class SpectralSolrSimilarityExperiment extends SolrSimilarityMatrixClustererExperiment{
+public class SpectralDBSCANCosineSimilarityExperiment extends SolrSimilarityMatrixClustererExperiment{
 	/**
 	 * @param similarityFile
 	 * @param indexFile
 	 * @param start
 	 * @param end
 	 */
-	public SpectralSolrSimilarityExperiment(String similarityFile, String indexFile, int start, int end) {
+	public SpectralDBSCANCosineSimilarityExperiment(String similarityFile, String indexFile, int start, int end) {
 		super(similarityFile, indexFile, start, end);
 	}
 
 	@Override
 	public Clusterer<SparseMatrix> prepareClusterer() {
 		SpatialClusterer<DoubleDBSCANClusters,double[]> inner = new DoubleNNDBSCAN(
-			1, 2, new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.EUCLIDEAN)
+			-0.8, 3, new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.COSINE_DIST)
 		);
 		SpectralClusteringConf<double[]> conf = new SpectralClusteringConf<double[]>(inner, new GraphLaplacian.Normalised());
 //		conf.eigenChooser = new AutoSelectingEigenChooser(50, 0.05);
@@ -72,7 +72,7 @@ public class SpectralSolrSimilarityExperiment extends SolrSimilarityMatrixCluste
 	public static void main(String[] args) throws IOException, XMLStreamException, ParseException {
 		int start = Integer.parseInt(args[0]);
 		int end = Integer.parseInt(args[1]);
-		String experimentOut = args[2] + "/spectral";
+		String experimentOut = args[2] + "/spectral_dbscancosine";
 		File expOut = new File(experimentOut,String.format("%d_%d",start,end));
 		if(!expOut.exists()){
 			expOut.mkdirs();
@@ -86,7 +86,7 @@ public class SpectralSolrSimilarityExperiment extends SolrSimilarityMatrixCluste
 			String similarityMatrix = args[i];
 			String[] split = similarityMatrix.split("/");
 			String name = split[split.length-1];
-			SpectralSolrSimilarityExperiment exp = new SpectralSolrSimilarityExperiment(similarityMatrix, indexFile, start, end);
+			SpectralDBSCANCosineSimilarityExperiment exp = new SpectralDBSCANCosineSimilarityExperiment(similarityMatrix, indexFile, start, end);
 			ExperimentContext c = ExperimentRunner.runExperiment(exp);
 			exp.writeIndexClusters(correctWriter,exp.analysis.correct);
 			exp.writeIndexClusters(estimatedWriter,exp.analysis.estimated);

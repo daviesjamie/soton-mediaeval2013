@@ -43,7 +43,7 @@ public class DBSCANSolrSimilarityExperiment extends SolrSimilarityMatrixClustere
 	double eps;
 	@Override
 	public SimilarityDBSCAN prepareClusterer() {
-		return new SimilarityDBSCAN(eps, 5);
+		return new SimilarityDBSCAN(eps, 1);
 	}
 
 	/**
@@ -62,27 +62,40 @@ public class DBSCANSolrSimilarityExperiment extends SolrSimilarityMatrixClustere
 		}
 		String indexFile = args[3];
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-		DoubleRange r = new DoubleRange(0.5,0.05,0.7);
-		PrintWriter reportWriter = new PrintWriter(new File(expOut,"report.txt"));
+		DoubleRange r = new DoubleRange(0.4,0.05,1.5);
 		
+		String allExp = ""; 
 		for (int i = 4; i < args.length; i++) {
 			String similarityMatrix = args[i];
 			String[] split = similarityMatrix.split("/");
 			String name = split[split.length-1];
+			allExp += name+"+";
 			DBSCANSolrSimilarityExperiment exp = new DBSCANSolrSimilarityExperiment(similarityMatrix, indexFile, start, end);
+			File dmatDir = new File(expOut,name);
+			dmatDir.mkdirs();
 			for (Double d : r) {
+				File epsDir = new File(dmatDir,String.format("%2.2f",d));
+				epsDir.mkdirs();
+				PrintWriter reportWriter = new PrintWriter(new File(epsDir,"report.txt"));
+				PrintWriter correctWriter = new PrintWriter(new 
+						File(epsDir,"correct.txt"));
+				PrintWriter estimatedWriter = new PrintWriter(new File(epsDir,"estimated.txt"));
 				exp.eps = d;
 				ExperimentContext c = ExperimentRunner.runExperiment(exp);
 				dataset.addValue(exp.f1score.score(), name, String.format("%2.2f",d));
+				exp.writeIndexClusters(correctWriter, exp.analysis.correct);
+				exp.writeIndexClusters(estimatedWriter, exp.analysis.estimated);
 				reportWriter.println(c);
 				reportWriter.flush();
+				reportWriter.close();
 			}
 		}
-		reportWriter.close();
-		IOUtils.writeToFile(dataset, new File(expOut,"results.jchart"));
-		dataset = IOUtils.readFromFile(new File(expOut,"results.jchart"));
+		allExp = allExp.substring(0,allExp.length()-1);
+		String combinedResultsName = String.format("results_%s",allExp );
+		IOUtils.writeToFile(dataset, new File(expOut,combinedResultsName + ".jchart"));
+		dataset = IOUtils.readFromFile(new File(expOut,combinedResultsName + ".jchart"));
 		JFreeChart line = ChartFactory.createLineChart("DBSCAN Clustering", "DBSCAN eps", "f1score", dataset , PlotOrientation.VERTICAL, true, false, false);
-		ChartUtilities.saveChartAsPNG(new File(expOut,"results.png"), line, 800, 600);
+		ChartUtilities.saveChartAsPNG(new File(expOut,combinedResultsName+".png"), line, 800, 600);
 		
 	}
 
