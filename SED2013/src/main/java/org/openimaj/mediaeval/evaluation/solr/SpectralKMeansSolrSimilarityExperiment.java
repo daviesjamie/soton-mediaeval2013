@@ -55,7 +55,7 @@ public class SpectralKMeansSolrSimilarityExperiment extends SolrSimilarityMatrix
 				new Function<IndependentPair<double[],double[][]>, SpatialClusterer<? extends SpatialClusters<double[]>,double[]>>() {
 			@Override
 			public SpatialClusterer<? extends SpatialClusters<double[]>, double[]> apply(IndependentPair<double[], double[][]> in) {
-				DoubleKMeans inner = DoubleKMeans.createExact(0, 69, 1000);
+				DoubleKMeans inner = DoubleKMeans.createExact(69, 1000);
 				inner.getConfiguration().setNearestNeighbourFactory(new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.COSINE_SIM));
 				return inner;
 			}
