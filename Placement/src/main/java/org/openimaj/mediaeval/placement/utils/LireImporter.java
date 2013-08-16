@@ -1,15 +1,15 @@
 package org.openimaj.mediaeval.placement.utils;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
 import net.semanticmetadata.lire.utils.LuceneUtils;
 
@@ -42,7 +42,7 @@ public class LireImporter {
         "tamura "
     };
 
-    private static final List<Integer> SKIP = Arrays.asList();
+    private String SKIPPED_OUTPUT = "data/featureskipped";
     
     private String indexPath;
     private List<File> inputFiles;
@@ -56,6 +56,7 @@ public class LireImporter {
     public void run() {
         try {
             IndexWriterConfig config = new IndexWriterConfig( LuceneUtils.LUCENE_VERSION, new WhitespaceAnalyzer( LuceneUtils.LUCENE_VERSION ) );
+            config.setRAMBufferSizeMB( 1024 );
             config.setOpenMode( IndexWriterConfig.OpenMode.CREATE_OR_APPEND );
             IndexWriter indexWriter = new IndexWriter( FSDirectory.open( new File( indexPath ) ), config );
 
@@ -92,14 +93,10 @@ public class LireImporter {
             Document d = new Document();
             String[] parts = line.split( LireFeatures.CSVREGEX );
 
-            d.add( new StoredField( LuceneIndexBuilder.FIELD_ID, parts[ 0 ] ) );
+            d.add( new StoredField( LuceneIndexBuilder.FIELD_ID, Long.parseLong( parts[ 0 ] ) ) );
 
             for( int i = 1; i < parts.length; i++ ) {
                 try {
-                    // Skip broken features
-                    if( SKIP.contains( i - 1 ) )
-                        continue;
-
                     // Format feature string so that LIRE will accept it
                     feature = PREFIXES[ i - 1 ] + parts[ i ];
                     if( i - 1 == 10 ) {
@@ -137,12 +134,19 @@ public class LireImporter {
         }
 
         br.close();
+        
+        // Save a list of the photos that failed to import
+        BufferedWriter w = new BufferedWriter( new FileWriter( new File( SKIPPED_OUTPUT ) ) );
+        for( String id : skippedPhotos )
+            w.write( id + "\n" );
+        w.close();
     }
 
     public static void main( String[] args ) {
         ArrayList<File> inputFiles = new ArrayList<File>();
         for( int i = 1; i < 10; i++ )
             inputFiles.add( new File( "data/imagefeatures_" + i ) );
+        inputFiles.add( new File( "data/imagefeatures_missingBlocks" ) );
 
         LireImporter li = new LireImporter( "data/lire-feature-index", inputFiles );
         li.run();
