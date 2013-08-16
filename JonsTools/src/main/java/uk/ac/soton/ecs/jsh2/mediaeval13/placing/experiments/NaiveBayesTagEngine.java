@@ -6,13 +6,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
@@ -20,7 +17,6 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
-import org.apache.lucene.util.Bits;
 import org.openimaj.image.FImage;
 import org.openimaj.image.pixel.FValuePixel;
 
@@ -29,20 +25,28 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.LuceneIndexBuilder;
 
+/**
+ * This estimates position within a 1x1 degree grid "square" using a Naive bayes
+ * classifier with all the tags acting as an independent feature. The prior can
+ * be disabled if necessary (actually made uniform).
+ * 
+ * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
+ * 
+ */
 public class NaiveBayesTagEngine implements GeoPositioningEngine {
 	protected IndexSearcher searcher;
 	protected TLongArrayList skipIds;
 	protected FImage prior;
 
-	public NaiveBayesTagEngine(File file, TLongArrayList skipIds) throws IOException {
-		final Directory directory = new MMapDirectory(file);
-		final IndexReader reader = DirectoryReader.open(directory);
-		this.searcher = new IndexSearcher(reader);
-		this.skipIds = skipIds;
-
-		this.prior = createPrior(reader);
-	}
-
+	/**
+	 * Construct with the given data. If the latlngFile is null, then the prior
+	 * will be uniform.
+	 * 
+	 * @param file
+	 * @param skipIds
+	 * @param latlngFile
+	 * @throws IOException
+	 */
 	public NaiveBayesTagEngine(File file, TLongArrayList skipIds, File latlngFile) throws IOException {
 		final Directory directory = new MMapDirectory(file);
 		final IndexReader reader = DirectoryReader.open(directory);
@@ -52,45 +56,15 @@ public class NaiveBayesTagEngine implements GeoPositioningEngine {
 		this.prior = createPrior(latlngFile);
 	}
 
-	private FImage createPrior(IndexReader reader) throws IOException {
-		final Bits liveDocs = MultiFields.getLiveDocs(reader);
-		final Set<String> fields = new HashSet<String>();
-		fields.add(LuceneIndexBuilder.FIELD_LOCATION);
-		fields.add(LuceneIndexBuilder.FIELD_ID);
-
+	protected FImage createPrior(File latlngFile) throws IOException {
 		final FImage img = new FImage(360, 180);
 		img.fill(1f / (img.height * img.width));
 
-		for (int i = 0; i < reader.maxDoc(); i++) {
-			if (liveDocs != null && !liveDocs.get(i))
-				continue;
+		if (latlngFile == null)
+			return img;
 
-			final Document doc = reader.document(i, fields);
-
-			final long flickrId = Long.parseLong(doc.get(LuceneIndexBuilder.FIELD_ID));
-			if (skipIds.contains(flickrId))
-				continue;
-
-			final String[] llstr = doc.get(LuceneIndexBuilder.FIELD_LOCATION).split(" ");
-			final float x = Float.parseFloat(llstr[0]) + 180;
-			final float y = 90 - Float.parseFloat(llstr[1]);
-
-			img.pixels[(int) (y % img.height)][(int) (x % img.width)]++;
-
-			if (i % 10000 == 0)
-				System.out.println(i);
-		}
-
-		logNorm(img);
-
-		return img;
-	}
-
-	private FImage createPrior(File latlngFile) throws IOException {
 		final BufferedReader br = new BufferedReader(new FileReader(latlngFile));
 
-		final FImage img = new FImage(360, 180);
-		img.fill(1f / (img.height * img.width));
 		String line;
 		br.readLine();
 		while ((line = br.readLine()) != null) {

@@ -17,6 +17,15 @@ import org.openimaj.image.FImage;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.LuceneIndexBuilder;
 
 public class NaiveBayesPerUserTagEngine extends NaiveBayesTagEngine {
+	/**
+	 * Construct with the given data. If the latlngFile is null, then the prior
+	 * will be uniform.
+	 * 
+	 * @param file
+	 * @param skipIds
+	 * @param latlngFile
+	 * @throws IOException
+	 */
 	public NaiveBayesPerUserTagEngine(File file, TLongArrayList skipIds, File latlngFile) throws IOException {
 		super(file, skipIds, latlngFile);
 	}
