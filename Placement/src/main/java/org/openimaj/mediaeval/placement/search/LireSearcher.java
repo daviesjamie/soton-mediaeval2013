@@ -6,7 +6,6 @@ import java.io.IOException;
 
 import net.semanticmetadata.lire.ImageSearchHits;
 import net.semanticmetadata.lire.ImageSearcher;
-import net.semanticmetadata.lire.impl.GenericFastImageSearcher;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
