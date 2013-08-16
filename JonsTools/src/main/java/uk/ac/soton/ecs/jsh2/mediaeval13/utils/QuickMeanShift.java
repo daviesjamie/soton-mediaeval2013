@@ -189,6 +189,30 @@ public class QuickMeanShift {
 			}
 		}
 
-		System.out.println(Arrays.toString(result.firstObject()[maxIdx]));
+		double maxX = -1000;
+		double minX = 1000;
+		final double maxY = -1000;
+		double minY = 1000;
+		final double[][] biggest = new double[counts.get(maxIdx)][];
+		for (int i = 0, j = 0; i < pts.length; i++) {
+			if (result.secondObject()[i] == maxIdx) {
+				biggest[j++] = pts[i];
+
+				if (pts[i][0] > maxX)
+					maxX = pts[i][0];
+				if (pts[i][0] < minX)
+					minX = pts[i][0];
+				if (pts[i][1] > maxY)
+					maxX = pts[i][1];
+				if (pts[i][1] < minY)
+					minY = pts[i][1];
+			}
+		}
+
+		final double dx = maxX - minX;
+		final double dy = maxY - minY;
+		final double dist = Math.sqrt(dx * dx + dy * dy);
+
+		System.out.println(Arrays.toString(result.firstObject()[maxIdx]) + " " + dist);
 	}
 }
