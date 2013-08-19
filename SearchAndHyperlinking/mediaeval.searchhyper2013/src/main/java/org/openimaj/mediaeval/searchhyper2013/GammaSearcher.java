@@ -21,12 +21,15 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
@@ -49,57 +52,102 @@ import ch.qos.logback.core.util.FileUtil;
 public class GammaSearcher extends AlphaSearcher {
 	public static final int FPS = 25;
 	
-	public int MAX_EXPANSIONS = 1000000;
-	public int MAX_IMAGETERRIER_HITS = 100;
-	public int FRAME_SKIP = 1;
-	public float IMAGETERRIER_WEIGHT = 0.2f;
+	public int MAX_EXPANSIONS = 10;
+	public int MAX_QUERY_FRAMES = 10;
+	public int MAX_FRAME_HITS = 10;
+	public float IMAGE_WEIGHT = 0.8f;
 	
-	ImageTerrierSearcher imageSearcher;
-	File shotsDirectory;
+	IndexReader imageIndexReader;
 	Map<String, Map<Integer, String>> shotsDirectoryCache;
 	
 	public GammaSearcher(String runName,
 						 IndexReader indexReader,
-						 ImageTerrierSearcher imageSearcher,
-						 File shotsDirectory,
+						 IndexReader imageIndexReader,
 						 File shotsDirectoryCacheFile) throws IOException {
 		super(runName, indexReader);
 		
-		this.imageSearcher = imageSearcher;
-		this.shotsDirectory = shotsDirectory;		
+		this.imageIndexReader = imageIndexReader;
 		
+		System.out.print("Reading cache file... ");
 		shotsDirectoryCache = IOUtils.readFromFile(shotsDirectoryCacheFile);
+		System.out.println("Done!");
 	}
 	
 	@Override
 	ResultList _search(Query q) throws Exception {
+		// Get base results.
 		ResultList results = super._search(q);
 		
-		ResultList imageResults = new ResultList(q.queryID, runName);
+		System.out.println("\nBase results: \n" + results + "\n--");
 		
+		Map<String, ResultList> imageResults = new HashMap<String, ResultList>();
+		
+		IndexSearcher imageIndexSearcher = new IndexSearcher(imageIndexReader);
+		
+		StandardQueryParser queryParser =
+				new StandardQueryParser(new WhitespaceAnalyzer(LUCENE_VERSION));
+		BooleanQuery.setMaxClauseCount(1000000);
+		
+		// Expand on each base result.
 		for (int i = 0; i < results.size() && i < MAX_EXPANSIONS; i++) {
 			Result result = results.get(i);
 			
-			List<File> frames = getFrameFilesForResult(result);
+			List<String> frames = getFrameFilesForResult(result);
 			
-			for (int j = 0; j < frames.size(); j += FRAME_SKIP) {
-				File frameFile = frames.get(j);
+			// Expand on each frame within this result.
+			for (int j = 0; 
+				 j < frames.size() && j < MAX_FRAME_HITS;
+				 j += (frames.size() / MAX_FRAME_HITS) + 1) {
+				String id = frames.get(j);
 				
-				SearchResult[] frameHits = 
-						imageSearcher.search(frameFile,
-											 MAX_IMAGETERRIER_HITS);
+				System.out.println("\nFrame: " + id + " : " + j);
 				
-				ResultList frameResults = framesToResults(frameHits,
-														  q.queryID,
-														  result.confidenceScore);
-				System.out.println(frameResults);
-				imageResults.addAll(frameResults);
+				Document frameDoc =
+						imageIndexReader.document(
+							imageIndexSearcher.search(
+								new TermQuery(new Term("id", id)),
+								1)
+							.scoreDocs[0]
+							.doc);
+				
+				org.apache.lucene.search.Query query = 
+						queryParser.parse(frameDoc.get("qsift"), "qsift");
+				
+				ScoreDoc[] hits = 
+						imageIndexSearcher.search(
+							query,
+							MAX_FRAME_HITS)
+						.scoreDocs;
+				
+				Map<String, ResultList> frameResults =
+						framesToResults(hits,
+										q.queryID,
+										result.confidenceScore);
+
+				// Merge in results.
+				for (String programme : frameResults.keySet()) {
+					System.out.println("\nProgramme frame results: \n" + frameResults.get(programme) + "\n--");
+					
+					ResultList programmeResults = imageResults.get(programme);
+					
+					if (programmeResults != null) {
+						programmeResults.addAll(frameResults.get(programme));
+					} else {
+						imageResults.put(programme, frameResults.get(programme));
+					}
+				}
 			}
 		}
 		
-		Set<Result> chunked = 
-				new HashSet<Result>(
-					imageResults.mergeShortResults(MIN_LENGTH, MAX_LENGTH));
+		Set<Result> chunked = new HashSet<Result>();
+		
+		// Merge within programmes and add to chunked set.
+		for (String programme : imageResults.keySet()) {
+			chunked.addAll(imageResults.get(programme)
+							 		   .mergeShortResults(MIN_LENGTH,
+							 					 		  MAX_LENGTH));
+		}
+		
 		chunked.addAll(results);
 		
 		ResultList allResults = new ResultList(results.queryID, results.runName);
@@ -110,51 +158,54 @@ public class GammaSearcher extends AlphaSearcher {
 		return allResults;
 	}
 	
-	private List<File> getFrameFilesForResult(Result result) {
+	private List<String> getFrameFilesForResult(Result result) {
 		int firstFrame = ((int) result.startTime) * FPS;
 		int lastFrame = (((int) result.endTime) + 1) * FPS;
 		
-		List<File> framesFiles = new ArrayList<File>();
+		List<String> framesFiles = new ArrayList<String>();
 		
 		Map<Integer, String> frames = shotsDirectoryCache.get(result.fileName);
 		
 		for (Integer frame : frames.keySet()) {
 			if (firstFrame <= frame && frame <= lastFrame) {
-				String path = shotsDirectory.getAbsolutePath() + "/" +
-							  frames.get(frame);
-				System.out.println(path);
-				framesFiles.add(new File(path));
+				String path = "/shotdetection/" + frames.get(frame);
+				
+				framesFiles.add(path);
 			}
 		}
 		
 		return framesFiles;
 	}
 
-	ResultList framesToResults(SearchResult[] frameHits, String queryID, float scoreScaleFactor) {
-		ResultList results = new ResultList(queryID, runName);
+	Map<String, ResultList> framesToResults(ScoreDoc[] frameHits, String queryID, float scoreScaleFactor) throws IOException {
+		Map<String, ResultList> results = new HashMap<String, ResultList>();
 		
-		for (SearchResult hit : frameHits) {
-			int frame =	Integer.parseInt(Paths.get(hit.fileName)
-											  .getFileName()
-											  .toString()
-											  .split("\\.")[0]);
+		for (ScoreDoc hit : frameHits) {
+			Document frameDoc = imageIndexReader.document(hit.doc);
+			
+			String[] fileNameParts = frameDoc.get("id").split("/");
+			
+			int frame = Integer.parseInt(fileNameParts[5].split("\\.")[0]);
 			
 			Result result = new Result();
 			
 			result.startTime = frame / FPS;
 			result.endTime = result.startTime;
 			result.jumpInPoint = result.startTime;
-			result.fileName = Paths.get(hit.fileName)
-								   .getParent()
-								   .getParent()
-								   .getParent()
-								   .getFileName()
-								   .toString();
+			result.fileName = fileNameParts[2];
 			
 			result.confidenceScore = (float) hit.score * scoreScaleFactor
-													   * IMAGETERRIER_WEIGHT;
+													   * IMAGE_WEIGHT;
 			
-			results.add(result);
+			ResultList programmeResults = results.get(result.fileName);
+			
+			if (programmeResults != null) {
+				programmeResults.add(result);
+			} else {
+				programmeResults = new ResultList(queryID, runName);
+				programmeResults.add(result);
+				results.put(result.fileName, programmeResults);
+			}
 		}
 		
 		return results;
@@ -197,8 +248,8 @@ public class GammaSearcher extends AlphaSearcher {
 		return cache;
 	}
 	
-	public static void main(String[] args) throws IOException {
+	/*public static void main(String[] args) throws IOException {
 		Map map = cacheDirectory(new File(args[0]));
 		IOUtils.writeToFile(map, new File("cache.map"));
-	}
+	}*/
 }

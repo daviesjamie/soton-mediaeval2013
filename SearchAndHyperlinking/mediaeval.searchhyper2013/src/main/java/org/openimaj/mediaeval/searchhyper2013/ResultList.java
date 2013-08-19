@@ -48,15 +48,15 @@ public class ResultList extends ArrayList<Result> {
 		for (int i = 0; i < size(); i++) {
 			Result result = get(i);
 			
-			stringBuilder.append(queryID                + " " + 
-								 "Q0"                   + " " +
-								 result.fileName        + " " + 
-								 result.startTime       + " " +
-								 result.endTime         + " " +
-								 result.jumpInPoint     + " " + 
-								 (i + 1)                + " " +
-								 result.confidenceScore + " " + 
-								 runName				+ "\n");
+			stringBuilder.append(queryID                		+ " " + 
+								 "Q0"                   		+ " " +
+								 result.fileName        		+ " " + 
+								 Time.StoMS(result.startTime)   + " " +
+								 Time.StoMS(result.endTime)     + " " +
+								 Time.StoMS(result.jumpInPoint) + " " + 
+								 (i + 1)                		+ " " +
+								 result.confidenceScore 		+ " " + 
+								 runName						+ "\n");
 		}
 		
 		return stringBuilder.toString();
@@ -151,8 +151,8 @@ public class ResultList extends ArrayList<Result> {
 			mergedResult.endTime = nearest.secondObject().endTime;
 			mergedResult.jumpInPoint = nearest.firstObject().jumpInPoint;
 			mergedResult.fileName = nearest.firstObject().fileName;
-			mergedResult.confidenceScore = Math.max(nearest.firstObject().confidenceScore,
-												    nearest.secondObject().confidenceScore);
+			mergedResult.confidenceScore = nearest.firstObject().confidenceScore +
+										   nearest.secondObject().confidenceScore;
 			
 			if (mergedResult.length() > maxLength) {
 				return this;

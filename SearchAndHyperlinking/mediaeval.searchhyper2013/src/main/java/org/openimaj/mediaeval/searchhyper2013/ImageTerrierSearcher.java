@@ -130,15 +130,15 @@ public class ImageTerrierSearcher {
 		return results.toArray(new SearchResult[results.size()]);
 	}
 
-	public SearchResult[] search(File keypointFile, int numResults) throws IOException {
-
-		final List<QuantisedLocalFeature> qf = 
-				MemoryLocalFeatureList.read(keypointFile, QuantisedLocalFeature.class);
-
-		final QLFDocument<QuantisedLocalFeature> d =
-				new QLFDocument<QuantisedLocalFeature>(qf, "query", null);
-		final QLFDocumentQuery<QuantisedLocalFeature> qlf =
-				new QLFDocumentQuery<QuantisedLocalFeature>(d);
+	public List<SearchResult> search(File keypointFile, int numResults) throws IOException {
+		System.out.println("Read file...");
+		final List<QuantisedKeypoint> qf = 
+				MemoryLocalFeatureList.read(keypointFile, QuantisedKeypoint.class);
+		
+		final QLFDocument<QuantisedKeypoint> d =
+				new QLFDocument<QuantisedKeypoint>(qf, "query", null);
+		final QLFDocumentQuery<QuantisedKeypoint> qlf =
+				new QLFDocumentQuery<QuantisedKeypoint>(d);
 
 		final Manager manager = new Manager(index);
 		final SearchRequest request = manager.newSearchRequest("foo");
@@ -147,6 +147,7 @@ public class ImageTerrierSearcher {
 		ApplicationSetup.setProperty("ignore.low.idf.terms", "false");
 		ApplicationSetup.setProperty("matching.retrieved_set_size", "" + numResults);
 
+		System.out.println("Searching...");
 		manager.runPreProcessing(request);
 		manager.runMatching(request);
 		manager.runPostProcessing(request);
@@ -158,7 +159,7 @@ public class ImageTerrierSearcher {
 
 		final List<SearchResult> results = new ArrayList<SearchResult>();
 		for (int i = 0; i < docids.length; i++) {
-
+			System.out.println("Meta lookup...");
 			final String fileName = index.getMetaIndex().getItem("docno", docids[i]);
 			
 			SearchResult result = new SearchResult();
@@ -167,7 +168,8 @@ public class ImageTerrierSearcher {
 			
 			results.add(result);
 		}
-
-		return results.toArray(new SearchResult[results.size()]);
+		
+		System.out.println("Returning...");
+		return results;
 	}
 }

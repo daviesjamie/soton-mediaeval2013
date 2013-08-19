@@ -73,4 +73,12 @@ public class Result implements Comparable<Result> {
 			return false;
 		return true;
 	}
+	
+	public String toString() {
+		return fileName + " " + 
+			   Time.StoMS(startTime) + " " + 
+			   Time.StoMS(endTime) + " " + 
+			   Time.StoMS(jumpInPoint) + " " + 
+			   confidenceScore;
+	}
 }

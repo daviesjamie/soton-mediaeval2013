@@ -7,30 +7,9 @@ package org.openimaj.mediaeval.searchhyper2013;
  * @author John Preston (jlp1g11@ecs.soton.ac.uk)
  *
  */
-public class Time {
-	private Float seconds;
-	
-	public Time(Float time, Boolean seconds) {
-		if (seconds) {
-			this.seconds = time;
-		} else {
-			this.seconds = MStoS(time);
-		}
-	}
-	
-	public Time(Float seconds) {
-		this(seconds, true);
-	}
-	
-	public Float seconds() {
-		return seconds;
-	}
-	
-	public Float minutesSeconds() {
-		return StoMS(seconds);
-	}
-	
-	private static Float MStoS(Float minutesSeconds) {
+public abstract class Time {
+
+	public static Float MStoS(Float minutesSeconds) {
 		Float seconds = 0f;
 		
 		float minutes = (float) Math.floor(minutesSeconds);
@@ -41,7 +20,7 @@ public class Time {
 		return seconds;
 	}
 	
-	private static Float StoMS(Float seconds) {
+	public static Float StoMS(Float seconds) {
 		Float minutesSeconds = 0f;
 		
 		float minutes = seconds % 60;
