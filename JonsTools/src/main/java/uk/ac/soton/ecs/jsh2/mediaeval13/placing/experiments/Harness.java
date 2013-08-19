@@ -33,7 +33,7 @@ public class Harness {
 		// new File("/Volumes/SSD/mediaeval13/placing/places.lucene"),
 		// getSkipIds(queries),
 		// new File("/Volumes/SSD/mediaeval13/placing/training_latlng"));
-		final GeoPositioningEngine engine = new MeanShiftTagEngine(
+		final GeoPositioningEngine engine = new NewMeanShiftTagEngine(
 				new File("/Volumes/SSD/mediaeval13/placing/places.lucene"),
 				getSkipIds(queries), 1000, new
 				File("/Volumes/SSD/mediaeval13/placing/training_latlng"), 0.01);

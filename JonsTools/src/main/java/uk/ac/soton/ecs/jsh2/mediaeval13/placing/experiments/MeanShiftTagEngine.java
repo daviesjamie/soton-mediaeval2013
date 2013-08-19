@@ -31,6 +31,9 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.utils.QuickMeanShift;
 import uk.ac.soton.ecs.jsh2.mediaeval13.utils.QuickMeanShift.FlatWindow;
 
 public class MeanShiftTagEngine implements GeoPositioningEngine {
+	private static final int MIN_BIN_FREQ = 1;
+	private static final int MAX_ITERATIONS = 300;
+
 	protected IndexSearcher searcher;
 	protected TLongArrayList skipIds;
 	protected List<GeoLocation> prior;
@@ -118,10 +121,6 @@ public class MeanShiftTagEngine implements GeoPositioningEngine {
 	public GeoLocationEstimate estimateLocation(QueryImageData query) {
 		final String[] queryTerms = query.tags.split(" ");
 
-		if (queryTerms == null || queryTerms.length == 0) {
-			return new GeoLocationEstimate(0, 0, 40000);
-		}
-
 		final List<GeoLocation> pts = search(queryTerms[0]);
 		for (int i = 1; i < queryTerms.length; i++) {
 			pts.addAll(search(queryTerms[i]));
@@ -132,10 +131,9 @@ public class MeanShiftTagEngine implements GeoPositioningEngine {
 
 		final double[][] data = toArray(pts);
 
-		final double[][] seeds = QuickMeanShift.bin_points(data, bandwidth, 1);
+		final double[][] seeds = QuickMeanShift.bin_points(data, bandwidth, MIN_BIN_FREQ);
 		final IndependentPair<double[][], int[]> result = QuickMeanShift.meanShift(data, bandwidth, seeds,
-				FlatWindow.INSTANCE,
-				300);
+				FlatWindow.INSTANCE, MAX_ITERATIONS);
 
 		final TIntIntHashMap counts = new TIntIntHashMap();
 		for (final int i : result.secondObject())

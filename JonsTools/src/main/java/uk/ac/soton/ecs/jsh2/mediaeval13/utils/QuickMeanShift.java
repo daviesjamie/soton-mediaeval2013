@@ -16,7 +16,17 @@ import org.openimaj.util.iterator.TextLineIterable;
 import org.openimaj.util.pair.IndependentPair;
 import org.openimaj.util.pair.IntDoublePair;
 import org.openimaj.util.pair.ObjectIntPair;
+import org.openimaj.util.tree.DoubleKDTree;
 
+/**
+ * Variant of Mean-Shift as found in scipy-learn. This performs a mean shift on
+ * the data, possibly starting with external seed points, rather than using the
+ * raw data. The final step assigns points to modes based on distance rather
+ * than the underlying density, which is a bit wierd...
+ * 
+ * @author Jonathon Hare (jsh2@ecs.soton.ac.uk)
+ * 
+ */
 public class QuickMeanShift {
 	public static interface Window {
 		double[] window(double[] x, double[][] points, double bandwidth);
@@ -50,7 +60,7 @@ public class QuickMeanShift {
 		final double stop_thresh = 1e-3 * bandwidth;
 		final TObjectIntHashMap<DoubleFV> center_intensity_dict = new TObjectIntHashMap<DoubleFV>();
 
-		FastKDTree tree = new FastKDTree(X, new FastKDTree.BBFMedianSplit());
+		DoubleKDTree tree = new DoubleKDTree(X, new DoubleKDTree.BBFMedianSplit());
 
 		for (double[] my_mean : seeds) {
 			for (int iter = 0; iter < max_iterations; iter++) {
@@ -89,7 +99,7 @@ public class QuickMeanShift {
 		final boolean[] unique = new boolean[sorted_centers.length];
 		Arrays.fill(unique, true);
 
-		tree = new FastKDTree(sorted_centers, new FastKDTree.BBFMedianSplit());
+		tree = new DoubleKDTree(sorted_centers, new DoubleKDTree.BBFMedianSplit());
 
 		for (int i = 0; i < sorted_centers.length; i++) {
 			final double[] center = sorted_centers[i];
@@ -115,7 +125,7 @@ public class QuickMeanShift {
 		}
 
 		// ASSIGN LABELS: a point belongs to the cluster that it is closest to
-		tree = new FastKDTree(cluster_centers, new FastKDTree.BBFMedianSplit());
+		tree = new DoubleKDTree(cluster_centers, new DoubleKDTree.BBFMedianSplit());
 
 		final int[] labels = new int[n_samples];
 		for (int i = 0; i < n_samples; i++) {
