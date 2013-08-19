@@ -29,10 +29,16 @@ public class Harness {
 		// final GeoPositioningEngine engine = new
 		// PriorRandomPositioningEngine(new File("/Users/jon/training_latlng"),
 		// getSkipIds(queries));
-		final GeoPositioningEngine engine = new NaiveBayesFilteredTagEngine(
+		// final GeoPositioningEngine engine = new NaiveBayesFilteredTagEngine(
+		// new File("/Volumes/SSD/mediaeval13/placing/places.lucene"),
+		// getSkipIds(queries),
+		// new File("/Volumes/SSD/mediaeval13/placing/training_latlng"));
+		final GeoPositioningEngine engine = new NewMeanShiftTagEngine(
 				new File("/Volumes/SSD/mediaeval13/placing/places.lucene"),
-				getSkipIds(queries),
-				new File("/Volumes/SSD/mediaeval13/placing/training_latlng"));
+				getSkipIds(queries), 1000, new
+				File("/Volumes/SSD/mediaeval13/placing/training_latlng"), 0.01);
+		// final GeoPositioningEngine engine = new ExternalDataEngine(
+		// new File("/Users/jsh2/Desktop/positions.txt"));
 
 		final GeoEvaluator eval = new GeoEvaluator(groundTruth, engine, queries);
 		final GeoAnalysisResult result = eval.analyse(eval.evaluate());

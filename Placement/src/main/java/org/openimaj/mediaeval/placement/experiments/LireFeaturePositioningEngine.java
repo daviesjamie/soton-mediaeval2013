@@ -9,7 +9,6 @@ import java.util.Set;
 
 import net.semanticmetadata.lire.ImageSearchHits;
 import net.semanticmetadata.lire.ImageSearcher;
-import net.semanticmetadata.lire.impl.GenericFastImageSearcher;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -24,6 +23,7 @@ import org.apache.lucene.util.Bits;
 import org.openimaj.image.FImage;
 import org.openimaj.image.pixel.FValuePixel;
 import org.openimaj.mediaeval.placement.data.LireFeatures;
+import org.openimaj.mediaeval.placement.search.GenericFastImageSearcher;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
