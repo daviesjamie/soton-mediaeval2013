@@ -143,7 +143,6 @@ public class SearcherEvaluator {
 			}
 			
 			//System.out.println("\nExpecting: \n" + expectedResults.get(query));
-			
 			//System.out.println("\nResults: \n" + runResults + "\n----");
 			
 			for (int i = 0; i < runResults.size(); i++) {

@@ -23,7 +23,7 @@ public abstract class Time {
 	public static Float StoMS(Float seconds) {
 		Float minutesSeconds = 0f;
 		
-		float minutes = seconds % 60;
+		float minutes = (float) Math.floor(seconds / 60);
 		
 		minutesSeconds += (seconds - (minutes * 60)) / 100;
 		minutesSeconds += minutes;

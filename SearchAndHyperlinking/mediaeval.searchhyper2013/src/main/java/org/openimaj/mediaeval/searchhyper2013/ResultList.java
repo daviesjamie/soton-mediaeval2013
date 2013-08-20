@@ -147,9 +147,30 @@ public class ResultList extends ArrayList<Result> {
 		
 		if (nearest != null) {
 			Result mergedResult = new Result();
-			mergedResult.startTime = nearest.firstObject().startTime;
-			mergedResult.endTime = nearest.secondObject().endTime;
-			mergedResult.jumpInPoint = nearest.firstObject().jumpInPoint;
+			
+			if (nearest.firstObject().startTime < nearest.secondObject().startTime) {
+				if (nearest.firstObject().endTime < nearest.secondObject().endTime) {
+					mergedResult.startTime = nearest.firstObject().startTime;
+					mergedResult.endTime = nearest.secondObject().endTime;
+				} else {
+					mergedResult.startTime = nearest.firstObject().startTime;
+					mergedResult.endTime = nearest.firstObject().endTime;
+				}
+				
+				mergedResult.jumpInPoint = nearest.firstObject().jumpInPoint;
+			} else {
+				if (nearest.firstObject().endTime < nearest.secondObject().endTime) {
+					mergedResult.startTime = nearest.secondObject().startTime;
+					mergedResult.endTime = nearest.secondObject().endTime;
+				} else {
+					mergedResult.startTime = nearest.secondObject().startTime;
+					mergedResult.endTime = nearest.firstObject().endTime;
+				}
+				
+
+				mergedResult.jumpInPoint = nearest.secondObject().jumpInPoint;
+			}
+			
 			mergedResult.fileName = nearest.firstObject().fileName;
 			mergedResult.confidenceScore = nearest.firstObject().confidenceScore +
 										   nearest.secondObject().confidenceScore;
