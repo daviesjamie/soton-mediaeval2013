@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -15,7 +16,9 @@ import net.semanticmetadata.lire.utils.LuceneUtils;
 
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.FSDirectory;
@@ -53,7 +56,7 @@ public class LireImporter {
         this.inputFiles = inputFiles;
     }
 
-    public void run() {
+    public void run() throws IOException {
         try {
             IndexWriterConfig config = new IndexWriterConfig( LuceneUtils.LUCENE_VERSION, new WhitespaceAnalyzer( LuceneUtils.LUCENE_VERSION ) );
             config.setRAMBufferSizeMB( 1024 );
@@ -78,8 +81,12 @@ public class LireImporter {
 
         System.out.println( "Done." );
         System.out.println( skippedPhotos.size() + " photos were skipped." );
-        for( String p : skippedPhotos )
-            System.out.println( p );
+
+        // Save a list of the photos that failed to import
+        BufferedWriter w = new BufferedWriter( new FileWriter( new File( SKIPPED_OUTPUT ) ) );
+        for( String id : skippedPhotos )
+            w.write( id + "\n" );
+        w.close();
     }
 
     private void readFile( IndexWriter indexWriter, File inputFile ) throws Exception { 
@@ -93,10 +100,10 @@ public class LireImporter {
             Document d = new Document();
             String[] parts = line.split( LireFeatures.CSVREGEX );
 
-            d.add( new StoredField( LuceneIndexBuilder.FIELD_ID, Long.parseLong( parts[ 0 ] ) ) );
-
-            for( int i = 1; i < parts.length; i++ ) {
-                try {
+            try {
+                d.add( new LongField( LuceneIndexBuilder.FIELD_ID, Long.parseLong( parts[ 0 ] ), Store.YES ) );
+    
+                for( int i = 1; i < parts.length; i++ ) {
                     // Format feature string so that LIRE will accept it
                     feature = PREFIXES[ i - 1 ] + parts[ i ];
                     if( i - 1 == 10 ) {
@@ -113,12 +120,12 @@ public class LireImporter {
                         d.add( new StoredField( LireFeatures.values()[ i - 1 ].name, f.getStringRepresentation() ) );
                     else
                         d.add( new StoredField( LireFeatures.values()[ i - 1 ].name, f.getByteArrayRepresentation() ) );
-                } catch( Throwable e ) {
-                    e.printStackTrace();
-                    // System.exit( 0 );
-                    skippedPhotos.add( parts[ 0 ] );
-                    continue outerLoop;
                 }
+            } catch( Throwable e ) {
+                e.printStackTrace();
+                // System.exit( 1 );
+                skippedPhotos.add( parts[ 0 ] );
+                continue outerLoop;
             }
             
             indexWriter.addDocument( d );
@@ -134,15 +141,9 @@ public class LireImporter {
         }
 
         br.close();
-        
-        // Save a list of the photos that failed to import
-        BufferedWriter w = new BufferedWriter( new FileWriter( new File( SKIPPED_OUTPUT ) ) );
-        for( String id : skippedPhotos )
-            w.write( id + "\n" );
-        w.close();
     }
 
-    public static void main( String[] args ) {
+    public static void main( String[] args ) throws IOException {
         ArrayList<File> inputFiles = new ArrayList<File>();
         for( int i = 1; i < 10; i++ )
             inputFiles.add( new File( "data/imagefeatures_" + i ) );
