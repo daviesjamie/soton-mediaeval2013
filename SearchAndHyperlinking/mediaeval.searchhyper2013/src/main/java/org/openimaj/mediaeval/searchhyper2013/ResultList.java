@@ -48,15 +48,15 @@ public class ResultList extends ArrayList<Result> {
 		for (int i = 0; i < size(); i++) {
 			Result result = get(i);
 			
-			stringBuilder.append(queryID                + " " + 
-								 "Q0"                   + " " +
-								 result.fileName        + " " + 
-								 result.startTime       + " " +
-								 result.endTime         + " " +
-								 result.jumpInPoint     + " " + 
-								 (i + 1)                + " " +
-								 result.confidenceScore + " " + 
-								 runName				+ "\n");
+			stringBuilder.append(queryID                		+ " " + 
+								 "Q0"                   		+ " " +
+								 result.fileName        		+ " " + 
+								 Time.StoMS(result.startTime)   + " " +
+								 Time.StoMS(result.endTime)     + " " +
+								 Time.StoMS(result.jumpInPoint) + " " + 
+								 (i + 1)                		+ " " +
+								 result.confidenceScore 		+ " " + 
+								 runName						+ "\n");
 		}
 		
 		return stringBuilder.toString();
@@ -147,12 +147,33 @@ public class ResultList extends ArrayList<Result> {
 		
 		if (nearest != null) {
 			Result mergedResult = new Result();
-			mergedResult.startTime = nearest.firstObject().startTime;
-			mergedResult.endTime = nearest.secondObject().endTime;
-			mergedResult.jumpInPoint = nearest.firstObject().jumpInPoint;
+			
+			if (nearest.firstObject().startTime < nearest.secondObject().startTime) {
+				if (nearest.firstObject().endTime < nearest.secondObject().endTime) {
+					mergedResult.startTime = nearest.firstObject().startTime;
+					mergedResult.endTime = nearest.secondObject().endTime;
+				} else {
+					mergedResult.startTime = nearest.firstObject().startTime;
+					mergedResult.endTime = nearest.firstObject().endTime;
+				}
+				
+				mergedResult.jumpInPoint = nearest.firstObject().jumpInPoint;
+			} else {
+				if (nearest.firstObject().endTime < nearest.secondObject().endTime) {
+					mergedResult.startTime = nearest.secondObject().startTime;
+					mergedResult.endTime = nearest.secondObject().endTime;
+				} else {
+					mergedResult.startTime = nearest.secondObject().startTime;
+					mergedResult.endTime = nearest.firstObject().endTime;
+				}
+				
+
+				mergedResult.jumpInPoint = nearest.secondObject().jumpInPoint;
+			}
+			
 			mergedResult.fileName = nearest.firstObject().fileName;
-			mergedResult.confidenceScore = Math.max(nearest.firstObject().confidenceScore,
-												    nearest.secondObject().confidenceScore);
+			mergedResult.confidenceScore = nearest.firstObject().confidenceScore +
+										   nearest.secondObject().confidenceScore;
 			
 			if (mergedResult.length() > maxLength) {
 				return this;

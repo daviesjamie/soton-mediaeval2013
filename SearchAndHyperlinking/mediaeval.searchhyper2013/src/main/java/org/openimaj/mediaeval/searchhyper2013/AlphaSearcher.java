@@ -1,12 +1,15 @@
 package org.openimaj.mediaeval.searchhyper2013;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -55,15 +58,15 @@ import org.apache.lucene.util.Version;
 public class AlphaSearcher implements Searcher {
 	static final Version LUCENE_VERSION = Version.LUCENE_43;
 	
-	static final int NUM_SYNOPSIS_RESULTS = 3;
-	static final int MAX_SUBS_HITS = 100;
-	static final int MAX_LIMSI_HITS = 100;
-	static final int MAX_LIUM_HITS = 100;
-	float SUBS_SCALE_FACTOR = 0.3f;
-	float LIMSI_SCALE_FACTOR = 1f;
-	float LIUM_SCALE_FACTOR = 1f;
-	float MIN_LENGTH = 60 * 5;
-	float MAX_LENGTH = 60 * 25;
+	static final int NUM_SYNOPSIS_RESULTS = 5;
+	static final int MAX_SUBS_HITS = 1000;
+	static final int MAX_LIMSI_HITS = 1000;
+	static final int MAX_LIUM_HITS = 1000;
+	float SUBS_SCALE_FACTOR = 1f;
+	float LIMSI_SCALE_FACTOR = 0f;
+	float LIUM_SCALE_FACTOR = 0f;
+	float MIN_LENGTH = 60 * 1;
+	float MAX_LENGTH = 60 * 15;
 	
 	IndexReader indexReader;
 	String runName;
@@ -125,7 +128,7 @@ public class AlphaSearcher implements Searcher {
 			
 		});
 		
-		Set<Result> resultSet = new HashSet<Result>();
+		Set<Result> resultSet = new TreeSet<Result>();
 		
 		// 2. Find results within transcripts.
 		for (ScoreDoc synopsis : scoreDocs) {
@@ -143,11 +146,12 @@ public class AlphaSearcher implements Searcher {
 														  runName,
 														  subsDoc.get(Field.Program.toString()),
 														  subsHits,
-														  SUBS_SCALE_FACTOR,
+														  SUBS_SCALE_FACTOR * synopsis.score,
 														  MIN_LENGTH,
 														  MAX_LENGTH);
 			
-			Document limsiDoc =
+			//System.out.println(subsResults);
+			/*Document limsiDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
 														Type.LIMSI,
 														indexSearcher);
@@ -181,11 +185,11 @@ public class AlphaSearcher implements Searcher {
 														  liumHits,
 														  LIUM_SCALE_FACTOR,
 														  MIN_LENGTH,
-														  MAX_LENGTH);
+														  MAX_LENGTH);*/
 			
 			resultSet.addAll(subsResults);
-			resultSet.addAll(liumResults);
-			resultSet.addAll(limsiResults);
+			//resultSet.addAll(liumResults);
+			//resultSet.addAll(limsiResults);
 		}
 		
 		ResultList results = new ResultList(q.queryID, runName);
@@ -211,16 +215,35 @@ public class AlphaSearcher implements Searcher {
 					new DefaultEncoder(),
 					new QueryTermScorer(query));
 		
-		String[] frags = 
-			highlighter.getBestFragments(new EnglishAnalyzer(LUCENE_VERSION),
-										 Field.Text.toString(),
-										 doc.get(Field.Text.toString()),
-										 maxHits);
 		
+		TokenStream tokenStream =
+				new EnglishAnalyzer(LUCENE_VERSION)
+							.tokenStream(Field.Text.toString(),
+										 new StringReader(
+											doc.get(Field.Text.toString())));
+		
+		TextFragment[] frag = 
+				highlighter.getBestTextFragments(tokenStream,
+									 doc.get(Field.Text.toString()),
+									 false,
+									 maxHits);
+
+	    //Get text
+	    ArrayList<String> fragTexts = new ArrayList<String>();
+	    for (int i = 0; i < frag.length; i++)
+	    {
+	      if ((frag[i] != null) && (frag[i].getScore() > 0))
+	      {
+	        fragTexts.add(frag[i].toString());
+	      }
+	    }
+	    
+	    tokenStream.close();
+
 		List<HighlightedTranscript> hits = 
 				PositionWordFormatter.toHighlightedTranscripts(doc.get(Field.Text.toString()),
 															   doc.get(Field.Times.toString()),
-															   frags);
+															   fragTexts.toArray(new String[0]));
 		
 		return hits;
 	}

@@ -87,15 +87,15 @@ public class SearcherEvaluator {
 			
 			if (parts.length == 4) {
 				result.fileName = parts[1];
-				result.startTime = Float.parseFloat(parts[2]);
-				result.endTime = Float.parseFloat(parts[3]);
+				result.startTime = Time.MStoS(Float.parseFloat(parts[2]));
+				result.endTime = Time.MStoS(Float.parseFloat(parts[3]));
 				result.jumpInPoint = result.startTime;
 				result.confidenceScore = -1f;
 			} else if (parts.length == 6) {
 				result.fileName = parts[1];
-				result.startTime = Float.parseFloat(parts[2]);
-				result.endTime = Float.parseFloat(parts[3]);
-			    result.jumpInPoint = Float.parseFloat(parts[4]);
+				result.startTime = Time.MStoS(Float.parseFloat(parts[2]));
+				result.endTime = Time.MStoS(Float.parseFloat(parts[3]));
+			    result.jumpInPoint = Time.MStoS(Float.parseFloat(parts[4]));
 			    result.confidenceScore = Float.parseFloat(parts[5]);
 			} else {
 				return null;
@@ -124,7 +124,9 @@ public class SearcherEvaluator {
 		List<Double> gap = new ArrayList<Double>();
 		List<Double> asp = new ArrayList<Double>();
 		
-		for (Query query : expectedResults.keySet()) {			
+		for (Query query : expectedResults.keySet()) {
+			//System.out.println(query);
+			
 			String fileName = expectedResults.get(query).iterator().next().fileName;
 			double qRelStart = expectedResults.get(query).iterator().next().startTime;
 			double qRelEnd = expectedResults.get(query).iterator().next().endTime;
@@ -140,7 +142,8 @@ public class SearcherEvaluator {
 				continue;
 			}
 			
-			//System.out.println("\nResults: \n" + runResults);
+			//System.out.println("\nExpecting: \n" + expectedResults.get(query));
+			//System.out.println("\nResults: \n" + runResults + "\n----");
 			
 			for (int i = 0; i < runResults.size(); i++) {
 				Result result = runResults.get(i);

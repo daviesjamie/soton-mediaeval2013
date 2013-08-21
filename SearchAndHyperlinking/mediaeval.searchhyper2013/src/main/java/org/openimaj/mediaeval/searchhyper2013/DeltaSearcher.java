@@ -39,17 +39,18 @@ import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
 import org.openimaj.io.IOUtils;
 import org.openimaj.mediaeval.searchhyper2013.ImageTerrierSearcher.SearchResult;
+import org.openimaj.util.pair.ObjectDoublePair;
 
 import ch.qos.logback.core.util.FileUtil;
 
 /**
- * Extends AlphaSearcher by expanding the query using similar frames in an 
- * ImageTerrier database.
+ * Extends AlphaSearcher by expanding the query using similar frames in a graph 
+ * built by LSH over SIFT features.
  * 
  * @author John Preston (jlp1g11@ecs.soton.ac.uk)
  *
  */
-public class GammaSearcher extends AlphaSearcher {
+public class DeltaSearcher extends AlphaSearcher {
 	public static final int FPS = 25;
 	
 	public int MAX_EXPANSIONS = 10;
@@ -57,20 +58,18 @@ public class GammaSearcher extends AlphaSearcher {
 	public int MAX_FRAME_HITS = 10;
 	public float IMAGE_WEIGHT = 0.8f;
 	
-	IndexReader imageIndexReader;
 	Map<String, Map<Integer, String>> shotsDirectoryCache;
+	LSHDataExplorer lshExplorer;
 	
-	public GammaSearcher(String runName,
+	public DeltaSearcher(String runName,
 						 IndexReader indexReader,
-						 IndexReader imageIndexReader,
-						 File shotsDirectoryCacheFile) throws IOException {
+						 File shotsDirectoryCacheFile,
+						 LSHDataExplorer lshExplorer) throws IOException {
 		super(runName, indexReader);
 		
-		this.imageIndexReader = imageIndexReader;
-		
-		System.out.print("Reading cache file... ");
 		shotsDirectoryCache = IOUtils.readFromFile(shotsDirectoryCacheFile);
-		System.out.println("Done!");
+		
+		this.lshExplorer = lshExplorer;
 	}
 	
 	@Override
@@ -78,15 +77,9 @@ public class GammaSearcher extends AlphaSearcher {
 		// Get base results.
 		ResultList results = super._search(q);
 		
-		//System.out.println("\nBase results: \n" + results + "\n--");
+		//System.out.println("\nBase results: \n" + results + "\n");
 		
 		Map<String, ResultList> imageResults = new HashMap<String, ResultList>();
-		
-		IndexSearcher imageIndexSearcher = new IndexSearcher(imageIndexReader);
-		
-		StandardQueryParser queryParser =
-				new StandardQueryParser(new WhitespaceAnalyzer(LUCENE_VERSION));
-		BooleanQuery.setMaxClauseCount(1000000);
 		
 		// Expand on each base result.
 		for (int i = 0; i < results.size() && i < MAX_EXPANSIONS; i++) {
@@ -102,31 +95,22 @@ public class GammaSearcher extends AlphaSearcher {
 				
 				//System.out.println("\nFrame: " + id + " : " + j);
 				
-				Document frameDoc =
-						imageIndexReader.document(
-							imageIndexSearcher.search(
-								new TermQuery(new Term("id", id)),
-								1)
-							.scoreDocs[0]
-							.doc);
-				
-				org.apache.lucene.search.Query query = 
-						queryParser.parse(frameDoc.get("qsift"), "qsift");
-				
-				ScoreDoc[] hits = 
-						imageIndexSearcher.search(
-							query,
-							MAX_FRAME_HITS)
-						.scoreDocs;
-				
+				// Frame may not be in the graph, make sure we handle this.
+				List<ObjectDoublePair<String>> frameHits;
+				try {
+					frameHits = lshExplorer.search(id);
+				} catch (IllegalArgumentException e) {
+					break;
+				}	
+
 				Map<String, ResultList> frameResults =
-						framesToResults(hits,
+						framesToResults(frameHits,
 										q.queryID,
 										result.confidenceScore);
 
 				// Merge in results.
 				for (String programme : frameResults.keySet()) {
-					//System.out.println("\nProgramme frame results: \n" + frameResults.get(programme) + "\n--");
+					//System.out.println("\nProgramme frame results: \n" + frameResults.get(programme) + "\n");
 					
 					ResultList programmeResults = imageResults.get(programme);
 					
@@ -139,7 +123,7 @@ public class GammaSearcher extends AlphaSearcher {
 			}
 		}
 		
-		Set<Result> chunked = new HashSet<Result>();
+		Set<Result> chunked = new TreeSet<Result>();
 		
 		// Merge within programmes and add to chunked set.
 		for (String programme : imageResults.keySet()) {
@@ -177,13 +161,17 @@ public class GammaSearcher extends AlphaSearcher {
 		return framesFiles;
 	}
 
-	Map<String, ResultList> framesToResults(ScoreDoc[] frameHits, String queryID, float scoreScaleFactor) throws IOException {
+	Map<String, ResultList> framesToResults(List<ObjectDoublePair<String>> frameHits, String queryID, float scoreScaleFactor) throws IOException {
 		Map<String, ResultList> results = new HashMap<String, ResultList>();
 		
-		for (ScoreDoc hit : frameHits) {
-			Document frameDoc = imageIndexReader.document(hit.doc);
-			
-			String[] fileNameParts = frameDoc.get("id").split("/");
+		double maxConf = 0;
+		
+		for (ObjectDoublePair<String> hit : frameHits) {
+			maxConf = Math.max(maxConf, hit.getSecond());
+		}
+		
+		for (ObjectDoublePair<String> hit : frameHits) {
+			String[] fileNameParts = hit.getFirst().split("/");
 			
 			int frame = Integer.parseInt(fileNameParts[5].split("\\.")[0]);
 			
@@ -194,8 +182,9 @@ public class GammaSearcher extends AlphaSearcher {
 			result.jumpInPoint = result.startTime;
 			result.fileName = fileNameParts[2];
 			
-			result.confidenceScore = (float) hit.score * scoreScaleFactor
-													   * IMAGE_WEIGHT;
+			result.confidenceScore = (float) (hit.getSecond() * scoreScaleFactor
+											 		   		  * IMAGE_WEIGHT
+											 		   		  / maxConf);
 			
 			ResultList programmeResults = results.get(result.fileName);
 			

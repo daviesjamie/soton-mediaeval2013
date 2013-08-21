@@ -16,4 +16,8 @@ public class Query {
 		this.queryText = queryText;
 		this.visualCues = visualCues;
 	}
+	
+	public String toString() {
+		return "(" + queryID + ") " + queryText + " | " + visualCues;
+	}
 }
