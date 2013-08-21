@@ -15,39 +15,40 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.xml.sax.SAXException;
 
-public class GammaSearcherTool {
+public class SearcherTool {
 	public static final int WINDOW = 300;
 
 	public static void main(String[] args) throws IOException, SearcherException, ParserConfigurationException, SAXException {
 		if (args[0].equalsIgnoreCase("Search")) {
-			search(new File(args[1]), args[2], new File(args[3]), new File(args[4]));
+			search(new File(args[1]), args[2], new File(args[3]), new File(args[4]), new File(args[5]), new File(args[6]));
 		} else if (args[0].equalsIgnoreCase("Evaluate")) {
-			evaluate(new File(args[1]), new File(args[2]), new File(args[3]), new File(args[4]), new File(args[5]));
+			evaluate(new File(args[1]), new File(args[2]), new File(args[3]), new File(args[4]), new File(args[5]), new File(args[6]), new File(args[7]));
 		} else {
 			System.err.println("Unrecognised mode. Recognised modes are " + 
 							   "'Search' and 'Evaluate'.");
 		}
 	}
 	
-	private static void search(File index, String query, File imageIndex, File shotsDirCacheFile) throws IOException, SearcherException {
+	private static void search(File index, String query, File shotsDirCacheFile, File graphFile, File conceptsDir, File conceptsFile) throws IOException, SearcherException {
 		Directory indexDir = FSDirectory.open(index);
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		Directory imageIndexDir = FSDirectory.open(imageIndex);
-		IndexReader imageIndexReader = DirectoryReader.open(imageIndexDir);
+		LSHDataExplorer lshExplorer = new LSHDataExplorer(graphFile, 10);
 		
-		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageIndexReader, shotsDirCacheFile);
+		EpsilonSearcher epsilonSearcher = new EpsilonSearcher("EpsilonSearcher", indexReader, shotsDirCacheFile, lshExplorer, conceptsDir, conceptsFile);
 		
 		Query q = new Query("CLI", query, null);
 		
-		System.out.println(gammaSearcher.search(q));
+		System.out.println(epsilonSearcher.search(q));
 	}
 	
 	private static void evaluate(File index,
 								 File queriesFile,
 								 File resultsFile,
-								 File imageIndex,
-								 File shotsDirCacheFile) 
+								 File shotsDirCacheFile,
+								 File graphFile,
+								 File conceptsDir,
+								 File conceptsFile) 
 										 throws IOException,
 										 		ParserConfigurationException,
 										 		SAXException {
@@ -55,20 +56,18 @@ public class GammaSearcherTool {
 		Directory indexDir = FSDirectory.open(index);
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		System.out.println("Opening image index...");
-		Directory imageIndexDir = FSDirectory.open(imageIndex);
-		IndexReader imageIndexReader = DirectoryReader.open(imageIndexDir);
+		LSHDataExplorer lshExplorer = new LSHDataExplorer(graphFile, 10);
 		
-		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageIndexReader, shotsDirCacheFile);
+		EpsilonSearcher epsilonSearcher = new EpsilonSearcher("EpsilonSearcher", indexReader, shotsDirCacheFile, lshExplorer, conceptsDir, conceptsFile);
 		
-		SearcherEvaluator eval = new SearcherEvaluator(gammaSearcher);
+		SearcherEvaluator eval = new SearcherEvaluator(epsilonSearcher);
 		
 		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
-		Float[] initial = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 0f };
+		Float[] initial = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 3f };
 		Float[] increment = { 1f, 1f, 1f, 1f, 1f, 0.1f };
-		Float[] termination = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 3f };
+		Float[] termination = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 6f };
 		
 		List<Float[]> evaluation = eval.evaluateOverSettings(expectedResults,
 															 WINDOW,

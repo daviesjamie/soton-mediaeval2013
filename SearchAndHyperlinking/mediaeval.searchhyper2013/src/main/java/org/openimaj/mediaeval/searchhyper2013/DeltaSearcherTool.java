@@ -15,7 +15,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.xml.sax.SAXException;
 
-public class GammaSearcherTool {
+public class DeltaSearcherTool {
 	public static final int WINDOW = 300;
 
 	public static void main(String[] args) throws IOException, SearcherException, ParserConfigurationException, SAXException {
@@ -29,25 +29,24 @@ public class GammaSearcherTool {
 		}
 	}
 	
-	private static void search(File index, String query, File imageIndex, File shotsDirCacheFile) throws IOException, SearcherException {
+	private static void search(File index, String query, File shotsDirCacheFile, File graphFile) throws IOException, SearcherException {
 		Directory indexDir = FSDirectory.open(index);
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		Directory imageIndexDir = FSDirectory.open(imageIndex);
-		IndexReader imageIndexReader = DirectoryReader.open(imageIndexDir);
+		LSHDataExplorer lshExplorer = new LSHDataExplorer(graphFile, 10);
 		
-		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageIndexReader, shotsDirCacheFile);
+		DeltaSearcher deltaSearcher = new DeltaSearcher("DeltaSearcher", indexReader, shotsDirCacheFile, lshExplorer);
 		
 		Query q = new Query("CLI", query, null);
 		
-		System.out.println(gammaSearcher.search(q));
+		System.out.println(deltaSearcher.search(q));
 	}
 	
 	private static void evaluate(File index,
 								 File queriesFile,
 								 File resultsFile,
-								 File imageIndex,
-								 File shotsDirCacheFile) 
+								 File shotsDirCacheFile,
+								 File graphFile) 
 										 throws IOException,
 										 		ParserConfigurationException,
 										 		SAXException {
@@ -55,20 +54,18 @@ public class GammaSearcherTool {
 		Directory indexDir = FSDirectory.open(index);
 		IndexReader indexReader = DirectoryReader.open(indexDir);
 		
-		System.out.println("Opening image index...");
-		Directory imageIndexDir = FSDirectory.open(imageIndex);
-		IndexReader imageIndexReader = DirectoryReader.open(imageIndexDir);
+		LSHDataExplorer lshExplorer = new LSHDataExplorer(graphFile, 10);
 		
-		GammaSearcher gammaSearcher = new GammaSearcher("GammaSearcher", indexReader, imageIndexReader, shotsDirCacheFile);
+		DeltaSearcher deltaSearcher = new DeltaSearcher("DeltaSearcher", indexReader, shotsDirCacheFile, lshExplorer);
 		
-		SearcherEvaluator eval = new SearcherEvaluator(gammaSearcher);
+		SearcherEvaluator eval = new SearcherEvaluator(deltaSearcher);
 		
 		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
-		Float[] initial = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 0f };
+		Float[] initial = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 3f };
 		Float[] increment = { 1f, 1f, 1f, 1f, 1f, 0.1f };
-		Float[] termination = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 3f };
+		Float[] termination = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 6f };
 		
 		List<Float[]> evaluation = eval.evaluateOverSettings(expectedResults,
 															 WINDOW,

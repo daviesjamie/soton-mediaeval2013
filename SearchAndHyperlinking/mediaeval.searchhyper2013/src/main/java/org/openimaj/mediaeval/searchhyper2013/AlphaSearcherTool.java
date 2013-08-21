@@ -54,9 +54,9 @@ public class AlphaSearcherTool {
 		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
-		Float[] initial = { 0f, 0f, 0f, 60 * 1f, 60 * 5f };
+		Float[] initial = { 1f, 0f, 0f, 60 * 1f, 60 * 5f };
 		Float[] increment = { 0.1f, 0.1f, 0.1f, 60 * 1f, 60 * 5f };
-		Float[] termination = { 1f, 1f, 1f, 60 * 15f, 60 * 60f };
+		Float[] termination = { 1f, 0f, 0f, 60 * 15f, 60 * 60f };
 		
 		List<Float[]> evaluation = eval.evaluateOverSettings(expectedResults,
 															 WINDOW,

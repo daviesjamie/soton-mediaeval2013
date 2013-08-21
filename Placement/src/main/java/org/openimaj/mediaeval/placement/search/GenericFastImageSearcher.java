@@ -312,7 +312,7 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
             logger.warning( "No " + descriptorClass.getName() + " feature stored for " + document.get( LuceneIndexBuilder.FIELD_ID ) );
         }
         
-        return -1f;
+        return 40000f;
     }
 
     public String toString() {

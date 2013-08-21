@@ -138,14 +138,14 @@ public class LireExtractor {
     }
 
     public static void main( String args[] ) throws IOException {
-        File input = new File( "data/skippedfeatures" );
+        File input = new File( "data/featureskipped" );
         BufferedReader br = new BufferedReader( new FileReader( input ) );
         
         String line = null;
         int count = 0;
         int fails = 0;
         
-        final IndexReader ir = DirectoryReader.open( new SimpleFSDirectory( new File( "data/lucene-test-index" ) ) );
+        final IndexReader ir = DirectoryReader.open( new SimpleFSDirectory( new File( "data/lucene-meta-index" ) ) );
         final IndexSearcher metadata = new IndexSearcher( ir );
         LireExtractor lireExtractor = new LireExtractor( "data/lire-feature-index", metadata );
         
