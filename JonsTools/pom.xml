@@ -147,7 +147,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>uk.ac.soton.ecs.jsh2.mediaeval13.App</mainClass>
+              <mainClass>uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.ServerHarness</mainClass>
             </manifest>
           </archive>
         </configuration>
