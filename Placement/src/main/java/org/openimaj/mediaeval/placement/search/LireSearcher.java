@@ -47,12 +47,18 @@ public class LireSearcher implements VisualSearcher {
 
     @Override
     public ScoreDoc[] search( long flickrId, int numResults ) throws IOException {
-        final Query q = NumericRangeQuery.newLongRange( LuceneIndexBuilder.FIELD_ID, flickrId, flickrId, true, true );
-        final TopDocs topdocs = featSearch.search( q, 1 );
-        final int docId = topdocs.scoreDocs[ 0 ].doc;
-        final Document dquery = featSearch.doc( docId );
-        
-        ImageSearchHits hits = visSearch.search( dquery, ir );
+        ImageSearchHits hits = null;
+        try {
+            final Query q = NumericRangeQuery.newLongRange( LuceneIndexBuilder.FIELD_ID, flickrId, flickrId, true, true );
+//            final Query q = new QueryParser( Version.LUCENE_43, LuceneIndexBuilder.FIELD_ID, new StandardAnalyzer( Version.LUCENE_43 ) ).parse( String.valueOf( flickrId ) );
+            final TopDocs topdocs = featSearch.search( q, 1 );
+            final int docId = topdocs.scoreDocs[ 0 ].doc;
+            final Document dquery = featSearch.doc( docId );
+            
+            hits = visSearch.search( dquery, ir );
+        } catch( Exception e ) {
+            e.printStackTrace();
+        }
         
         return linkResults( hits );
     }
