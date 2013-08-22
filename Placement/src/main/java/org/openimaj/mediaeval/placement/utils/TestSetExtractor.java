@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 public class TestSetExtractor {
      
-    private static final File TEST_ID_FILE = new File( "data/test5" );
+    private static final File TEST_ID_FILE = new File( "data/test5_complete" );
     private static final File OUTPUT_FILE = new File( "data/testset.csv" );
     
     private ArrayList<File> inputFiles;
