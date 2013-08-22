@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.dpd;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -85,8 +85,8 @@ public class ProgrammeSubtitles
 					if( localName.equals( "p" ) )
 					{
 						this.ttl = new TimedTextLine();
-						this.ttl.start = (long)(ImportUtils.HMStoS( attributes.getValue( "begin" ) )*1000);
-						this.ttl.end   = (long)(ImportUtils.HMStoS( attributes.getValue( "end" ) )*1000);
+						this.ttl.start = (long)(ProgrammeSubtitles.HMStoS( attributes.getValue( "begin" ) )*1000);
+						this.ttl.end   = (long)(ProgrammeSubtitles.HMStoS( attributes.getValue( "end" ) )*1000);
 					}
 				}
 
@@ -143,6 +143,23 @@ public class ProgrammeSubtitles
 		}
 
 		return ps;
+	}
+
+	/**
+	 * 	Converts the hours, minutes and seconds timecode string into
+	 * 	a number of seconds.
+	 *
+	 *	@param hmsString The string
+	 *	@return Seconds as a float
+	 */
+	public static float HMStoS(final String hmsString) {
+		final String[] parts = hmsString.split(":");
+
+		float secs = Float.parseFloat(parts[2]);
+		secs += Float.parseFloat(parts[1]) * 60;
+		secs += Float.parseFloat(parts[0]) * 60 * 60;
+
+		return secs;
 	}
 
 	/**

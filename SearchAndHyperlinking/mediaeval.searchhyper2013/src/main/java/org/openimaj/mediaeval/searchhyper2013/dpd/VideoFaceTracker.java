@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.dpd;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -305,14 +305,14 @@ public class VideoFaceTracker
 				System.out.println( "Analysing frame "+xv.getCurrentTimecode() );
 
 			// Look for faces to track with the KLT tracker
-			final List<DetectedFace> faces1 = kltTracker.trackFace( frame );
+			final List<DetectedFace> kltFaces = kltTracker.trackFace( frame );
 
-			if( faces1.size() == 0 )
+			if( kltFaces.size() == 0 )
 				continue;
 
 			if( VideoFaceTracker.IMAGE_DEBUG )
 				// DEBUG - Draw the KLT Tracked faces to the frame
-				for( final DetectedFace f : faces1 )
+				for( final DetectedFace f : kltFaces )
 					image.drawShape( f.getBounds(), RGBColour.CYAN );
 
 			// Look for faces to track with the CLM tracker
@@ -327,7 +327,7 @@ public class VideoFaceTracker
 							RGBColour.WHITE, RGBColour.WHITE, RGBColour.RED );
 
 			// Find agreements between the trackers
-			final List<DetectedFace> faces = this.findTrackerAgreements( clmFaces, faces1 );
+			final List<DetectedFace> faces = this.findTrackerAgreements( clmFaces, kltFaces );
 
 			// Check if we've got a face
 			final List<FaceRange> toRemove = new ArrayList<FaceRange>();
@@ -336,18 +336,25 @@ public class VideoFaceTracker
 				if( VideoFaceTracker.DEBUG )
 					System.out.println( "Found "+faces.size()+" faces.");
 
-				// Map all the tracked faces to the existing faces.
+				// Map all the tracked faces to the existing faces. We do this because
+				// the trackers give us new instances of DetectedFace each time we track,
+				// so it's hard to tell if a face in the new frame is the same as the face
+				// in the old frame. So we map based on location and overlap of the previous
+				// and current face bounds.  If we find a match we will use the old DetectedFace
+				// instance and update it (later), but for now just keep a list of those
+				// that we are tracking.
 				final List<FaceRange> f = new ArrayList<FaceRange>();
 				FaceRange x = null;
 				for( final DetectedFace face : faces )
 					if( (x  = this.getExistingDetectedFace( face )) != null )
 						f.add( x );
 
-				// Now remove all those existing faces from our list of existing faces
-				// so that we're left with the existing faces that we're no longer tracking.
-				// These need to be removed.
-				toRemove.addAll( this.frameCount.keySet() );
-				toRemove.removeAll( f );
+				// Now remove all those faces we're tracking from (a copy of) our list
+				// of existing faces. We're left with the faces that we -were- tracking but
+				// we are no longer tracking (tracks lost). These need to be removed, so we
+				// add them to the "toRemove" list which we'll process later.
+				toRemove.addAll( this.frameCount.keySet() );	// Copy of existing faces
+				toRemove.removeAll( f );						// Remove those we're still tracking
 
 				// Loop through the detected faces
 				for( final DetectedFace face : faces )
@@ -358,12 +365,17 @@ public class VideoFaceTracker
 					if( VideoFaceTracker.DEBUG )
 						System.out.println( "    - Confidence "+face.getConfidence() );
 
+					// If we don't have a face patch for this detected face, we'll make it
+					// from the bounds of the tracked face.
 					if( face.getFacePatch() == null )
 						face.setFacePatch( frame.extractROI( face.getBounds() ) );
 
-					// Calculate the score for the face
+					// Calculate the score for the face. The score should tell us how good
+					// the face will be for recognition. See the method for the formula.
 					final double score = this.calculateScore( face, image );
 
+					// Get the face that this detected face matches (if we're already tracking it).
+					// This will be null if it's a completely new face track.
 					final FaceRange sameAs = this.getExistingDetectedFace( face );
 
 					if( VideoFaceTracker.DEBUG )
@@ -372,14 +384,20 @@ public class VideoFaceTracker
 						System.out.println( "        -> Score: "+score );
 
 					// If we haven't found a similar detected face in the current face
-					// list, then we'll add it in there.
+					// list, then it's new and we'll add it in there.
 					if( sameAs == null )
 					{
-						// Start a new frame counter for this face
+						// Create a new face that started at the current timecode and has the given score.
 						final FaceRange fr = new FaceRange( xv.getCurrentTimecode().clone(), face, score );
+
+						// We enlarge the bounds and make a snapshot of the face for the bestFaceImage field.
+						// We do the enlargement so that we can later use a face detector again, if needs be.
+						// The face detectors tend to give very tight bounds.
 						final Rectangle enlargedBounds = face.getBounds().clone();
 						enlargedBounds.scaleCOG( this.enlargeBoundsAmount );
 						fr.bestFaceImage = image.extractROI( enlargedBounds );
+
+						// Start a new frame counter for this face
 						this.frameCount.put( fr, 1 );
 					}
 					else
@@ -390,6 +408,8 @@ public class VideoFaceTracker
 						sameAs.face.setBounds( face.getBounds() );
 						sameAs.face.setFacePatch( face.getFacePatch() );
 
+						// If the score for this face exeeds the best score so far, we'll
+						// update the best face and score in the object.
 						if( score > sameAs.bestFaceScore )
 						{
 							sameAs.bestFaceScore = score;

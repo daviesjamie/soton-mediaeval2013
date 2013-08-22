@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.dpd;
 
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
@@ -47,7 +47,13 @@ import com.google.gson.JsonSyntaxException;
  * extension) it will analyse the metadata for names, train a classifier for
  * recognising those people (by searching Bing for the name of the person along
  * with the name of the programme), and then analyse the video to find the best
- * faces of people in the videos and compare them with the classifier.
+ * faces of people in the videos and compare them with the classifier. The main
+ * method is the {@link #process()} method which contains pretty much all the
+ * logic.
+ * <p>
+ * <b>Note</b>: The defaults for many of the directories within the class probably
+ * won't work for you!  Use the setters to set the directories up before processing
+ * a video.
  *
  * @author David Dupplaw (dpd@ecs.soton.ac.uk)
  * @created 18 Jul 2013
@@ -143,9 +149,8 @@ public class PersonRecogniser
 			PersonMatcher pm = null;
 			final File recFile = new File( this.baseFilename + ".rec" );
 			if( recFile.exists() )
-				pm = new PersonMatcher( recFile );
-			else
-				pm = new PersonMatcher( peopleNames, recFile, true );
+					pm = new PersonMatcher( recFile );
+			else	pm = new PersonMatcher( peopleNames, recFile, true );
 
 			// These options are for minimising false positives in images with
 			// multiple people in them. We only have images with a single person
@@ -252,7 +257,7 @@ public class PersonRecogniser
 
 		people.addAll( this.getPeopleNames( this.cleanString( pi.description ) ) );
 
-		// For the subtitles text we will have to chop it down a bit.
+		// For the subtitles text we will have to chop it down and process it bit by bit
 		final int maxLineLength = 1024;
 		final String[] lines = ps.getText().split( "\n." );
 		String currentLine = "";

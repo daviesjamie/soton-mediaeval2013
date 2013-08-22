@@ -30,7 +30,7 @@
 /**
  *
  */
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.dpd;
 
 import java.io.File;
 import java.io.FilenameFilter;
