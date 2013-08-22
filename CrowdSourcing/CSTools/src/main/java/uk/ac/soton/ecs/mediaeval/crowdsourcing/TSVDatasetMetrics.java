@@ -128,6 +128,7 @@ public class TSVDatasetMetrics
 
 				int missingInTestSet = 0;
 				int tp = 0;
+				int tn = 0;
 				int fp = 0;
 				int fn = 0;
 				for (final String k : gt.keySet())
@@ -145,6 +146,10 @@ public class TSVDatasetMetrics
 						// True positive
 						if (gtt && tst)
 							tp++;
+
+						// True positive
+						if (!gtt && !tst)
+							tn++;
 
 						// False positive
 						if (tst && !gtt)
@@ -164,6 +169,7 @@ public class TSVDatasetMetrics
 						{ "True positives: ", tp + "" },
 						{ "False positives: ", fp + "" },
 						{ "False negatives: ", fn + "" },
+						{ "True negatives: ", tn + "" },
 						{ "Precision: ", prec + "" },
 						{ "Recall: ", recall + "" },
 						{ "F1: ", F1 + "" } };
