@@ -56,7 +56,7 @@ public class DeltaSearcher extends AlphaSearcher {
 	public int MAX_EXPANSIONS = 10;
 	public int MAX_QUERY_FRAMES = 10;
 	public int MAX_FRAME_HITS = 10;
-	public float IMAGE_WEIGHT = 0.8f;
+	public float IMAGE_WEIGHT = 0.5f;
 	
 	Map<String, Map<Integer, String>> shotsDirectoryCache;
 	LSHDataExplorer lshExplorer;
@@ -72,18 +72,50 @@ public class DeltaSearcher extends AlphaSearcher {
 		this.lshExplorer = lshExplorer;
 	}
 	
+	ResultList getBaseResults(Query q) throws Exception {
+		return super._search(q);
+	}
+	
 	@Override
 	ResultList _search(Query q) throws Exception {
-		// Get base results.
-		ResultList results = super._search(q);
+		ResultList results = getBaseResults(q);
 		
 		//System.out.println("\nBase results: \n" + results + "\n");
 		
+		Map<String, ResultList> imageResults = getImageResults(results, q);
+		
+		ResultList allResults = chunkResults(imageResults, results);
+		
+		return allResults;
+	}
+	
+	ResultList chunkResults(Map<String, ResultList> programmeResults, ResultList baseResults) {
+		Set<Result> chunked = new TreeSet<Result>();
+		
+		// Merge within programmes and add to chunked set.
+		for (String programme : programmeResults.keySet()) {
+			chunked.addAll(programmeResults.get(programme)
+							 		   .mergeShortResults(MIN_LENGTH,
+							 					 		  MAX_LENGTH));
+		}
+		
+		chunked.addAll(baseResults);
+		
+		ResultList allResults = new ResultList(baseResults.queryID, baseResults.runName);
+		allResults.addAll(chunked);
+		
+		Collections.sort(allResults);
+		
+		return allResults;
+	}
+	
+	Map<String, ResultList> getImageResults(ResultList baseResults, Query q)
+															throws IOException {
 		Map<String, ResultList> imageResults = new HashMap<String, ResultList>();
 		
 		// Expand on each base result.
-		for (int i = 0; i < results.size() && i < MAX_EXPANSIONS; i++) {
-			Result result = results.get(i);
+		for (int i = 0; i < baseResults.size() && i < MAX_EXPANSIONS; i++) {
+			Result result = baseResults.get(i);
 			
 			List<String> frames = getFrameFilesForResult(result);
 			
@@ -96,12 +128,21 @@ public class DeltaSearcher extends AlphaSearcher {
 				//System.out.println("\nFrame: " + id + " : " + j);
 				
 				// Frame may not be in the graph, make sure we handle this.
-				List<ObjectDoublePair<String>> frameHits;
+				List<ObjectDoublePair<String>> rawFrameHits;
 				try {
-					frameHits = lshExplorer.search(id);
+					rawFrameHits = lshExplorer.search(id);
 				} catch (IllegalArgumentException e) {
 					break;
-				}	
+				}
+				
+				Map<Frame, Float> frameHits = new HashMap<Frame, Float>();
+				
+				for (ObjectDoublePair<String> hit : rawFrameHits) {
+					frameHits.put(Frame.fromString(hit.getFirst()
+													  .replace("/shotdetection/",
+															   "")),
+								  (float) hit.getSecond());
+				}
 
 				Map<String, ResultList> frameResults =
 						framesToResults(frameHits,
@@ -123,25 +164,8 @@ public class DeltaSearcher extends AlphaSearcher {
 			}
 		}
 		
-		Set<Result> chunked = new TreeSet<Result>();
-		
-		// Merge within programmes and add to chunked set.
-		for (String programme : imageResults.keySet()) {
-			chunked.addAll(imageResults.get(programme)
-							 		   .mergeShortResults(MIN_LENGTH,
-							 					 		  MAX_LENGTH));
-		}
-		
-		chunked.addAll(results);
-		
-		ResultList allResults = new ResultList(results.queryID, results.runName);
-		allResults.addAll(chunked);
-		
-		Collections.sort(allResults);
-		
-		return allResults;
+		return imageResults;
 	}
-	
 	private List<String> getFrameFilesForResult(Result result) {
 		int firstFrame = ((int) result.startTime) * FPS;
 		int lastFrame = (((int) result.endTime) + 1) * FPS;
@@ -161,28 +185,24 @@ public class DeltaSearcher extends AlphaSearcher {
 		return framesFiles;
 	}
 
-	Map<String, ResultList> framesToResults(List<ObjectDoublePair<String>> frameHits, String queryID, float scoreScaleFactor) throws IOException {
+	Map<String, ResultList> framesToResults(Map<Frame, Float> frameHits, String queryID, float scoreScaleFactor) throws IOException {
 		Map<String, ResultList> results = new HashMap<String, ResultList>();
 		
 		double maxConf = 0;
 		
-		for (ObjectDoublePair<String> hit : frameHits) {
-			maxConf = Math.max(maxConf, hit.getSecond());
+		for (Float score : frameHits.values()) {
+			maxConf = Math.max(maxConf, score);
 		}
 		
-		for (ObjectDoublePair<String> hit : frameHits) {
-			String[] fileNameParts = hit.getFirst().split("/");
-			
-			int frame = Integer.parseInt(fileNameParts[5].split("\\.")[0]);
-			
+		for (Frame frame : frameHits.keySet()) {			
 			Result result = new Result();
 			
-			result.startTime = frame / FPS;
+			result.startTime = frame.frame / FPS;
 			result.endTime = result.startTime;
 			result.jumpInPoint = result.startTime;
-			result.fileName = fileNameParts[2];
+			result.fileName = frame.programme;
 			
-			result.confidenceScore = (float) (hit.getSecond() * scoreScaleFactor
+			result.confidenceScore = (float) (frameHits.get(frame) * scoreScaleFactor
 											 		   		  * IMAGE_WEIGHT
 											 		   		  / maxConf);
 			
