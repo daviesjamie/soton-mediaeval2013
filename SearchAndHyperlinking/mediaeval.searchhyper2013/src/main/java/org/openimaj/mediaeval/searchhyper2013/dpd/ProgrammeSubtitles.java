@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openimaj.mediaeval.searchhyper2013.OLD.ImportUtils;
+import org.openimaj.mediaeval.searchhyper2013.Time;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -86,8 +86,8 @@ public class ProgrammeSubtitles
 					if( localName.equals( "p" ) )
 					{
 						this.ttl = new TimedTextLine();
-						this.ttl.start = (long)(ProgrammeSubtitles.HMStoS( attributes.getValue( "begin" ) )*1000);
-						this.ttl.end   = (long)(ProgrammeSubtitles.HMStoS( attributes.getValue( "end" ) )*1000);
+						this.ttl.start = (long)(Time.HMStoS( attributes.getValue( "begin" ) )*1000);
+						this.ttl.end   = (long)(Time.HMStoS( attributes.getValue( "end" ) )*1000);
 					}
 				}
 
@@ -144,23 +144,6 @@ public class ProgrammeSubtitles
 		}
 
 		return ps;
-	}
-
-	/**
-	 * 	Converts the hours, minutes and seconds timecode string into
-	 * 	a number of seconds.
-	 *
-	 *	@param hmsString The string
-	 *	@return Seconds as a float
-	 */
-	public static float HMStoS(final String hmsString) {
-		final String[] parts = hmsString.split(":");
-
-		float secs = Float.parseFloat(parts[2]);
-		secs += Float.parseFloat(parts[1]) * 60;
-		secs += Float.parseFloat(parts[0]) * 60 * 60;
-
-		return secs;
 	}
 
 	/**

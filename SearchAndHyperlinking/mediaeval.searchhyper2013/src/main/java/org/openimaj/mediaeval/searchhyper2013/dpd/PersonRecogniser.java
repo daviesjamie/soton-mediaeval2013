@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -135,17 +136,28 @@ public class PersonRecogniser
 		try
 		{
 			// Parse the programme metadata into a ProgrammeInfo object
+			System.out.println( "Reading programme information..." );
 			final ProgrammeInfo pi = ProgrammeInfo.create( programmeInfoFile );
 
 			// Parse the programme subtitles into a ProgrammeSubtitles object
+			System.out.println( "Reading subtitles..." );
 			final ProgrammeSubtitles ps = ProgrammeSubtitles.create( subtitlesFile );
 
 			// Analyse the description for the people names
+			System.out.println( "Analysing for people's names..." );
 			final Set<String> peopleNames = this.getPeopleNames( pi, ps );
+
+			// Remove singleton people names. They are unlikely to be real names
+			// and more likely to cause problems.
+			final Iterator<String> it = peopleNames.iterator();
+			while( it.hasNext() )
+				if( !it.next().trim().contains(" ") )
+					it.remove();
 
 			System.out.println( "Found these people:\n\t"+peopleNames );
 
 			// Create a classifier for the given people names
+			System.out.println( "Creating a classifier for people's faces..." );
 			PersonMatcher pm = null;
 			final File recFile = new File( this.baseFilename + ".rec" );
 			if( recFile.exists() )
@@ -154,7 +166,7 @@ public class PersonRecogniser
 
 			// These options are for minimising false positives in images with
 			// multiple people in them. We only have images with a single person
-			// in it.
+			// in it so we can turn them off (slightly quicker processing)
 			pm.setAllowOnlyOneInstance( false );
 			pm.setIgnoreBlurredFaces( false );
 
@@ -183,14 +195,13 @@ public class PersonRecogniser
 				System.out.println( "Cache for video already exists. Using cache." );
 
 			// Read the list of images back in from the cache. We use the cache
-			// so that
-			// we can deal with more images than will fit in memory.
+			// so that we can deal with more images than will fit in memory.
 			final File[] files = videoFaceCacheDir.listFiles( new FileFilter()
 			{
 				@Override
 				public boolean accept( final File pathname )
 				{
-					return pathname.getName().endsWith( ".png" );
+					return pathname.getName().endsWith( "-face.png" );
 				}
 			} );
 
@@ -198,28 +209,32 @@ public class PersonRecogniser
 			// person classifier we created just a minute ago
 			for( final File f : files )
 			{
+				// Read the cached face
 				final MBFImage img = ImageUtilities.readMBF( f );
 
+				// Query the face recognition engine
 				final List<? extends IndependentPair<? extends DetectedFace, ScoredAnnotation<String>>> x
 						= pm.query( img.flatten() );
 
 				// As the query image should only have one face within it, the
 				// hope is that there will only be a single result in the person
-				// matcher.
+				// matcher. We check there's one at all, then take the first one.
 				if( x.size() > 0 )
 				{
-					// Get the single result
+					// Get the (hopefully) single result:
 					final IndependentPair<? extends DetectedFace, ScoredAnnotation<String>> y = x.get( 0 );
+
+					// Get the name of the person with which is was annotated
 					final String name = (y.secondObject() == null ? "Unknown" : y.secondObject().annotation);
 
-					// Write the name of the person to a file next to the face
-					// image.
-					final FileWriter fw = new FileWriter( new File( f.getCanonicalPath() + ".txt" ) );
-					fw.write( name );
+					// Write the name of the person to a file next to the face image along with the confidence.
+					final FileWriter fw = new FileWriter( new File( f.getCanonicalPath() + "-recognised.txt" ) );
+					fw.write( name + "\t" + y.secondObject().confidence );
 					fw.close();
 				}
 			}
 
+			// Shows a window with the images and recognition results
 			this.showResults( files );
 		}
 		catch( final Exception e )
@@ -455,7 +470,8 @@ public class PersonRecogniser
 					String str;
 					try
 					{
-						str = Files.readFirstLine( new File( files[this.fc].getCanonicalPath() + ".txt" ), Charset.forName( "UTF-8" ) );
+						str = Files.readFirstLine( new File( files[this.fc].getCanonicalPath() + ".txt" ),
+								Charset.forName( "UTF-8" ) );
 					}
 					catch( final Exception e )
 					{
