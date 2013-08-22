@@ -46,4 +46,9 @@ public class GeoLocation {
 		final double c = 2 * Math.asin(Math.sqrt(a));
 		return EARTH_RADIUS_KM * c;
 	}
+
+	@Override
+	public String toString() {
+		return latitude + " " + longitude;
+	}
 }

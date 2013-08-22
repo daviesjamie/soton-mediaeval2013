@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.openimaj.mediaeval.searchhyper2013;
+package org.openimaj.mediaeval.searchhyper2013.dpd;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openimaj.mediaeval.searchhyper2013.OLD.ImportUtils;
+import org.openimaj.mediaeval.searchhyper2013.Time;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -86,8 +86,8 @@ public class ProgrammeSubtitles
 					if( localName.equals( "p" ) )
 					{
 						this.ttl = new TimedTextLine();
-						this.ttl.start = (long)(ImportUtils.HMStoS( attributes.getValue( "begin" ) )*1000);
-						this.ttl.end   = (long)(ImportUtils.HMStoS( attributes.getValue( "end" ) )*1000);
+						this.ttl.start = (long)(Time.HMStoS( attributes.getValue( "begin" ) )*1000);
+						this.ttl.end   = (long)(Time.HMStoS( attributes.getValue( "end" ) )*1000);
 					}
 				}
 

@@ -88,8 +88,9 @@ public class MeanShiftTagEngine implements GeoPositioningEngine {
 				Collections.shuffle(locations);
 				locations = locations.subList(0, sampleCount);
 			} else {
+				final int size = locations.size();
 				while (locations.size() < sampleCount) {
-					locations.add(locations.get((int) (Math.random() * locations.size())));
+					locations.add(locations.get((int) (Math.random() * size)));
 				}
 			}
 
@@ -129,9 +130,13 @@ public class MeanShiftTagEngine implements GeoPositioningEngine {
 			pts.addAll(prior);
 		}
 
+		return computeLocationMeanShift(pts);
+	}
+
+	protected GeoLocationEstimate computeLocationMeanShift(final List<GeoLocation> pts) {
 		final double[][] data = toArray(pts);
 
-		final double[][] seeds = QuickMeanShift.bin_points(data, bandwidth, MIN_BIN_FREQ);
+		final double[][] seeds = QuickMeanShift.bin_points(data, bandwidth / 2, MIN_BIN_FREQ);
 		final IndependentPair<double[][], int[]> result = QuickMeanShift.meanShift(data, bandwidth, seeds,
 				FlatWindow.INSTANCE, MAX_ITERATIONS);
 

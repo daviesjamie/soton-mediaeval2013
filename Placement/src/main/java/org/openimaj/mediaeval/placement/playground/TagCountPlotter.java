@@ -13,6 +13,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
@@ -27,13 +28,16 @@ import org.jfree.ui.ApplicationFrame;
 
 public class TagCountPlotter {
     public static void main(String[] args) throws IOException, ParseException {
-        final Directory directory = new SimpleFSDirectory(new File("data/lucene-test-index"));
+        final Directory directory = new SimpleFSDirectory(new File("data/lucene-meta-index"));
 
-        final Query q = new QueryParser(Version.LUCENE_43, "tags", new StandardAnalyzer(Version.LUCENE_43))
-                .parse("+southampton +snow");
+//        final Query q = new QueryParser(Version.LUCENE_43, "tags", new StandardAnalyzer(Version.LUCENE_43))
+//                .parse("+geotagged");
+        
+        final Query q = new MatchAllDocsQuery();
+//        final Query q = new QueryParser( Version.LUCENE_43, "tags", new StandardAnalyzer( Version.LUCENE_43 ) ).parse( "*:*  -tags:[* TO *]" );
 
         // 3. search
-        final int hitsPerPage = 100000;
+        final int hitsPerPage = 8550000;
         final IndexReader reader = DirectoryReader.open(directory);
         final IndexSearcher searcher = new IndexSearcher(reader);
         final TopScoreDocCollector collector = TopScoreDocCollector.create(hitsPerPage, true);
@@ -42,7 +46,7 @@ public class TagCountPlotter {
 
         // 4. display results
         System.out.println( "Found " + collector.getTotalHits() + " hits." );
-        final List<float[]> data = new ArrayList<float[]>(7800000);
+        final List<float[]> data = new ArrayList<float[]>(8550000);
         
         for( int i = 0; i < hits.length; ++i ) {
             final int docId = hits[ i ].doc;

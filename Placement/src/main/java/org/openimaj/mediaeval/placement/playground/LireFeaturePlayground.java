@@ -29,7 +29,7 @@ public class LireFeaturePlayground {
 
     public static void main( String[] args ) throws IOException {
         final String lireIndex = "data/lire-feature-index";
-        final String luceneIndex = "data/lucene-test-index";
+        final String luceneIndex = "data/lucene-meta-index";
 
         final int numResults = 10;
 
