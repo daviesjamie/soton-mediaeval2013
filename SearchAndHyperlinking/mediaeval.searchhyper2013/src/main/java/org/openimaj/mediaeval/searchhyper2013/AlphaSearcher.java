@@ -116,8 +116,20 @@ public class AlphaSearcher implements Searcher {
 
 		ScoreDoc[] synopsisScoreDocs = synopses.scoreDocs;
 		
+		// Normalise synopsis scores.
+		float maxScore = 0;
+		
+		for (ScoreDoc doc : synopsisScoreDocs) {
+			maxScore = Math.max(maxScore, doc.score);
+		}
+		
+		for (ScoreDoc doc : synopsisScoreDocs) {
+			doc.score /= maxScore;
+		}
+		
 		List<ScoreDoc> scoreDocs = new ArrayList<ScoreDoc>();
 		
+		// Expand by title.
 		for (ScoreDoc doc : synopsisScoreDocs) {
 			scoreDocs.add(doc);
 			
@@ -144,8 +156,15 @@ public class AlphaSearcher implements Searcher {
 														  NUM_TITLE_RESULTS);
 			ScoreDoc[] titleScoreDocs = seriesSynopses.scoreDocs;
 			
+			// Normalise, weight, add to list.
+			float maxTitleScore = 0;
+			
 			for (ScoreDoc titleDoc : titleScoreDocs) {
-				titleDoc.score *= TITLE_SCALE_FACTOR;
+				maxTitleScore = Math.max(maxTitleScore, titleDoc.score);
+			}
+			
+			for (ScoreDoc titleDoc : titleScoreDocs) {
+				titleDoc.score *= TITLE_SCALE_FACTOR / maxTitleScore;
 				
 				scoreDocs.add(titleDoc);
 			}

@@ -242,6 +242,11 @@ public class BetaSearcher extends AlphaSearcher {
 	public void configure(Float[] settings) {
 		super.configure(settings);
 		
-		ORIGINAL_QUERY_SCALE_FACTOR = settings[5];
+		ORIGINAL_QUERY_SCALE_FACTOR = settings[super.numSettings()];
+	}
+	
+	@Override
+	public int numSettings() {
+		return super.numSettings() + 1;
 	}
 }
