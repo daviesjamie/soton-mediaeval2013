@@ -163,6 +163,8 @@ public class TSVDatasetMetrics
 
 				final double prec = (double) tp / (double) (tp + fp);
 				final double recall = (double) tp / (double) (tp + fn);
+				final double tnr = (double) tn / (double) (tn + fp);
+				final double accuracy = (double) (tp + tn) / (double) (tp + tn + fp + fn);
 				final double F1 = (2 * prec * recall) / (prec + recall);
 
 				final String[][] table = {
@@ -170,9 +172,11 @@ public class TSVDatasetMetrics
 						{ "False positives: ", fp + "" },
 						{ "False negatives: ", fn + "" },
 						{ "True negatives: ", tn + "" },
-						{ "Precision: ", prec + "" },
-						{ "Recall: ", recall + "" },
-						{ "F1: ", F1 + "" } };
+						{ "Precision: ", String.format("%2.4f", prec) },
+						{ "Recall: ", String.format("%2.4f", recall) },
+						{ "True negative rate: ", String.format("%2.4f", tnr) },
+						{ "Accuracy: ", String.format("%2.4f", accuracy) },
+						{ "F1: ", String.format("%2.4f", F1) } };
 
 				final ASCIITableHeader[] header = {
 						new ASCIITableHeader("Statistic", ASCIITable.ALIGN_RIGHT),
