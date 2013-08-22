@@ -47,7 +47,7 @@ public class Concepts extends HashMap<String, Integer> {
 			String[] parts = line.split(" ");
 			
 			Frame frame =
-				Frame.fromString(parts[1].replace("keyframes/cBBC.sh13/", ""));
+				Frame.fromString(parts[1].replace("keyframes/cBBC.sh13/v", ""));
 			
 			conceptObj.put(frame, Float.parseFloat(parts[2]));
 		}

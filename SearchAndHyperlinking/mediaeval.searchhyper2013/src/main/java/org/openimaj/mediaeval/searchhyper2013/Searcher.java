@@ -14,4 +14,6 @@ public interface Searcher {
 	public ResultList search(Query q) throws SearcherException;
 
 	public void configure(Float[] settings);
+
+	int numSettings();
 }

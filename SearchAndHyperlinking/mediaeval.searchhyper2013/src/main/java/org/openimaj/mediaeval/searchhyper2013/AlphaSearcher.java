@@ -19,9 +19,11 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queries.BooleanFilter;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
@@ -59,9 +61,11 @@ public class AlphaSearcher implements Searcher {
 	static final Version LUCENE_VERSION = Version.LUCENE_43;
 	
 	static final int NUM_SYNOPSIS_RESULTS = 5;
+	static final int NUM_TITLE_RESULTS = 100;
 	static final int MAX_SUBS_HITS = 1000;
 	static final int MAX_LIMSI_HITS = 1000;
 	static final int MAX_LIUM_HITS = 1000;
+	float TITLE_SCALE_FACTOR = 0.1f;
 	float SUBS_SCALE_FACTOR = 1f;
 	float LIMSI_SCALE_FACTOR = 0f;
 	float LIUM_SCALE_FACTOR = 0f;
@@ -110,9 +114,44 @@ public class AlphaSearcher implements Searcher {
 												synopsisFilter,
 												NUM_SYNOPSIS_RESULTS);
 
-		ScoreDoc[] scoreDocs = synopses.scoreDocs;
-		Arrays.sort(scoreDocs, new Comparator<ScoreDoc>() {
-
+		ScoreDoc[] synopsisScoreDocs = synopses.scoreDocs;
+		
+		List<ScoreDoc> scoreDocs = new ArrayList<ScoreDoc>();
+		
+		for (ScoreDoc doc : synopsisScoreDocs) {
+			scoreDocs.add(doc);
+			
+			Document synopsisDoc = 
+					LuceneUtils.resolveOtherFromProgram(doc.doc,
+														Type.Synopsis,
+														indexSearcher);
+			String seriesTitle = synopsisDoc.get(Field.Title.toString());
+			
+			org.apache.lucene.search.Query seriesQuery = 
+					queryParser.parse("\"" + seriesTitle + "\"",
+									  Field.Title.toString());
+			
+			BooleanFilter differentSynopsesFilter = new BooleanFilter();
+			differentSynopsesFilter.add(synopsisFilter, BooleanClause.Occur.MUST);
+			differentSynopsesFilter.add(new QueryWrapperFilter(
+											new TermQuery(
+												new Term(Field.Program.toString(),
+														 synopsisDoc.get(Field.Program.toString())))),
+										BooleanClause.Occur.MUST_NOT);
+			
+			TopDocs seriesSynopses = indexSearcher.search(seriesQuery,
+														  synopsisFilter,
+														  NUM_TITLE_RESULTS);
+			ScoreDoc[] titleScoreDocs = seriesSynopses.scoreDocs;
+			
+			for (ScoreDoc titleDoc : titleScoreDocs) {
+				titleDoc.score *= TITLE_SCALE_FACTOR;
+				
+				scoreDocs.add(titleDoc);
+			}
+		}
+		
+		Collections.sort(scoreDocs, new Comparator<ScoreDoc>() {
 			@Override
 			public int compare(ScoreDoc arg0, ScoreDoc arg1) {
 				float diff = arg0.score - arg1.score;
@@ -125,7 +164,6 @@ public class AlphaSearcher implements Searcher {
 					return 0;
 				}
 			}
-			
 		});
 		
 		Set<Result> resultSet = new TreeSet<Result>();
@@ -250,10 +288,16 @@ public class AlphaSearcher implements Searcher {
 
 	@Override
 	public void configure(Float[] settings) {
-		SUBS_SCALE_FACTOR = settings[0];
-		LIMSI_SCALE_FACTOR = settings[1];
-		LIUM_SCALE_FACTOR = settings[2];
-		MIN_LENGTH = settings[3];
-		MAX_LENGTH = settings[4];
+		TITLE_SCALE_FACTOR = settings[0];
+		SUBS_SCALE_FACTOR = settings[1];
+		LIMSI_SCALE_FACTOR = settings[2];
+		LIUM_SCALE_FACTOR = settings[3];
+		MIN_LENGTH = settings[4];
+		MAX_LENGTH = settings[5];
+	}
+	
+	@Override
+	public int numSettings() {
+		return 6;
 	}
 }

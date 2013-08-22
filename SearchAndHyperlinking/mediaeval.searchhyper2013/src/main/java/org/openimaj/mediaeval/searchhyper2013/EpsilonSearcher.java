@@ -33,6 +33,8 @@ import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.KeywordAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.analysis.util.CharArraySet;
+import org.apache.lucene.analysis.util.StopwordAnalyzerBase;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -74,21 +76,26 @@ public class EpsilonSearcher extends DeltaSearcher {
 	
 	Concepts concepts;
 	File conceptsDir;
+	File synFile;
 	
 	public EpsilonSearcher(String runName,
 						 IndexReader indexReader,
 						 File shotsDirectoryCacheFile,
 						 LSHDataExplorer lshExplorer,
 						 File conceptsDir,
-						 File conceptsFile) throws IOException {
+						 File conceptsFile,
+						 File synFile) throws IOException {
 		super(runName, indexReader, shotsDirectoryCacheFile, lshExplorer);
 		
 		concepts = new Concepts(conceptsFile);
 		this.conceptsDir = conceptsDir;
+		this.synFile = synFile;
 	}
 	
 	@Override
 	ResultList _search(Query q) throws Exception {
+		//System.out.println(q);
+		
 		ResultList baseResults = getBaseResults(q);
 		
 		Map<String, ResultList> imageResults = getImageResults(baseResults, q);
@@ -96,6 +103,8 @@ public class EpsilonSearcher extends DeltaSearcher {
 		List<String> queryConcepts =
 				getCommonTokens(q.queryText + " " + q.visualCues,
 								this.concepts.conceptsString());
+		
+		//System.out.println(queryConcepts);
 		
 		List<Concept> conceptObjs = new ArrayList<Concept>();
 		
@@ -106,6 +115,8 @@ public class EpsilonSearcher extends DeltaSearcher {
 		for (String programme : imageResults.keySet()) {
 			for (Concept concept : conceptObjs) {
 				Map<Frame, Float> frames = concept.findProgrammeFrames(programme);
+				
+				//System.out.println("Concept frames: \n" + frames + "\n");
 				
 				Map<String, ResultList> results = framesToResults(frames,
 																  q.queryID,
@@ -131,12 +142,21 @@ public class EpsilonSearcher extends DeltaSearcher {
 		}
 	}
 	
-	public static List<String> getCommonTokens(String queryString, String searchString) throws IOException, QueryNodeException, InvalidTokenOffsetsException {
+	public List<String> getCommonTokens(String queryString, String searchString) throws IOException, QueryNodeException, InvalidTokenOffsetsException {
 		
-		EnglishAnalyzer englishAnalyzer = new EnglishAnalyzer(LUCENE_VERSION);
+		Map<String, String> analyzerArgs = new HashMap<String, String>();
+		
+		analyzerArgs.put("luceneMatchVersion", LUCENE_VERSION.toString());
+		analyzerArgs.put("synonyms", synFile.getAbsolutePath());
+		analyzerArgs.put("format", "wordnet");
+		analyzerArgs.put("ignoreCase", "true");
+		analyzerArgs.put("expand", "true");
+		
+		EnglishSynonymAnalyzer englishSynonymAnalyzer =
+				new EnglishSynonymAnalyzer(LUCENE_VERSION, analyzerArgs);
 		
 		StandardQueryParser queryParser =
-				new StandardQueryParser(englishAnalyzer);
+				new StandardQueryParser(englishSynonymAnalyzer);
 		org.apache.lucene.search.Query query = 
 				queryParser.parse(queryString, "foo");
 		
@@ -192,6 +212,11 @@ public class EpsilonSearcher extends DeltaSearcher {
 	public void configure(Float[] settings) {
 		super.configure(settings);
 		
-		CONCEPT_FRAME_WEIGHT = settings[6];
+		CONCEPT_FRAME_WEIGHT = settings[super.numSettings()];
+	}
+	
+	@Override
+	public int numSettings() {
+		return super.numSettings() + 1;
 	}
 }

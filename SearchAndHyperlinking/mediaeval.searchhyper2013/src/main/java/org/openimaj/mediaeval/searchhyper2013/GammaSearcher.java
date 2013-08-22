@@ -252,7 +252,12 @@ public class GammaSearcher extends AlphaSearcher {
 	public void configure(Float[] settings) {
 		super.configure(settings);
 		
-		IMAGE_WEIGHT = settings[5];
+		IMAGE_WEIGHT = settings[super.numSettings()];
+	}
+	
+	@Override
+	public int numSettings() {
+		return super.numSettings() + 1;
 	}
 	
 	/*public static void main(String[] args) throws IOException {
