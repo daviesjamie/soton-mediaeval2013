@@ -1,7 +1,6 @@
 package org.openimaj.mediaeval.placement.vis;
 
 import org.openimaj.image.MBFImage;
-import org.openimaj.image.colour.RGBColour;
 import org.openimaj.math.geometry.point.Point2d;
 import org.openimaj.mediaeval.placement.vis.PointPlotVisualisation.ColouredPoint;
 import org.openimaj.vis.general.AxesRenderer2D;

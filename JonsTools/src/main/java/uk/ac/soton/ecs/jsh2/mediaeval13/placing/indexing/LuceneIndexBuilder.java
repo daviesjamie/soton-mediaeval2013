@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -16,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.LineIterator;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -64,9 +62,9 @@ public class LuceneIndexBuilder {
 	private final static String CSV_REGEX = ",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))";
 
 	public static void main(String[] args) throws IOException {
-		final String latlngPath = "/Volumes/SSD/mediaeval13/training_latlng";
+		final String latlngPath = "/Volumes/SSD/mediaeval13/placing/training_latlng";
 		final String csvPath = "/Volumes/SSD/mediaeval13/placing/all.csv";
-		final String indexPath = "/Users/jon/lucene-test-index";
+		final String indexPath = "/Volumes/SSD/mediaeval13/placing/places.lucene.v2";
 
 		buildIndex(latlngPath, csvPath, indexPath);
 	}
@@ -128,8 +126,8 @@ public class LuceneIndexBuilder {
 							final String userId = parts[2];
 							final String url = parts[3];
 							final String tags = parts[4];
-							final Date taken = new Date(Long.parseLong(parts[5]));
-							final Date uploaded = new Date(Long.parseLong(parts[6]));
+							final long taken = Long.parseLong(parts[5]);
+							final long uploaded = Long.parseLong(parts[6]);
 							final int views = Integer.parseInt(parts[7]);
 
 							final Document doc = makeDocument(flickrId, userId, url, tags, taken, uploaded, views,
@@ -153,8 +151,8 @@ public class LuceneIndexBuilder {
 	}
 
 	@SuppressWarnings("deprecation")
-	private static Document makeDocument(long flickrId, String userId, String url, String tags, Date taken,
-			Date uploaded, int views, float lat, float lon, SpatialContext ctx, SpatialStrategy strategy)
+	private static Document makeDocument(long flickrId, String userId, String url, String tags, long taken,
+			long uploaded, int views, float lat, float lon, SpatialContext ctx, SpatialStrategy strategy)
 	{
 		final Document doc = new Document();
 
@@ -162,9 +160,8 @@ public class LuceneIndexBuilder {
 		doc.add(new StringField(FIELD_USER, userId, Store.YES));
 		doc.add(new StringField(FIELD_URL, url, Store.YES));
 		doc.add(new TextField(FIELD_TAGS, tags, Store.YES));
-		doc.add(new StringField(FIELD_TAKEN, DateTools.dateToString(taken, DateTools.Resolution.MINUTE), Field.Store.YES));
-		doc.add(new StringField(FIELD_UPLOADED, DateTools.dateToString(uploaded, DateTools.Resolution.MINUTE),
-				Field.Store.YES));
+		doc.add(new LongField(FIELD_TAKEN, taken, Field.Store.YES));
+		doc.add(new LongField(FIELD_UPLOADED, uploaded, Field.Store.YES));
 		doc.add(new IntField(FIELD_VIEWS, views, Store.YES));
 
 		final Shape point = ctx.makePoint(lon, lat);
