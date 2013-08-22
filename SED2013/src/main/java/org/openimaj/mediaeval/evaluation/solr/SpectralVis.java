@@ -94,7 +94,7 @@ public class SpectralVis {
 	}
 
 	private static double[][] solrDistance(String indexFile,int start, int end) throws CorruptIndexException, IOException {
-		MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto> ds = SpectralSolrSimilarityExperiment.datasetFromSolr(indexFile, start, end);
+		MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto> ds = SpectralDBSCANSimilarityExperiment.datasetFromSolr(indexFile, start, end);
 		double[][] ret = new double[ds.numInstances()][ds.numInstances()];
 		int clusterIndex = 0;
 		for (Entry<Integer, ListDataset<IndexedPhoto>> cluster : ds.entrySet()) {

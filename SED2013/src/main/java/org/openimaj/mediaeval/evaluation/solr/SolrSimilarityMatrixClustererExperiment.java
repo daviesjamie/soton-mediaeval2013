@@ -228,4 +228,11 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		}
 		clusterWriter.flush();
 	}
+
+	/**
+	 * @return the ground truth
+	 */
+	public MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto> getGroundtruth() {
+		return groundtruth;
+	}
 }

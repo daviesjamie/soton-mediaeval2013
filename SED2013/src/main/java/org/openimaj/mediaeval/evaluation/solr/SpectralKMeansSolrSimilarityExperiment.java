@@ -26,6 +26,7 @@ import org.openimaj.ml.clustering.spectral.GraphLaplacian;
 import org.openimaj.ml.clustering.spectral.HardCodedEigenChooser;
 import org.openimaj.ml.clustering.spectral.SpectralClusteringConf;
 import org.openimaj.ml.clustering.spectral.SpectralIndexedClusters;
+import org.openimaj.ml.clustering.spectral.SpectralClusteringConf.ClustererProvider;
 import org.openimaj.util.function.Function;
 import org.openimaj.util.pair.IndependentPair;
 import org.openimaj.vis.general.BarVisualisationBasic;
@@ -51,13 +52,17 @@ public class SpectralKMeansSolrSimilarityExperiment extends SolrSimilarityMatrix
 	@Override
 	public Clusterer<SparseMatrix> prepareClusterer() {
 		
-		Function<IndependentPair<double[], double[][]>, SpatialClusterer<? extends SpatialClusters<double[]>, double[]>> func = 
-				new Function<IndependentPair<double[],double[][]>, SpatialClusterer<? extends SpatialClusters<double[]>,double[]>>() {
+		ClustererProvider<double[]> func = new ClustererProvider<double[]>() {
 			@Override
 			public SpatialClusterer<? extends SpatialClusters<double[]>, double[]> apply(IndependentPair<double[], double[][]> in) {
 				DoubleKMeans inner = DoubleKMeans.createExact(69, 1000);
 				inner.getConfiguration().setNearestNeighbourFactory(new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.COSINE_SIM));
 				return inner;
+			}
+			
+			@Override
+			public String toString() {
+				return DoubleKMeans.createExact(69, 1000).toString();
 			}
 		};
 		SpectralClusteringConf<double[]> conf = new SpectralClusteringConf<double[]>(func);

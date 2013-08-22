@@ -22,28 +22,35 @@ import org.openimaj.data.DoubleRange;
 import org.openimaj.experiment.ExperimentContext;
 import org.openimaj.experiment.ExperimentRunner;
 import org.openimaj.io.IOUtils;
+import org.openimaj.ml.clustering.IndexClusters;
+import org.openimaj.ml.clustering.SparseMatrixClusterer;
+import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
 import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
+import org.openimaj.ml.clustering.incremental.IncrementalSparseClusterer;
 
 /**
  * A {@link SolrSimilarityMatrixClustererExperiment} which launches the experiment using DBSCAN
  *
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  */
-public class DBSCANSolrSimilarityExperiment extends SolrSimilarityMatrixClustererExperiment{
+public class IncrementalDBSCANSolrSimilarityExperiment extends SolrSimilarityMatrixClustererExperiment{
 	/**
 	 * @param similarityFile
 	 * @param indexFile
 	 * @param start
 	 * @param end
 	 */
-	public DBSCANSolrSimilarityExperiment(String similarityFile, String indexFile, int start, int end) {
+	public IncrementalDBSCANSolrSimilarityExperiment(String similarityFile, String indexFile, int start, int end, int windowsize) {
 		super(similarityFile, indexFile, start, end);
+		this.windowssize = windowsize;
 	}
 	
 	double eps;
+	private int windowssize;
 	@Override
-	public SimilarityDBSCAN prepareClusterer() {
-		return new SimilarityDBSCAN(eps, 1);
+	public SparseMatrixClusterer<IndexClusters> prepareClusterer() {
+		IncrementalSparseClusterer<DoubleDBSCANClusters> a = new IncrementalSparseClusterer<DoubleDBSCANClusters>(new SimilarityDBSCAN(eps, 1), windowssize);
+		return a;
 	}
 
 	/**
@@ -55,23 +62,26 @@ public class DBSCANSolrSimilarityExperiment extends SolrSimilarityMatrixClustere
 	public static void main(String[] args) throws IOException, XMLStreamException, ParseException {
 		int start = Integer.parseInt(args[0]);
 		int end = Integer.parseInt(args[1]);
-		String experimentOut = args[2] + "/dbscan";
+		String experimentOut = args[2] + "/incrementaldbscan";
 		File expOut = new File(experimentOut,String.format("%d_%d",start,end));
 		if(!expOut.exists()){
 			expOut.mkdirs();
 		}
 		String indexFile = args[3];
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-		DoubleRange r = new DoubleRange(0.4,0.05,1.5);
+		DoubleRange r = new DoubleRange(0.4,0.05,0.8);
 		
 		String allExp = ""; 
+		int windowsize = 500;
+		File windowDir = new File(expOut,"windowsize="+windowsize);
 		for (int i = 4; i < args.length; i++) {
 			String similarityMatrix = args[i];
 			String[] split = similarityMatrix.split("/");
 			String name = split[split.length-1];
 			allExp += name+"+";
-			DBSCANSolrSimilarityExperiment exp = new DBSCANSolrSimilarityExperiment(similarityMatrix, indexFile, start, end);
-			File dmatDir = new File(expOut,name);
+			File dmatDir = new File(windowDir,name);
+			
+			IncrementalDBSCANSolrSimilarityExperiment exp = new IncrementalDBSCANSolrSimilarityExperiment(similarityMatrix, indexFile, start, end,windowsize);
 			dmatDir.mkdirs();
 			for (Double d : r) {
 				File epsDir = new File(dmatDir,String.format("%2.2f",d));
@@ -92,10 +102,10 @@ public class DBSCANSolrSimilarityExperiment extends SolrSimilarityMatrixClustere
 		}
 		allExp = allExp.substring(0,allExp.length()-1);
 		String combinedResultsName = String.format("results_%s",allExp );
-		IOUtils.writeToFile(dataset, new File(expOut,combinedResultsName + ".jchart"));
-		dataset = IOUtils.readFromFile(new File(expOut,combinedResultsName + ".jchart"));
+		IOUtils.writeToFile(dataset, new File(windowDir,combinedResultsName + ".jchart"));
+		dataset = IOUtils.readFromFile(new File(windowDir,combinedResultsName + ".jchart"));
 		JFreeChart line = ChartFactory.createLineChart("DBSCAN Clustering", "DBSCAN eps", "f1score", dataset , PlotOrientation.VERTICAL, true, false, false);
-		ChartUtilities.saveChartAsPNG(new File(expOut,combinedResultsName+".png"), line, 800, 600);
+		ChartUtilities.saveChartAsPNG(new File(windowDir,combinedResultsName+".png"), line, 800, 600);
 		
 	}
 

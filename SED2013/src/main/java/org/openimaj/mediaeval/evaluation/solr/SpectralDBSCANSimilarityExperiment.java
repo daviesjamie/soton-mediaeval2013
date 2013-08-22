@@ -16,11 +16,8 @@ import org.openimaj.ml.clustering.SpatialClusterer;
 import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
 import org.openimaj.ml.clustering.dbscan.DoubleNNDBSCAN;
 import org.openimaj.ml.clustering.spectral.AbsoluteValueEigenChooser;
-import org.openimaj.ml.clustering.spectral.CachedDoubleSpectralClustering;
-import org.openimaj.ml.clustering.spectral.ChangeDetectingEigenChooser;
 import org.openimaj.ml.clustering.spectral.DoubleSpectralClustering;
 import org.openimaj.ml.clustering.spectral.GraphLaplacian;
-import org.openimaj.ml.clustering.spectral.HardCodedEigenChooser;
 import org.openimaj.ml.clustering.spectral.SpectralClusteringConf;
 import org.openimaj.ml.clustering.spectral.SpectralIndexedClusters;
 import org.openimaj.vis.general.BarVisualisationBasic;
@@ -32,32 +29,27 @@ import ch.akuhn.matrix.SparseMatrix;
  *
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  */
-public class SpectralDBSCANCosineSimilarityExperiment extends SolrSimilarityMatrixClustererExperiment{
-	private File eigenCache;
-
+public class SpectralDBSCANSimilarityExperiment extends SolrSimilarityMatrixClustererExperiment{
 	/**
-	 * @param eigencache
 	 * @param similarityFile
 	 * @param indexFile
 	 * @param start
 	 * @param end
 	 */
-	public SpectralDBSCANCosineSimilarityExperiment(File eigencache, String similarityFile, String indexFile, int start, int end) {
+	public SpectralDBSCANSimilarityExperiment(String similarityFile, String indexFile, int start, int end) {
 		super(similarityFile, indexFile, start, end);
-		this.eigenCache = eigencache;
-		this.eigenCache.mkdirs();
 	}
 
 	@Override
 	public Clusterer<SparseMatrix> prepareClusterer() {
 		SpatialClusterer<DoubleDBSCANClusters,double[]> inner = new DoubleNNDBSCAN(
-			-0.8, 3, new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.COSINE_DIST)
+			0.5, 2, new DoubleNearestNeighboursExact.Factory(DoubleFVComparison.EUCLIDEAN)
 		);
 		SpectralClusteringConf<double[]> conf = new SpectralClusteringConf<double[]>(inner, new GraphLaplacian.Normalised());
 //		conf.eigenChooser = new AutoSelectingEigenChooser(50, 0.05);
-//		conf.eigenChooser = new HardCodedEigenChooser(2);
-		conf.eigenChooser = new AbsoluteValueEigenChooser(0.2, 0.01);
-		return new CachedDoubleSpectralClustering(new File(eigenCache,conf.eigenChooser.toString()), conf);
+//		conf.eigenChooser = new HardCodedEigenChooser((int) (this.similarityMatrix.matrix().rowCount() * 0.20));
+		conf.eigenChooser = new AbsoluteValueEigenChooser(0.2, 0.05);
+		return new DoubleSpectralClustering(conf);
 	}
 
 	/**
@@ -69,7 +61,7 @@ public class SpectralDBSCANCosineSimilarityExperiment extends SolrSimilarityMatr
 	public static void main(String[] args) throws IOException, XMLStreamException, ParseException {
 		int start = Integer.parseInt(args[0]);
 		int end = Integer.parseInt(args[1]);
-		String experimentOut = args[2] + "/spectral_dbscancosine";
+		String experimentOut = args[2] + "/spectral";
 		File expOut = new File(experimentOut,String.format("%d_%d",start,end));
 		if(!expOut.exists()){
 			expOut.mkdirs();
@@ -78,13 +70,12 @@ public class SpectralDBSCANCosineSimilarityExperiment extends SolrSimilarityMatr
 		PrintWriter reportWriter = new PrintWriter(new File(expOut,"report.txt"));
 		PrintWriter correctWriter = new PrintWriter(new File(expOut,"correct.txt"));
 		PrintWriter estimatedWriter = new PrintWriter(new File(expOut,"estimated.txt"));
-		File eigencache = new File(expOut,"eigenvectors.eig");
 		
 		for (int i = 4; i < args.length; i++) {
 			String similarityMatrix = args[i];
 			String[] split = similarityMatrix.split("/");
 			String name = split[split.length-1];
-			SpectralDBSCANCosineSimilarityExperiment exp = new SpectralDBSCANCosineSimilarityExperiment(eigencache,similarityMatrix, indexFile, start, end);
+			SpectralDBSCANSimilarityExperiment exp = new SpectralDBSCANSimilarityExperiment(similarityMatrix, indexFile, start, end);
 			ExperimentContext c = ExperimentRunner.runExperiment(exp);
 			exp.writeIndexClusters(correctWriter,exp.analysis.correct);
 			exp.writeIndexClusters(estimatedWriter,exp.analysis.estimated);
