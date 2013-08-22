@@ -16,7 +16,6 @@ import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.jgrapht.alg.ConnectivityInspector;
-import org.jgrapht.alg.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.openimaj.image.MBFImage;
@@ -101,12 +100,12 @@ public class LSHSiftGraphSearcher implements VisualSearcher {
 			for (final long r : ids) {
 				final ScoreDoc sd = lookup(r);
 				if (sd != null) {
-					final List<DefaultWeightedEdge> path =
-							DijkstraShortestPath.findPathBetween(graph, flickrId, r);
-
-					for (final DefaultWeightedEdge pe : path)
-						sd.score += (float) graph.getEdgeWeight(pe);
-					sd.score /= path.size();
+					// final List<DefaultWeightedEdge> path =
+					// DijkstraShortestPath.findPathBetween(graph, flickrId, r);
+					//
+					// for (final DefaultWeightedEdge pe : path)
+					// sd.score += (float) graph.getEdgeWeight(pe);
+					// sd.score /= path.size();
 					results.add(sd);
 				}
 			}
