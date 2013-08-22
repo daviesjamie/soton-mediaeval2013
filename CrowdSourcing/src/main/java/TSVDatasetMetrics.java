@@ -151,8 +151,8 @@ public class TSVDatasetMetrics
 					}
 				}
 
-				final double prec = tp / (tp+fp);
-				final double recall = tp / (tp+fn);
+				final double prec = (double)tp / (double)(tp+fp);
+				final double recall = (double)tp / (double)(tp+fn);
 				final double F1 = (2*prec*recall)/(prec+recall);
 
 				System.out.println( "True positives: "+tp );

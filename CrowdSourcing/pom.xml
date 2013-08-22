@@ -84,7 +84,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>org.openimag.mediaeval.searchandhyperlinking.App</mainClass>
+              <mainClass>TSVDatasetMetrics.java</mainClass>
             </manifest>
           </archive>
         </configuration>
