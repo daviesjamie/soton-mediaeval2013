@@ -26,8 +26,10 @@ public class Harness {
 				.getResourceAsStream("/uk/ac/soton/ecs/jsh2/mediaeval13/placing/data/validation.csv"));
 
 		// final GeoPositioningEngine engine = new RandomPositioningEngine();
-		final GeoPositioningEngine engine = new PriorRandomBinnedPositioningEngine(new File(
-				"/Volumes/SSD/mediaeval13/placing/training_latlng"), getSkipIds(queries));
+		// final GeoPositioningEngine engine = new
+		// PriorRandomBinnedPositioningEngine(new File(
+		// "/Volumes/SSD/mediaeval13/placing/training_latlng"),
+		// getSkipIds(queries));
 		// final GeoPositioningEngine engine = new NaiveBayesFilteredTagEngine(
 		// new File("/Volumes/SSD/mediaeval13/placing/places.lucene"),
 		// getSkipIds(queries),
@@ -44,6 +46,10 @@ public class Harness {
 		// File("/Volumes/SSD/mediaeval13/placing/sift1x-dups/edges-v2.txt"),
 		// getSkipIds(queries), 1, 1000, 0.005
 		// );
+		final GeoPositioningEngine engine = new BasicCEDDEngine(
+				new File("/Volumes/SSD/mediaeval13/placing/places.lucene"), "/Volumes/SSD/mediaeval13/placing/cedd.bin",
+				getSkipIds(queries), 100, 1000, 0.005
+				);
 
 		final GeoEvaluator eval = new GeoEvaluator(groundTruth, engine, queries);
 		final GeoAnalysisResult result = eval.analyse(eval.evaluate());

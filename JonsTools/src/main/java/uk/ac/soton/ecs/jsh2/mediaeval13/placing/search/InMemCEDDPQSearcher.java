@@ -7,18 +7,33 @@ import java.util.List;
 
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
+import org.openimaj.data.RandomData;
 import org.openimaj.image.MBFImage;
-import org.openimaj.knn.approximate.ByteNearestNeighboursKDTree;
+import org.openimaj.knn.pq.ByteADCNearestNeighbours;
+import org.openimaj.knn.pq.ByteProductQuantiser;
+import org.openimaj.knn.pq.ByteProductQuantiserUtilities;
 import org.openimaj.util.pair.IntFloatPair;
 import org.openimaj.util.pair.LongFloatPair;
 
-public class InMemCEDDKDTreeSearcher extends InMemCEDDSearcher {
-	ByteNearestNeighboursKDTree tree;
+public class InMemCEDDPQSearcher extends InMemCEDDSearcher {
+	ByteADCNearestNeighbours nn;
 
-	public InMemCEDDKDTreeSearcher(String ceddDataFile, IndexSearcher meta) throws IOException {
+	public InMemCEDDPQSearcher(String ceddDataFile, IndexSearcher meta) throws IOException {
 		super(ceddDataFile, meta);
 
-		this.tree = new ByteNearestNeighboursKDTree(data, 8, 720);
+		System.out.println("getting samples");
+		final byte[][] sample = new byte[10000][];
+		final int[] sampIds = RandomData.getUniqueRandomInts(sample.length, 0, this.data.length);
+		for (int i = 0; i < sample.length; i++) {
+			sample[i] = data[sampIds[i]];
+		}
+
+		System.out.println("Building PQ");
+		final ByteProductQuantiser pq = ByteProductQuantiserUtilities.train(sample, 18, 50);
+
+		System.out.println("Building NN");
+		this.nn = new ByteADCNearestNeighbours(pq, this.data);
+		System.out.println("done");
 	}
 
 	@Override
@@ -31,7 +46,7 @@ public class InMemCEDDKDTreeSearcher extends InMemCEDDSearcher {
 		final int idx = findQueryIdx(flickrId);
 		final byte[] query = data[idx];
 
-		final List<IntFloatPair> res = tree.searchKNN(query, numResults * 10);
+		final List<IntFloatPair> res = nn.searchKNN(query, numResults);
 		List<LongFloatPair> results = new ArrayList<LongFloatPair>(res.size());
 		for (int i = 0; i < res.size(); i++) {
 			final IntFloatPair r = res.get(i);

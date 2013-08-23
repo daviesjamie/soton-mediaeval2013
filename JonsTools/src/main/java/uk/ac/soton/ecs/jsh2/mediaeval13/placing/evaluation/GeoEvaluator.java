@@ -60,8 +60,6 @@ public class GeoEvaluator implements Evaluator<TLongObjectHashMap<GeoLocationEst
 		Parallel.forEach(queries, new Operation<QueryImageData>() {
 			@Override
 			public void perform(QueryImageData q) {
-				if (q.flickrId == 179752334)
-					System.out.println("here");
 				final GeoLocationEstimate location = engine.estimateLocation(q);
 				synchronized (results) {
 					results.put(q.flickrId, location);
