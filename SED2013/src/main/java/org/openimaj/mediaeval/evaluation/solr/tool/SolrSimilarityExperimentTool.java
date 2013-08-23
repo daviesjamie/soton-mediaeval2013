@@ -1,21 +1,7 @@
 package org.openimaj.mediaeval.evaluation.solr.tool;
 
-import java.io.File;
-import java.io.PrintWriter;
-
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.openimaj.data.DoubleRange;
-import org.openimaj.experiment.ExperimentContext;
-import org.openimaj.experiment.ExperimentRunner;
 import org.openimaj.experiment.evaluation.cluster.processor.Clusterer;
-import org.openimaj.io.IOUtils;
-import org.openimaj.mediaeval.evaluation.solr.DBSCANSolrSimilarityExperiment;
 import org.openimaj.mediaeval.evaluation.solr.SolrSimilarityMatrixClustererExperiment;
-import org.openimaj.tools.twitter.options.TwitterPreprocessingToolOptions;
 
 import ch.akuhn.matrix.SparseMatrix;
 
@@ -26,29 +12,42 @@ import ch.akuhn.matrix.SparseMatrix;
 public class SolrSimilarityExperimentTool extends SolrSimilarityMatrixClustererExperiment {
 
 	private static SolrSimilarityExperimentToolOptions options;
+	private Clusterer<SparseMatrix> clusterer;
 
+	/**
+	 * @param similarityFile
+	 * @param indexFile
+	 * @param start
+	 * @param end
+	 */
 	public SolrSimilarityExperimentTool(String similarityFile,String indexFile, int start, int end) {
 		super(similarityFile, indexFile, start, end);
 	}
 
 	@Override
 	public Clusterer<SparseMatrix> prepareClusterer() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.clusterer;
+	}
+	/**
+	 * @param namedClusterer
+	 */
+	public void setNextClusterer(Clusterer<SparseMatrix> namedClusterer) {
+		this.clusterer = namedClusterer;
 	}
 	
-	public static void main(String[] args) {
+	/**
+	 * @param args
+	 * @throws Exception 
+	 */
+	public static void main(String[] args) throws Exception {
 		options = new SolrSimilarityExperimentToolOptions(args);
 		
-		// for each experimental configuration
-			// run the experiment
-			// save the output
-		// end
 		while(options.hasNextExperiment()){
 			options.performNextExperiment();
 		}
 		
 		
 	}
+
 
 }

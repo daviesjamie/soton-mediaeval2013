@@ -35,7 +35,6 @@ import org.openimaj.experiment.evaluation.cluster.analyser.RandomIndexAnalysis;
 import org.openimaj.experiment.evaluation.cluster.processor.Clusterer;
 import org.openimaj.mediaeval.data.util.PhotoUtils;
 import org.openimaj.mediaeval.evaluation.solr.SED2013Index.IndexedPhoto;
-import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
 import org.openimaj.util.function.Function;
 
 import ch.akuhn.matrix.SparseMatrix;
@@ -127,6 +126,9 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	private int end = 1000;
 	
 //	@DependentVariable
+	/**
+	 * 
+	 */
 	public RandomBaselineSMEAnalysis analysis;
 	@DependentVariable
 	protected RandomBaselineClusterAnalysis<FScoreAnalysis> f1score;

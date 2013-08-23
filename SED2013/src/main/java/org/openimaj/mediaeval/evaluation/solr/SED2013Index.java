@@ -172,7 +172,15 @@ public class SED2013Index {
 		solrContainer.register("cheese", solrCore, false);
 		return new EmbeddedSolrServer(solrContainer, "cheese");
 	}
-
+	
+	/**
+	 * @param p
+	 * @return
+	 * @throws SolrServerException
+	 */
+	public QueryResponse query(String textquery, int limit) throws SolrServerException{
+		return query(textquery, limit, afArray, null,null);
+	}
 	/**
 	 * @param p
 	 * @return
@@ -193,7 +201,7 @@ public class SED2013Index {
 			String name = solrInputField.getName();
 			if(rawQueryFields.contains(name)){
 				for (Object object : solrInputField) {
-					textquery += String.format("%s:\"%s\"^%2.5f",name,object,fieldBoost.get(name)) + " ";
+					textquery += String.format("%s:\"%s\"^%2.5f",name,object.toString().replace(":", " ").replace("\"", " "),fieldBoost.get(name)) + " ";
 				}
 			}
 			else if(timeFields.contains(name)){

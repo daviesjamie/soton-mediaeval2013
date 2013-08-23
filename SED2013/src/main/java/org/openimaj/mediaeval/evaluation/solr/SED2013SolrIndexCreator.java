@@ -271,7 +271,7 @@ public class SED2013SolrIndexCreator {
 	 */
 	private void process(Photo p) {
 		try {
-			solrServer.add(createSolrDoc(p));
+			solrServer.add(createSolrDoc(p,this));
 		} catch (Exception ex) {
 			log.error("Failed to add document:");
 			log.error("Stack trace: ", ex);
@@ -285,7 +285,17 @@ public class SED2013SolrIndexCreator {
 	 * @return SolrInputDocument: The prepared document
 	 */
 	public static SolrInputDocument createSolrDoc(Photo p) {
-		SED2013SolrIndexCreator ret = new SED2013SolrIndexCreator();
+		return createSolrDoc(p,new SED2013SolrIndexCreator());
+	}
+	
+	/**
+	 * Create a Solr document from the provided Geonames column data.
+	 * @param p the photo object
+	 *
+	 * @return SolrInputDocument: The prepared document
+	 */
+	public static SolrInputDocument createSolrDoc(Photo p, SED2013SolrIndexCreator ret ) {
+		
 		SolrInputDocument doc = new SolrInputDocument();
 		for (PhotoDocumentAppender key : ret.columns) {
 			key.addFieldToDoc(p, doc);
