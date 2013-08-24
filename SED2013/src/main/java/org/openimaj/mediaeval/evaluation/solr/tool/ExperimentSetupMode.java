@@ -1,8 +1,7 @@
 package org.openimaj.mediaeval.evaluation.solr.tool;
 
-import org.openimaj.experiment.evaluation.cluster.processor.Clusterer;
-
-import ch.akuhn.matrix.SparseMatrix;
+import org.openimaj.ml.clustering.IndexClusters;
+import org.openimaj.ml.clustering.SparseMatrixClusterer;
 
 /**
  * The experiment mode
@@ -10,9 +9,9 @@ import ch.akuhn.matrix.SparseMatrix;
  *
  */
 public abstract class ExperimentSetupMode {
-	protected static class NamedClusterer{
+	protected class NamedClusterer{
 		public String name;
-		public Clusterer<SparseMatrix> clusterer;
+		public SparseMatrixClusterer<? extends IndexClusters> clusterer;
 	}
 	/**
 	 * prepare the experimental setups

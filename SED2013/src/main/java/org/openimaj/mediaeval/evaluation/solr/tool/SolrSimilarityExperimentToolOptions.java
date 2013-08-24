@@ -1,10 +1,16 @@
 package org.openimaj.mediaeval.evaluation.solr.tool;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Appender;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Layout;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -18,7 +24,7 @@ import org.openimaj.mediaeval.evaluation.solr.tool.ExperimentSetupMode.NamedClus
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  */
 public class SolrSimilarityExperimentToolOptions {
-
+	private final static Logger logger = Logger.getLogger(SolrSimilarityExperimentTool.class);
 	private String[] args;
 	@Option(
 		name = "--start",
@@ -60,6 +66,14 @@ public class SolrSimilarityExperimentToolOptions {
 		usage = "The root of the experiment. Modes will fill this with results"
 	)
 	private String root;
+	
+	@Option(
+		name = "--force",
+		aliases = "-f",
+		required = false,
+		usage = "Force the removal of existing experiemnts"
+	)
+	boolean force = false;
 	
 	@Option(
 		name = "--experiment-mode",
@@ -146,18 +160,47 @@ public class SolrSimilarityExperimentToolOptions {
 		}
 		NamedClusterer namedClusterer = this.experimentSetupModeOp.nextClusterer();
 		File setupDir= new File(this.experimentRoot,this.experimentSetupMode.name());
+		setupDir= new File(setupDir,String.format("%d_%d",start,end));
 		setupDir= new File(setupDir,namedClusterer.name);
 		setupDir.mkdirs();
 		this.experiment.setNextClusterer(namedClusterer.clusterer);
-		PrintWriter reportWriter = new PrintWriter(new File(setupDir,"report.txt"));
+		File reportFile = new File(setupDir,"report.txt");
+		if(!force && reportFile.exists()) {
+			logger.info("Skipping. Experiement Exists: " + setupDir.getAbsolutePath());
+			return;
+		}
 		PrintWriter correctWriter = new PrintWriter(new File(setupDir,"correct.txt"));
 		PrintWriter estimatedWriter = new PrintWriter(new File(setupDir,"estimated.txt"));
+		logger.info("Starting experiment: " + setupDir.getAbsolutePath());
+		addSetupLogger(setupDir);
 		ExperimentContext c = ExperimentRunner.runExperiment(this.experiment);
+		removeSetupLogger(setupDir);
 		this.experiment.writeIndexClusters(correctWriter, this.experiment.analysis.correct);
 		this.experiment.writeIndexClusters(estimatedWriter, this.experiment.analysis.estimated);
+		PrintWriter reportWriter = new PrintWriter(reportFile);
 		reportWriter.println(c);
 		reportWriter.flush();
 		reportWriter.close();
+	}
+
+	private void removeSetupLogger(File setupDir) {
+		Logger.getRootLogger().removeAppender("setupAppender");
+	}
+
+	private void addSetupLogger(File setupDir) {
+		Appender anapp = (Appender) Logger.getRootLogger().getAllAppenders().nextElement();
+		
+		FileAppender app;
+		try {
+			String f = new File(setupDir.getAbsolutePath(),"log").getAbsolutePath();
+			
+			app = new FileAppender(anapp.getLayout(), f );
+			app.setName("setupAppender");
+			app.setThreshold(Level.DEBUG);
+			Logger.getRootLogger().addAppender(app);
+		} catch (IOException e) {
+			logger.error("Could not add setup appender",e);
+		}
 	}
 
 	private void prepareNextSimmat() {

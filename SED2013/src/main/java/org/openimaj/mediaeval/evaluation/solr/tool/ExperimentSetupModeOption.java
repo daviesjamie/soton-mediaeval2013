@@ -16,6 +16,24 @@ public enum ExperimentSetupModeOption implements CmdLineOptionsProvider{
 		public ExperimentSetupMode getOptions() {
 			return new DBSCANSetupMode();
 		}
+	},
+	/**
+	 * 
+	 */
+	INCREMENTAL{
+		@Override
+		public ExperimentSetupMode getOptions() {
+			return new IncrementalSetupMode();
+		}
+	},
+	/**
+	 * 
+	 */
+	SPECTRAL{
+		@Override
+		public ExperimentSetupMode getOptions() {
+			return new SpectralSetupMode();
+		}
 	};
 
 	@Override

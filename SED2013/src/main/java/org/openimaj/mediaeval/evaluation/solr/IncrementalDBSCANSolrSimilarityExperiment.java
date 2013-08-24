@@ -49,7 +49,7 @@ public class IncrementalDBSCANSolrSimilarityExperiment extends SolrSimilarityMat
 	private int windowssize;
 	@Override
 	public SparseMatrixClusterer<IndexClusters> prepareClusterer() {
-		IncrementalSparseClusterer<DoubleDBSCANClusters> a = new IncrementalSparseClusterer<DoubleDBSCANClusters>(new SimilarityDBSCAN(eps, 1), windowssize);
+		IncrementalSparseClusterer a = new IncrementalSparseClusterer(new SimilarityDBSCAN(eps, 1), windowssize);
 		return a;
 	}
 

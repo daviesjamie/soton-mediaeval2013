@@ -92,6 +92,9 @@ public class SED2013SolrSimilarityMatrix {
 						}
 						SparseMatrix toAlter = allSimMat.get(comparator);
 						Vector newrow = comprow.row(0);
+						if(p.first % 1000==0){
+							logger.debug("Reading in row: " + p.first);
+						}
 						for (ch.akuhn.matrix.Vector.Entry rowent : newrow.entries()) {
 							double current = toAlter.get((int)p.first, rowent.index);
 							if(current < rowent.value){
@@ -114,14 +117,7 @@ public class SED2013SolrSimilarityMatrix {
 
 	private static Logger logger = Logger.getLogger(SED2013SolrSimilarityMatrix.class);
 
-	/**
-	 * @param args
-	 * @throws IOException
-	 * @throws XMLStreamException
-	 */
-	public static void main(String[] args) throws IOException, XMLStreamException {
-		
-	}
+	
 	double eps = 0.4; // used to be 0.4
 	int solrQueryN = 200; // used to be 200
 	/**

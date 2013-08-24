@@ -74,14 +74,14 @@ public class TestSolrSimilarityTool {
 		
 		// Build the similarity matricies
 //		
-		FileUtils.copyStreamToFileBinary(rec("/training.sed2013.photo_tfidf"), tfidf);
-		SED2013SolrSimilarityMatrix solrSimMat = new SED2013SolrSimilarityMatrix(tfidf.getAbsolutePath(), new File(data, "training.all.featurecache").getAbsolutePath());
-		allmats = solrSimMat.createSimilarityMatricies();
-		solrSimMat.write(new File(data, "training.all.sparse").getAbsolutePath(),allmats);
-//		File sparseZip = new File(data, "sparse.zip");
-//		FileUtils.copyStreamToFileBinary(rec("/training.all.sparse.zip"), sparseZip);
-//		ZipFile sparseZipFile = new ZipFile(sparseZip);
-//		sparseZipFile.extractAll(data.getAbsolutePath());
+//		FileUtils.copyStreamToFileBinary(rec("/training.sed2013.photo_tfidf"), tfidf);
+//		SED2013SolrSimilarityMatrix solrSimMat = new SED2013SolrSimilarityMatrix(tfidf.getAbsolutePath(), new File(data, "training.all.featurecache").getAbsolutePath());
+//		allmats = solrSimMat.createSimilarityMatricies();
+//		solrSimMat.write(new File(data, "training.all.sparse").getAbsolutePath(),allmats);
+		File sparseZip = new File(data, "sparse.zip");
+		FileUtils.copyStreamToFileBinary(rec("/training.all.sparse.zip"), sparseZip);
+		ZipFile sparseZipFile = new ZipFile(sparseZip);
+		sparseZipFile.extractAll(data.getAbsolutePath());
 		File[] sparsefiles = new File(data,"training.all.sparse").listFiles(new FilenameFilter() {
 			
 			@Override
@@ -106,9 +106,9 @@ public class TestSolrSimilarityTool {
 	 */
 	@Test
 	public void test() throws Exception{
-		for (Entry<String, File> es : this.simmats.entrySet()) {
-			displaySimmat(es.getKey(),es.getValue());
-		}
+//		for (Entry<String, File> es : this.simmats.entrySet()) {
+//			displaySimmat(es.getKey(),es.getValue());
+//		}
 		File file = this.simmats.get("aggregationMean.mat");
 		
 		SolrSimilarityExperimentTool.main(new String[]{
@@ -116,6 +116,30 @@ public class TestSolrSimilarityTool {
 			"-si",this.luceneIndex.getAbsolutePath(),
 			"-o",this.experiments.getAbsolutePath(),
 			"-em","DBSCAN"
+		});
+		System.out.println("done");
+	}
+	
+	/**
+	 * @throws Exception 
+	 * 
+	 */
+	@Test
+	public void testIncrementalDBSCAN() throws Exception{
+//		for (Entry<String, File> es : this.simmats.entrySet()) {
+//			displaySimmat(es.getKey(),es.getValue());
+//		}
+		File file = this.simmats.get("aggregationMean.mat");
+		
+		SolrSimilarityExperimentTool.main(new String[]{
+			"-sm",file.getAbsolutePath(),
+			"-si",this.luceneIndex.getAbsolutePath(),
+			"-o",this.experiments.getAbsolutePath(),
+			"-em","INCREMENTAL",
+			"-iem","DBSCAN",
+			"-ws","500",
+			"-ws","1000",
+			"-ws","2000",
 		});
 		System.out.println("done");
 	}

@@ -60,7 +60,7 @@ public class IncrementalSpectralDBSCANSimilarityExperiment extends SolrSimilarit
 //		conf.eigenChooser = new AutoSelectingEigenChooser(50, 0.05);
 //		conf.eigenChooser = new HardCodedEigenChooser((int) (this.similarityMatrix.matrix().rowCount() * 0.20));
 		conf.eigenChooser = new AbsoluteValueEigenChooser(0.5, 0.01);
-		return new IncrementalSparseClusterer<SpectralIndexedClusters>(new DoubleSpectralClustering(conf),windowSize,threshold);
+		return new IncrementalSparseClusterer(new DoubleSpectralClustering(conf),windowSize,threshold);
 	}
 
 	/**

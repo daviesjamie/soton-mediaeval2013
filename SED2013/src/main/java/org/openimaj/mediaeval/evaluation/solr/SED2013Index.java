@@ -19,6 +19,7 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
@@ -201,7 +202,7 @@ public class SED2013Index {
 			String name = solrInputField.getName();
 			if(rawQueryFields.contains(name)){
 				for (Object object : solrInputField) {
-					textquery += String.format("%s:\"%s\"^%2.5f",name,object.toString().replace(":", " ").replace("\"", " "),fieldBoost.get(name)) + " ";
+					textquery += String.format("%s:\"%s\"^%2.5f",name,ClientUtils.escapeQueryChars(object.toString()),fieldBoost.get(name)) + " ";
 				}
 			}
 			else if(timeFields.contains(name)){
