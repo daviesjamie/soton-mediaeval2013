@@ -44,6 +44,25 @@ public class SimilarityMatrixWrapper {
 		confirmMatrixIntegrity();
 	}
 	
+	/**
+	 * @param simMatrix the sim matrix
+	 * @param s the start location
+	 * @param e the end. if -1 end SparseMatrix
+	 * @throws IOException 
+	 */
+	public SimilarityMatrixWrapper(SparseMatrix simMatrix, int s, int e) throws IOException {
+		this.end = e;
+		this.start = s;
+		logger .debug("Loading sparse matrix");
+		SparseMatrix mat = simMatrix;
+		if(end < 0) end = mat.columnCount() + end + 1;
+		
+		logger.debug("Extracting submatrix");
+		this.similarityMatrix = MatlibMatrixUtils.subMatrix(mat,start,end,start,end);
+		logger.debug(String.format("Submatrix dims: %d x %d" ,similarityMatrix.rowCount(),similarityMatrix.columnCount()));
+		confirmMatrixIntegrity();
+	}
+	
 	private void confirmMatrixIntegrity() {
 		int i = 0;
 		for (Vector v : this.similarityMatrix.rows()) {

@@ -16,6 +16,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
+import org.apache.solr.request.ServletSolrParams;
 import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
@@ -47,6 +48,8 @@ import com.aetrion.flickr.photos.Photo;
  */
 public abstract class SolrSimilarityMatrixClustererExperiment implements RunnableExperiment{
 	final static Logger logger = Logger.getLogger(SolrSimilarityMatrixClustererExperiment.class);
+	private String similarityExp = null;
+	private String similarityRoot;
 	
 	/**
 	 * @param similarityFile
@@ -58,6 +61,23 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		this.start = start;
 		this.end = end;
 		this.simMatrixFile = similarityFile;
+		this.indexFile = indexFile;
+	}
+	
+	/**
+	 * This constructor makes this experiment load its {@link SparseMatrix} using {@link SED2013SolrSimilarityMatrix#readSparseMatricies(String, String...)}
+	 * 
+	 * @param similarityRoot the root of similarity matricies  
+	 * @param similarityExp the particular similarity matrix
+	 * @param indexFile
+	 * @param end 
+	 * @param start 
+	 */
+	public SolrSimilarityMatrixClustererExperiment(String similarityRoot, String similarityExp, String indexFile, int start, int end) {
+		this.start = start;
+		this.end = end;
+		this.similarityRoot = similarityRoot;
+		this.similarityExp = similarityExp;
 		this.indexFile = indexFile;
 	}
 
@@ -148,11 +168,21 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 
 	@Override
 	public void setup() {
-		if(this.similarityMatrix == null){			
-			try {
-				this.similarityMatrixFilename = new File(this.simMatrixFile).getName();
-				this.similarityMatrix = new SimilarityMatrixWrapper(this.simMatrixFile, start, end);
-			} catch (IOException e) {
+		if(this.similarityMatrix == null){
+			if(this.simMatrixFile!=null){		
+				try {
+					this.similarityMatrixFilename = new File(this.simMatrixFile).getName();
+					this.similarityMatrix = new SimilarityMatrixWrapper(this.simMatrixFile, start, end);
+				} catch (IOException e) {
+				}
+			}
+			else{
+				try {
+					SparseMatrix sp = SED2013SolrSimilarityMatrix.readSparseMatricies(similarityRoot, this.similarityExp).get(this.similarityExp);
+					this.similarityMatrix = new SimilarityMatrixWrapper(sp, start, end);
+					this.similarityMatrixFilename = similarityRoot + "#" + similarityExp;
+				} catch (IOException e) {
+				}
 			}
 		}
 		this.start = this.similarityMatrix.start();

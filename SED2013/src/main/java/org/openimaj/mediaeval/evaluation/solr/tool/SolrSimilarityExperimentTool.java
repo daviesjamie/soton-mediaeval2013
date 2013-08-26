@@ -24,6 +24,17 @@ public class SolrSimilarityExperimentTool extends SolrSimilarityMatrixClustererE
 		super(similarityFile, indexFile, start, end);
 	}
 
+	/**
+	 * @param simmatRoot
+	 * @param simMatFile
+	 * @param index
+	 * @param start
+	 * @param end
+	 */
+	public SolrSimilarityExperimentTool(String simmatRoot, String simMatFile,String index, int start, int end) {
+		super(simmatRoot, simMatFile, index, start, end);
+	}
+
 	@Override
 	public Clusterer<SparseMatrix> prepareClusterer() {
 		return this.clusterer;

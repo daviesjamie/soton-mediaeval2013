@@ -58,14 +58,39 @@ public class SED2013SolrSimilarityMatrixTool {
 	private String output;
 	
 	@Option(
-			name = "--incremental-build",
-			aliases = "-inc",
-			required = false,
-			usage = " if set to a positive number, split the final matrix as a number of matricies in a directory. Each matrix will be of the same dimensions, but will only contain inc completed rows."
-		)
-		private int incBuild = -1;
+		name = "--incremental-build",
+		aliases = "-inc",
+		required = false,
+		usage = " if set to a positive number, split the final matrix as a number of matricies in a directory. Each matrix will be of the same dimensions, but will only contain inc completed rows."
+	)
+	private int incBuild = -1;
+	
+	@Option(
+		name = "--solr-nsearch",
+		aliases = "-sn",
+		required = false,
+		usage = " Number of results to allow per item."
+	)
+	private int solrN = 200;
+	
+	@Option(
+		name = "--solr-eps",
+		aliases = "-se",
+		required = false,
+		usage = " The score at which point to set a similarity to non zero"
+	)
+	private double solrEps = 0.4d;
+	
+	@Option(
+		name = "--no-solr-sort",
+		aliases = "-nosort",
+		required = false,
+		usage = "Do Not Sort the solr results by their distance in time and geo"
+	)
+	private boolean deactivateSort = false;
 
 	private String[] args;
+
 	public SED2013SolrSimilarityMatrixTool(String[] args) {
 		this.args = args;
 		this.prepare();
@@ -94,6 +119,10 @@ public class SED2013SolrSimilarityMatrixTool {
 			System.setProperty("sed2013.solr.home", tool.input);
 			simmat = new SED2013SolrSimilarityMatrix(tool.tfidf, tool.featurecache, tool.input);
 		}
+		
+		simmat.eps = tool.solrEps;
+		simmat.solrQueryN = tool.solrN;
+		simmat.deactivateSort = tool.deactivateSort;
 		
 		if(tool.incBuild < 0){			
 			Map<String, SparseMatrix> allmats = simmat.createSimilarityMatricies();

@@ -2,6 +2,7 @@ package org.openimaj.mediaeval.evaluation.solr;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -92,7 +93,7 @@ public class SED2013SolrSimilarityMatrix {
 			public void perform(IndexedPhoto p) {
 				QueryResponse res;
 				try {
-					res = index.query(p.second, solrQueryN);
+					res = index.query(p.second, solrQueryN,!deactivateSort);
 					SolrDocumentList results = res.getResults();
 					final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
 					Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
@@ -132,6 +133,7 @@ public class SED2013SolrSimilarityMatrix {
 	
 	double eps = 0.4; // used to be 0.4
 	int solrQueryN = 200; // used to be 200
+	public boolean deactivateSort = false;
 	/**
 	 * @param expRoot the root to save the mats
 	 * @param mats the mats to save
@@ -198,52 +200,64 @@ public class SED2013SolrSimilarityMatrix {
 	 * @param incBuild
 	 */
 	public void createAndWrite(String expRoot, final int incBuild) {
-		final String matRoot = String.format("%s",expRoot);
+		final String matRoot = String.format("%s/solrsort=%s/solrtotal=%d/solreps=%2.2f/inc=%d",expRoot,!deactivateSort,solrQueryN,eps,incBuild);
 		final File rootFile = new File(matRoot);
 		rootFile.mkdirs();
 		final Map<String, SparseMatrix> allSimMat = new HashMap<String, SparseMatrix>();
 		
 		final int[] totalWritten = new int []{0};
+		final int[] currentSeen = new int[]{0};
 		solrStream
 		.map(new SolrDocumentToIndexedPhoto())
 		.forEach(new Operation<IndexedPhoto>() {
-			int currentSeen = 0;
 			@Override
 			public void perform(IndexedPhoto p) {
-				QueryResponse res;
-				try {
-					res = index.query(p.second, solrQueryN);
-					SolrDocumentList results = res.getResults();
-					final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
-					Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
-					for (Entry<String, SparseMatrix> namerow : rowmat.entrySet()) {
-						String comparator = namerow.getKey();
-						SparseMatrix comprow = namerow.getValue();
-						if(!allSimMat.containsKey(comparator)){
-							allSimMat.put(comparator, new SparseMatrix(collectionN,collectionN));
-							
-						}
-						SparseMatrix toAlter = allSimMat.get(comparator);
-						Vector newrow = comprow.row(0);
-						if(p.first % 1000==0){
-							logger.debug("Reading in row: " + p.first);
-						}
-						for (ch.akuhn.matrix.Vector.Entry rowent : newrow.entries()) {
-							double current = toAlter.get((int)p.first, rowent.index);
-							if(current < rowent.value){
-								toAlter.put((int) p.first, rowent.index, rowent.value);
-							}
-							current = toAlter.get(rowent.index, (int) p.first);
-							if(current < rowent.value){
-								toAlter.put(rowent.index,(int) p.first, rowent.value);
-							}
-						}
-					}
-					currentSeen++;
+				File outPath = new File(rootFile,"part_" + totalWritten[0]);
+				if(!outPath.exists()){
 					
-					if(currentSeen > incBuild){
-						File outPath = new File(rootFile,"part_" + totalWritten[0]++);
-						logger.debug("Reached inc! Writing: " + outPath);
+					QueryResponse res;
+					try {
+						res = index.query(p.second, solrQueryN,!deactivateSort);
+						SolrDocumentList results = res.getResults();
+						final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
+						Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
+						if(p.first % 1000==0){
+							logger.info("Reading in row: " + p.first);
+						}
+						for (Entry<String, SparseMatrix> namerow : rowmat.entrySet()) {
+							String comparator = namerow.getKey();
+							SparseMatrix comprow = namerow.getValue();
+							if(!allSimMat.containsKey(comparator)){
+								allSimMat.put(comparator, new SparseMatrix(collectionN,collectionN));
+								
+							}
+							SparseMatrix toAlter = allSimMat.get(comparator);
+							Vector newrow = comprow.row(0);
+							
+							for (ch.akuhn.matrix.Vector.Entry rowent : newrow.entries()) {
+								double current = toAlter.get((int)p.first, rowent.index);
+								if(current < rowent.value){
+									toAlter.put((int) p.first, rowent.index, rowent.value);
+								}
+								current = toAlter.get(rowent.index, (int) p.first);
+								if(current < rowent.value){
+									toAlter.put(rowent.index,(int) p.first, rowent.value);
+								}
+							}
+						}
+					} catch (SolrServerException e) {
+						logger.error("Error querying for photo: " + p.second.getId(),e);
+					}
+				}
+				else{
+					if(currentSeen[0] == 0)
+						logger.info(String.format("Part %d already exists, skipping!",totalWritten[0]));
+				}
+				currentSeen[0]++;
+				
+				if(currentSeen[0] > incBuild){
+					if(!outPath.exists()){
+						logger.info("Reached inc! Writing: " + outPath);
 						try {
 							write(outPath.getAbsolutePath(), allSimMat);
 						} catch (Exception e) {
@@ -253,13 +267,110 @@ public class SED2013SolrSimilarityMatrix {
 						for (String compKey : compKeySet) {
 							allSimMat.put(compKey, new SparseMatrix(collectionN,collectionN));
 						}
-						currentSeen = 0;
 					}
-				} catch (SolrServerException e) {
-					logger.error("Error querying for photo: " + p.second.getId(),e);
+					totalWritten[0]++;
+					currentSeen[0] = 0;
 				}
 			}
 		});
+		if(currentSeen[0] > 0){
+			
+			File outPath = new File(rootFile,"part_" + totalWritten[0]);
+			if(!outPath.exists()){
+				logger.info("Reached inc! Writing: " + outPath);
+				try {
+					write(outPath.getAbsolutePath(), allSimMat);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+				HashSet<String> compKeySet = new HashSet<String>(allSimMat.keySet());
+				for (String compKey : compKeySet) {
+					allSimMat.put(compKey, new SparseMatrix(collectionN,collectionN));
+				}
+			}
+			totalWritten[0]++;
+			currentSeen[0] = 0;
+		}
+	}
+	
+	/**
+	 * Read the matricies (either in parts or as a whole) from the root location
+	 * @param root
+	 * @return all matricies in the location
+	 * @throws IOException
+	 */
+	public static Map<String,SparseMatrix> readSparseMatricies(String root, String ... desiredMatricies) throws IOException {
+		File[] parts = new File(root).listFiles(new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.startsWith("part");
+			}
+		});
+		if(parts == null) throw new IOException("No such file: " + root);
+		if(parts.length != 0) return readMultiPart(parts,desiredMatricies);
+		File[] mats = new File(root).listFiles(matfilter(desiredMatricies));
+		return readFromMats(mats);
+	}
+
+	private static FilenameFilter matfilter(final String[] desiredMatricies) {
+		return new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File dir, String name) {
+				if(!name.endsWith("mat")) return false;
+				if(desiredMatricies.length != 0)
+				{
+					for (String string : desiredMatricies) {
+						if(name.matches(string)) return true;
+					}
+					return false;
+				}
+				return true;
+			}
+		};
+	}
+
+	private static Map<String, SparseMatrix> readFromMats(File[] mats) throws IOException {
+		Map<String, SparseMatrix> matMap = new HashMap<String, SparseMatrix>();
+		for (File matf : mats) {
+			logger.debug("Reading: " + matf);
+			matMap.put(matf.getName(), (SparseMatrix) IOUtils.readFromFile(matf));
+			
+		}
+		logger.debug("Done reading sparse matricies.");
+		return matMap ;
+	}
+
+	private static Map<String, SparseMatrix> readMultiPart(File[] parts, String ... desiredMatricies) throws IOException {
+		Map<String, SparseMatrix> combined = null;
+		for (File part : parts) {
+			File[] mats = part.listFiles(matfilter(desiredMatricies));
+			Map<String, SparseMatrix> newpart = readFromMats(mats);
+			if(combined == null){
+				combined = newpart;
+			}
+			else{
+				for (Entry<String, SparseMatrix> mat : combined.entrySet()) {
+					SparseMatrix newsparse = newpart.get(mat.getKey());
+					logger.debug("Combinging sparse matrix: " + mat.getKey());
+					int r = 0;
+					for (Vector file : newsparse.rows()) {
+						for (ch.akuhn.matrix.Vector.Entry ent : file.entries()) {							
+							mat.getValue().put(r, ent.index, ent.value);
+						}
+						r++;
+					}
+					logger.debug("Done! new density: " + (double)mat.getValue().used()/((double)mat.getValue().rowCount() * (double)mat.getValue().columnCount()));
+				}
+			}
+		}
+		return combined;
+	}
+	
+	public static void main(String[] args) throws IOException {
+		Map<String, SparseMatrix> found = readSparseMatricies("/home/ss/Experiments/mediaeval/SED2013/training.sed2013.solr.sparsematrix/solrtotal=200/solreps=0.40/inc=10000/","aggregationMean");
+		System.out.println(found.keySet());
 	}
 	
 }

@@ -73,7 +73,7 @@ public class DBSCANSetupMode extends ExperimentSetupMode{
 		usage="The minpts for DBSCAN", 
 		metaVar="INTEGER"
 	)
-	public int minStart = 1;
+	public int minStart = 3;
 	
 	/**
 	 * The end eps to searc
@@ -85,7 +85,7 @@ public class DBSCANSetupMode extends ExperimentSetupMode{
 		usage="The end minpts for DBSCAN", 
 		metaVar="INTEGER"
 	)
-	public int minEnd = 5;
+	public int minEnd = 4;
 	
 	
 	/**

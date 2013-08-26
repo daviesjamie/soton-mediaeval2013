@@ -187,7 +187,7 @@ public class SED2013Index {
 	 * @return
 	 * @throws SolrServerException
 	 */
-	public QueryResponse query(Photo p, int limit) throws SolrServerException{
+	public QueryResponse query(Photo p, int limit, boolean activateSort) throws SolrServerException{
 		// This will create a document with a meaningless index, ignore it
 		SolrInputDocument solrDoc = SED2013SolrIndexCreator.createSolrDoc(p);
 		String textquery = "";
@@ -222,13 +222,15 @@ public class SED2013Index {
 		}
 		textquery = textquery.substring(0, textquery.length()-1);
 		String sort = null;
-		if(geoquery!=null){
-			textquery = join(" ", textquery, join(" ",timequery), geoquery);
-			sort = join(", ",join(", ",timesort), geosort,"score desc");
-		}
-		else{
-			textquery = join(" ", textquery, join(" ",timequery));
-			sort = join(", ",join(", ",timesort), "score desc");
+		if(activateSort){			
+			if(geoquery!=null){
+				textquery = join(" ", textquery, join(" ",timequery), geoquery);
+				sort = join(", ",join(", ",timesort), geosort,"score desc");
+			}
+			else{
+				textquery = join(" ", textquery, join(" ",timequery));
+				sort = join(", ",join(", ",timesort), "score desc");
+			}
 		}
 		return query(textquery, limit, afArray, filter,sort);
 	}
@@ -318,7 +320,7 @@ public class SED2013Index {
 //			Photo first = photoStream.next();
 			Photo first = index.photoById("3358133370");
 			Timer t = Timer.timer();
-			QueryResponse res = index.query(first, 100);
+			QueryResponse res = index.query(first, 100,true);
 			int withGeoCode = 0;
 			int withoutGeoCode = 0;
 			List<ExtractorComparator<Photo, ? extends FeatureVector>> fe = PPK2012ExtractCompare.similarity(tfidf, featurecache);

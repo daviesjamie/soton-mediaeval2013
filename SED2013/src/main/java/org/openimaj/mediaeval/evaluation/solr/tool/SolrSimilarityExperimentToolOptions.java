@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
-import org.apache.log4j.Layout;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
@@ -58,6 +57,15 @@ public class SolrSimilarityExperimentToolOptions {
 		multiValued=true
 	)
 	private List<String> simmat;
+	
+	@Option(
+		name = "--simmat-root",
+		aliases = "-smr",
+		required = false,
+		usage = "If this similarity matrix root is set the -sm provided are treated as mats within this root.",
+		multiValued=true
+	)
+	private String simmatRoot;
 	
 	@Option(
 		name = "--experiment-set-root",
@@ -205,7 +213,12 @@ public class SolrSimilarityExperimentToolOptions {
 
 	private void prepareNextSimmat() {
 		simMatFile = this.simMatIter.next();
-		this.experiment = new SolrSimilarityExperimentTool(simMatFile, this.index, start, end);
+		if(this.simmatRoot==null){		
+			this.experiment = new SolrSimilarityExperimentTool(simMatFile, this.index, start, end);
+		}
+		else{
+			this.experiment = new SolrSimilarityExperimentTool(simmatRoot,simMatFile, this.index, start, end);
+		}
 		this.experimentRoot = new File(this.root,simMatFileName());
 		this.experimentSetupModeOp.setup();
 	}
