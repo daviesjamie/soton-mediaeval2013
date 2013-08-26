@@ -44,7 +44,8 @@ public class SED2013TFIDFTrainer {
 	}
 
 	public static void main(String[] args) throws XMLStreamException, IOException {
-		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
+//		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
+		String bigFile = "/Users/ss/Experiments/sed2013/sed2013_dataset_train.xml";
 		String expHome = "/Users/ss/Experiments/sed2013";
 //		String bigFile = "/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml";
 		logger .info(String.format("Loading dataset: %s ", bigFile));

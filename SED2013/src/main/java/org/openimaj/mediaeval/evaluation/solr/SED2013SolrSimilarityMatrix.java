@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -68,10 +69,10 @@ public class SED2013SolrSimilarityMatrix {
 		else
 			this.index = SED2013Index.instance(indexURL);
 		SolrQuery q = new SolrQuery("*:*");
+		q.setSortField("index", ORDER.asc);
 		this.solrStream = new SolrStream(q, index.getSolrIndex());
 		this.collectionN = solrStream.getNumResults();
 //		q = new SolrQuery("index:18829");
-//		q.setSortField("index", ORDER.asc);
 //		this.solrStream = new SolrStream(q, index.getSolrIndex());
 //		this.collectionN = solrStream.getNumResults();
 		this.fe = PPK2012ExtractCompare.similarity(tfidfLocation, featureCacheLocation);
@@ -89,7 +90,6 @@ public class SED2013SolrSimilarityMatrix {
 
 			@Override
 			public void perform(IndexedPhoto p) {
-				if(p.first != 18829) return;
 				QueryResponse res;
 				try {
 					res = index.query(p.second, solrQueryN);
@@ -192,4 +192,74 @@ public class SED2013SolrSimilarityMatrix {
 		}
 		return rowmats;
 	}
+
+	/**
+	 * @param expRoot
+	 * @param incBuild
+	 */
+	public void createAndWrite(String expRoot, final int incBuild) {
+		final String matRoot = String.format("%s",expRoot);
+		final File rootFile = new File(matRoot);
+		rootFile.mkdirs();
+		final Map<String, SparseMatrix> allSimMat = new HashMap<String, SparseMatrix>();
+		
+		final int[] totalWritten = new int []{0};
+		solrStream
+		.map(new SolrDocumentToIndexedPhoto())
+		.forEach(new Operation<IndexedPhoto>() {
+			int currentSeen = 0;
+			@Override
+			public void perform(IndexedPhoto p) {
+				QueryResponse res;
+				try {
+					res = index.query(p.second, solrQueryN);
+					SolrDocumentList results = res.getResults();
+					final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
+					Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
+					for (Entry<String, SparseMatrix> namerow : rowmat.entrySet()) {
+						String comparator = namerow.getKey();
+						SparseMatrix comprow = namerow.getValue();
+						if(!allSimMat.containsKey(comparator)){
+							allSimMat.put(comparator, new SparseMatrix(collectionN,collectionN));
+							
+						}
+						SparseMatrix toAlter = allSimMat.get(comparator);
+						Vector newrow = comprow.row(0);
+						if(p.first % 1000==0){
+							logger.debug("Reading in row: " + p.first);
+						}
+						for (ch.akuhn.matrix.Vector.Entry rowent : newrow.entries()) {
+							double current = toAlter.get((int)p.first, rowent.index);
+							if(current < rowent.value){
+								toAlter.put((int) p.first, rowent.index, rowent.value);
+							}
+							current = toAlter.get(rowent.index, (int) p.first);
+							if(current < rowent.value){
+								toAlter.put(rowent.index,(int) p.first, rowent.value);
+							}
+						}
+					}
+					currentSeen++;
+					
+					if(currentSeen > incBuild){
+						File outPath = new File(rootFile,"part_" + totalWritten[0]++);
+						logger.debug("Reached inc! Writing: " + outPath);
+						try {
+							write(outPath.getAbsolutePath(), allSimMat);
+						} catch (Exception e) {
+							throw new RuntimeException(e);
+						}
+						HashSet<String> compKeySet = new HashSet<String>(allSimMat.keySet());
+						for (String compKey : compKeySet) {
+							allSimMat.put(compKey, new SparseMatrix(collectionN,collectionN));
+						}
+						currentSeen = 0;
+					}
+				} catch (SolrServerException e) {
+					logger.error("Error querying for photo: " + p.second.getId(),e);
+				}
+			}
+		});
+	}
+	
 }

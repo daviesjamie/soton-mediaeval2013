@@ -28,7 +28,7 @@ public class SED2013SolrSimilarityMatrixTool {
 	@Option(
 		name = "--force-http",
 		aliases = "-h",
-		required = true,
+		required = false,
 		usage = "The provided solr index is treated as a URL to a solr server"
 	)
 	private boolean forceHTTP;
@@ -56,6 +56,14 @@ public class SED2013SolrSimilarityMatrixTool {
 		usage = "The root to save all the similarity matricies"
 	)
 	private String output;
+	
+	@Option(
+			name = "--incremental-build",
+			aliases = "-inc",
+			required = false,
+			usage = " if set to a positive number, split the final matrix as a number of matricies in a directory. Each matrix will be of the same dimensions, but will only contain inc completed rows."
+		)
+		private int incBuild = -1;
 
 	private String[] args;
 	public SED2013SolrSimilarityMatrixTool(String[] args) {
@@ -87,7 +95,12 @@ public class SED2013SolrSimilarityMatrixTool {
 			simmat = new SED2013SolrSimilarityMatrix(tool.tfidf, tool.featurecache, tool.input);
 		}
 		
-		Map<String, SparseMatrix> allmats = simmat.createSimilarityMatricies();
-		simmat.write(tool.output, allmats);
+		if(tool.incBuild < 0){			
+			Map<String, SparseMatrix> allmats = simmat.createSimilarityMatricies();
+			simmat.write(tool.output, allmats);
+		}
+		else{
+			simmat.createAndWrite(tool.output,tool.incBuild);
+		}
 	}
 }
