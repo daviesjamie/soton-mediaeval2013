@@ -209,7 +209,7 @@ public class SED2013Index {
 				String time = (String) solrInputField.getValue();
 				String timewindow = "30DAY";
 				timequery.add(String.format("%s:[ %s-%s TO %s+%s ]^%2.5f",name,time,timewindow,time,timewindow,fieldBoost.get(name)));
-				timesort.add(String.format("sub(1,div(log(ms(%s,%s)),%2.5f)) desc",time,name,Math.log(365*24*60*60*1000l)));
+				timesort.add(String.format("sub(1,div(log(abs(ms(%s,%s))),%2.5f)) desc",time,name,Math.log(365*24*60*60*1000l)));
 			}
 			else if(locFields.contains(name)){
 				String v = (String) solrInputField.getValue();
@@ -230,7 +230,7 @@ public class SED2013Index {
 			textquery = join(" ", textquery, join(" ",timequery));
 			sort = join(", ",join(", ",timesort), "score desc");
 		}
-		return query(textquery, limit, afArray, filter,null);
+		return query(textquery, limit, afArray, filter,sort);
 	}
 
 	/**

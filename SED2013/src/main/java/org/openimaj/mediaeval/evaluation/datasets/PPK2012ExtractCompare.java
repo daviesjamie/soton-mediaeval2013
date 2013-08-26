@@ -169,9 +169,9 @@ public class PPK2012ExtractCompare {
 	 * @return a similarity vector constructing {@link FeatureExtractor}
 	 * @throws IOException
 	 */
-	public static List<ExtractorComparator<Photo, ?>> similarity(String tfidfSource) throws IOException {
-		List<ExtractorComparator<Photo, ?>> comps =
-			new ArrayList<DatasetSimilarity.ExtractorComparator<Photo,?>>();
+	public static List<ExtractorComparator<Photo, ? extends FeatureVector>> similarity(String tfidfSource) throws IOException {
+		List<ExtractorComparator<Photo, ? extends FeatureVector>> comps =
+			new ArrayList<DatasetSimilarity.ExtractorComparator<Photo,? extends FeatureVector>>();
 		comps.add(
 			new ExtractorComparator<Photo, DoubleFV>(
 				memcache(new PhotoTime(Type.POSTED)),

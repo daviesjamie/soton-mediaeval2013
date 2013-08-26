@@ -137,7 +137,7 @@ public class DBSCANSetupMode extends ExperimentSetupMode{
 	
 	@Override
 	public boolean hasNextSetup() {
-		return (epsIter != null && epsIter.hasNext()) || mpIter.hasNext();
+		return (epsIter != null && epsIter.hasNext()) || (mpIter!=null && mpIter.hasNext());
 	}
 
 	@Override

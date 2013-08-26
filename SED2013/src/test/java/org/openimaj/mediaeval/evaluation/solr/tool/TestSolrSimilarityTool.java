@@ -143,6 +143,32 @@ public class TestSolrSimilarityTool {
 		});
 		System.out.println("done");
 	}
+	
+	@Test
+	public void testLTIncrementalDBSCAN() throws Exception{
+//		for (Entry<String, File> es : this.simmats.entrySet()) {
+//			displaySimmat(es.getKey(),es.getValue());
+//		}
+		File file = this.simmats.get("aggregationMean.mat");
+		
+		SolrSimilarityExperimentTool.main(new String[]{
+			"-sm",file.getAbsolutePath(),
+			"-si",this.luceneIndex.getAbsolutePath(),
+			"-o",this.experiments.getAbsolutePath(),
+			"-em","LTINCREMENTAL",
+			"-iem","DBSCAN",
+			"-mp","3",
+			"-lt","1",
+			"-lt","3",
+			"-lt","10",
+			"-epss","0.4",
+			"-epse","0.8",
+			"-ws","100",
+			"-ws","500",
+			"-ws","1000",
+		});
+		System.out.println("done");
+	}
 
 	private void displaySimmat(String name, File file) throws IOException {
 		HeatMap hm = new HeatMap(800, 800);

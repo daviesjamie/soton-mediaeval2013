@@ -26,6 +26,14 @@ public class SED2013SolrSimilarityMatrixTool {
 	private String input;
 	
 	@Option(
+		name = "--force-http",
+		aliases = "-h",
+		required = true,
+		usage = "The provided solr index is treated as a URL to a solr server"
+	)
+	private boolean forceHTTP;
+	
+	@Option(
 		name = "--tfidf-location",
 		aliases = "-t",
 		required = true,
@@ -69,8 +77,15 @@ public class SED2013SolrSimilarityMatrixTool {
 	
 	public static void main(String[] args) throws IOException, XMLStreamException {
 		SED2013SolrSimilarityMatrixTool tool = new SED2013SolrSimilarityMatrixTool(args);
-		System.setProperty("sed2013.solr.home", tool.input);
-		SED2013SolrSimilarityMatrix simmat = new SED2013SolrSimilarityMatrix(tool.tfidf, tool.featurecache);
+		SED2013SolrSimilarityMatrix simmat = null;
+		if(tool.forceHTTP)
+		{
+			simmat = new SED2013SolrSimilarityMatrix(tool.tfidf, tool.featurecache, tool.input);
+		}
+		else{
+			System.setProperty("sed2013.solr.home", tool.input);
+			simmat = new SED2013SolrSimilarityMatrix(tool.tfidf, tool.featurecache, tool.input);
+		}
 		
 		Map<String, SparseMatrix> allmats = simmat.createSimilarityMatricies();
 		simmat.write(tool.output, allmats);

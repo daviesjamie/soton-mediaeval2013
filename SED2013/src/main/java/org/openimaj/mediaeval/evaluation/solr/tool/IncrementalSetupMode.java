@@ -6,14 +6,10 @@ import java.util.List;
 
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ProxyOptionHandler;
-import org.openimaj.data.DoubleRange;
 import org.openimaj.data.IntegerRange;
 import org.openimaj.ml.clustering.IndexClusters;
 import org.openimaj.ml.clustering.SparseMatrixClusterer;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
-import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
 import org.openimaj.ml.clustering.incremental.IncrementalSparseClusterer;
-import org.openimaj.util.pair.DoubleIntPair;
 
 /**
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
@@ -91,7 +87,7 @@ public class IncrementalSetupMode extends ExperimentSetupMode {
 	}
 	@Override
 	public boolean hasNextSetup() {
-		return experimentSetupModeOp.hasNextSetup() || this.winSizeIter.hasNext();
+		return experimentSetupModeOp.hasNextSetup() || (this.winSizeIter!= null && this.winSizeIter.hasNext());
 	}
 	
 	@Override
@@ -102,12 +98,16 @@ public class IncrementalSetupMode extends ExperimentSetupMode {
 		}
 		NamedClusterer nextClusterer = experimentSetupModeOp.nextClusterer();
 		
-		nextClusterer.clusterer = new IncrementalSparseClusterer(
-			nextClusterer.clusterer, 
-			this.currentWindow
-		);
+		nextClusterer.clusterer = prepareIncrementalClusterer(nextClusterer.clusterer);
 		nextClusterer.name = String.format("window=%s/%s/%s",this.currentWindow,this.experimentSetupMode.name(),nextClusterer.name);
 		return nextClusterer;
+	}
+	
+	protected IncrementalSparseClusterer prepareIncrementalClusterer(SparseMatrixClusterer<? extends IndexClusters> clusterer) {
+		return new IncrementalSparseClusterer(
+			clusterer,
+			this.currentWindow
+		);
 	}
 	
 	

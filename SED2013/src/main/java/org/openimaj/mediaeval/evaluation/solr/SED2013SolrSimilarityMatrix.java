@@ -53,18 +53,29 @@ public class SED2013SolrSimilarityMatrix {
 	private List<ExtractorComparator<Photo, ? extends FeatureVector>> fe;
 	private SolrStream solrStream;
 	
+	public SED2013SolrSimilarityMatrix(String tfidfLocation, String featureCacheLocation) throws IOException {
+		this(tfidfLocation, featureCacheLocation, null);
+	}
+	
 	/**
 	 * @param tfidfLocation
 	 * @param featureCacheLocation
 	 * @throws IOException
 	 */
-	public SED2013SolrSimilarityMatrix(String tfidfLocation, String featureCacheLocation) throws IOException {
-		this.index = SED2013Index.instance();
+	public SED2013SolrSimilarityMatrix(String tfidfLocation, String featureCacheLocation, String indexURL) throws IOException {
+		if(indexURL == null)
+			this.index = SED2013Index.instance();
+		else
+			this.index = SED2013Index.instance(indexURL);
 		SolrQuery q = new SolrQuery("*:*");
-		q.setSortField("index", ORDER.asc);
 		this.solrStream = new SolrStream(q, index.getSolrIndex());
 		this.collectionN = solrStream.getNumResults();
+//		q = new SolrQuery("index:18829");
+//		q.setSortField("index", ORDER.asc);
+//		this.solrStream = new SolrStream(q, index.getSolrIndex());
+//		this.collectionN = solrStream.getNumResults();
 		this.fe = PPK2012ExtractCompare.similarity(tfidfLocation, featureCacheLocation);
+//		this.fe = PPK2012ExtractCompare.similarity(tfidfLocation);
 	}
 	
 	/**
@@ -78,6 +89,7 @@ public class SED2013SolrSimilarityMatrix {
 
 			@Override
 			public void perform(IndexedPhoto p) {
+				if(p.first != 18829) return;
 				QueryResponse res;
 				try {
 					res = index.query(p.second, solrQueryN);

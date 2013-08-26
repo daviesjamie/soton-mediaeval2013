@@ -29,6 +29,15 @@ public enum ExperimentSetupModeOption implements CmdLineOptionsProvider{
 	/**
 	 * 
 	 */
+	LTINCREMENTAL{
+		@Override
+		public ExperimentSetupMode getOptions() {
+			return new LTIncrementalSetupMode();
+		}
+	},
+	/**
+	 * 
+	 */
 	SPECTRAL{
 		@Override
 		public ExperimentSetupMode getOptions() {

@@ -42,8 +42,13 @@ public class TimeSimilarity implements DoubleFVComparator{
 		double h1n = h1[0] / (60 * 1000);
 		double h2n = h2[0] / (60 * 1000);
 		double d = Math.abs(h1n - h2n);
-		if(d==0)return 1.0;
-		return 1.0 - (Math.log(d) / normaliser );
+		// This means its similarity is less than 1 minute, so the same 
+		if(d<=1)return 1.0;
+		double add = Math.log(d) / normaliser;
+		if(add < 0){
+			System.out.println("WHAT THE FUCK");
+		}
+		return 1.0 - add;
 	}
 
 }
