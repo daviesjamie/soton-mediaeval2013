@@ -14,7 +14,7 @@ import java.util.List;
 import org.apache.lucene.search.IndexSearcher;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
-import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.CachingMeanShiftTagEngine;
+import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.old.meanshift.CachingMeanShiftTagEngine;
 
 public class CachingTagBasedEstimator extends TagBasedEstimator {
 	File cacheLocation;

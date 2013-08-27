@@ -16,7 +16,9 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoEvaluator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
+import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.old.meanshift.BasicCEDDEngine;
 
+@Deprecated
 public class Harness {
 	public static void main(String[] args) throws IOException {
 		final TLongObjectHashMap<GeoLocation> groundTruth =
