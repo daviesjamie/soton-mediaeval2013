@@ -113,6 +113,6 @@ public class CachingTagBasedEstimator extends TagBasedEstimator {
 
 	@Override
 	public String toString() {
-		return "CachingTagBasedEstimator";
+		return "CachingTagBasedEstimator[location=" + this.cacheLocation + "]";
 	}
 }

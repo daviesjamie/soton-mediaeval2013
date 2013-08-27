@@ -121,4 +121,9 @@ public class MeanShiftPlacingExperiment implements RunnableExperiment {
 		}
 		return data;
 	}
+
+	@Override
+	public String toString() {
+		return "MeanShift Placing Experiment, " + queries.size() + " queries";
+	}
 }

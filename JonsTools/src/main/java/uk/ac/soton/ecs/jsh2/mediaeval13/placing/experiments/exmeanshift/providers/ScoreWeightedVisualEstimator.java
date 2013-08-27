@@ -83,4 +83,16 @@ public class ScoreWeightedVisualEstimator implements GeoDensityEstimateProvider 
 			throw new RuntimeException(e);
 		}
 	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "ScoreWeightedVisualEstimator [searcher=" + searcher + ", visualSearcher=" + visualSearcher
+				+ ", numResults=" + numResults + ", scaling=" + scaling + "]";
+	}
+
 }

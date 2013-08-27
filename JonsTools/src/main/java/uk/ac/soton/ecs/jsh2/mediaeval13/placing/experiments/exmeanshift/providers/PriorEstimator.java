@@ -46,4 +46,9 @@ public class PriorEstimator implements GeoDensityEstimateProvider {
 	public List<GeoLocation> estimatePoints(QueryImageData query) {
 		return prior;
 	}
+
+	@Override
+	public String toString() {
+		return "PriorEstimator[file=" + latLngFile + "]";
+	}
 }
