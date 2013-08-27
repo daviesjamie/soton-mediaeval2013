@@ -82,6 +82,21 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	}
 
 	/**
+	 * @param matname
+	 * @param mat
+	 * @param indexFile
+	 * @param start
+	 * @param end
+	 */
+	public SolrSimilarityMatrixClustererExperiment(String matname, SparseMatrix mat, String indexFile, int start, int end) {
+		this.similarityMatrix = new SimilarityMatrixWrapper(mat, start, end);
+		this.start = this.similarityMatrix.start();
+		this.end = this.similarityMatrix.end();
+		this.indexFile = indexFile;
+		this.similarityMatrixFilename = matname;
+	}
+
+	/**
 	 * @param indexFile
 	 * @param start
 	 * @param end

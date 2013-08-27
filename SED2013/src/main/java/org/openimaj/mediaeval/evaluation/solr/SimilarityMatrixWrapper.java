@@ -48,9 +48,8 @@ public class SimilarityMatrixWrapper {
 	 * @param simMatrix the sim matrix
 	 * @param s the start location
 	 * @param e the end. if -1 end SparseMatrix
-	 * @throws IOException 
 	 */
-	public SimilarityMatrixWrapper(SparseMatrix simMatrix, int s, int e) throws IOException {
+	public SimilarityMatrixWrapper(SparseMatrix simMatrix, int s, int e) {
 		this.end = e;
 		this.start = s;
 		logger .debug("Loading sparse matrix");

@@ -50,5 +50,12 @@ public class TimeSimilarity implements DoubleFVComparator{
 		}
 		return 1.0 - add;
 	}
+	
+	public static void main(String[] args) {
+		DoubleFV t1 = new DoubleFV(new double[]{0});
+		DoubleFV t2 = new DoubleFV(new double[]{1000 * 60 * 60 * 24});
+		
+		System.out.println(new TimeSimilarity().compare(t1, t2));
+	}
 
 }

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
@@ -17,6 +16,7 @@ import org.kohsuke.args4j.ProxyOptionHandler;
 import org.openimaj.experiment.ExperimentContext;
 import org.openimaj.experiment.ExperimentRunner;
 import org.openimaj.mediaeval.evaluation.solr.tool.ExperimentSetupMode.NamedClusterer;
+import org.openimaj.mediaeval.evaluation.solr.tool.SimMatSetupMode.NamedSolrSimilarityMatrixClustererExperiment;
 
 /**
  *
@@ -25,47 +25,7 @@ import org.openimaj.mediaeval.evaluation.solr.tool.ExperimentSetupMode.NamedClus
 public class SolrSimilarityExperimentToolOptions {
 	private final static Logger logger = Logger.getLogger(SolrSimilarityExperimentTool.class);
 	private String[] args;
-	@Option(
-		name = "--start",
-		aliases = "-s",
-		required = false,
-		usage = "The index in the similarity matrix to start with. Default is 0"
-	)
-	private int start = 0;
 	
-	@Option(
-		name = "--end",
-		aliases = "-e",
-		required = false,
-		usage = "The index in the similarity matrix to end with. Default is -1 (i.e. all)"
-	)
-	private int end = -1;
-	
-	@Option(
-		name = "--index",
-		aliases = "-si",
-		required = true,
-		usage = "The lucene index used to query by the similarity matrix indecies to build the ground truth."
-	)
-	private String index;
-	
-	@Option(
-		name = "--simmat",
-		aliases = "-sm",
-		required = true,
-		usage = "The similarity matrix to use for this experiment.",
-		multiValued=true
-	)
-	private List<String> simmat;
-	
-	@Option(
-		name = "--simmat-root",
-		aliases = "-smr",
-		required = false,
-		usage = "If this similarity matrix root is set the -sm provided are treated as mats within this root.",
-		multiValued=true
-	)
-	private String simmatRoot;
 	
 	@Option(
 		name = "--experiment-set-root",
@@ -92,8 +52,18 @@ public class SolrSimilarityExperimentToolOptions {
 	)
 	ExperimentSetupModeOption experimentSetupMode = null;
 	ExperimentSetupMode experimentSetupModeOp = null;
+	
+	@Option(
+		name = "--simmat-mode",
+		aliases = "-smm",
+		required = true,
+		usage = "How the simmats are to be processed",
+		handler = ProxyOptionHandler.class
+	)
+	SimMatModeOption simmatSetupMode = null;
+	SimMatSetupMode simmatSetupModeOp = null;
+	
 	private Iterator<String> simMatIter;
-	private String simMatFile;
 	private SolrSimilarityExperimentTool experiment;
 	private File experimentRoot;
 
@@ -119,29 +89,8 @@ public class SolrSimilarityExperimentToolOptions {
 	}
 
 	private void setup() {
-		simMatIter = this.simmat.iterator();
+		simmatSetupModeOp.setup();
 		this.prepareNextSimmat();
-	}
-
-	/**
-	 * @return the start index
-	 */
-	public int getStart() {
-		return start;
-	}
-	
-	/**
-	 * @return the end index
-	 */
-	public int getEnd() {
-		return end;
-	}
-
-	/**
-	 * @return the index
-	 */
-	public String getIndex() {
-		return index;
 	}
 	
 	/**
@@ -155,7 +104,7 @@ public class SolrSimilarityExperimentToolOptions {
 	 * @return whether there is a next valid experiment
 	 */
 	public boolean hasNextExperiment() {
-		return experimentSetupModeOp.hasNextSetup() || simMatIter.hasNext();
+		return experimentSetupModeOp.hasNextSetup() || this.simmatSetupModeOp.hasNextSimmat();
 	}
 
 	/**
@@ -168,7 +117,7 @@ public class SolrSimilarityExperimentToolOptions {
 		}
 		NamedClusterer namedClusterer = this.experimentSetupModeOp.nextClusterer();
 		File setupDir= new File(this.experimentRoot,this.experimentSetupMode.name());
-		setupDir= new File(setupDir,String.format("%d_%d",start,end));
+		setupDir= new File(setupDir,String.format("%d_%d",this.simmatSetupModeOp.start,this.simmatSetupModeOp.end));
 		setupDir= new File(setupDir,namedClusterer.name);
 		setupDir.mkdirs();
 		this.experiment.setNextClusterer(namedClusterer.clusterer);
@@ -212,21 +161,10 @@ public class SolrSimilarityExperimentToolOptions {
 	}
 
 	private void prepareNextSimmat() {
-		simMatFile = this.simMatIter.next();
-		if(this.simmatRoot==null){		
-			this.experiment = new SolrSimilarityExperimentTool(simMatFile, this.index, start, end);
-		}
-		else{
-			this.experiment = new SolrSimilarityExperimentTool(simmatRoot,simMatFile, this.index, start, end);
-		}
-		this.experimentRoot = new File(this.root,simMatFileName());
+		NamedSolrSimilarityMatrixClustererExperiment nextMode = this.simmatSetupModeOp.nextSimmat();
+		this.experiment = (SolrSimilarityExperimentTool) nextMode.exp;
+		this.experimentRoot = new File(new File(this.root,this.simmatSetupMode.name()),nextMode.name);
 		this.experimentSetupModeOp.setup();
-	}
-
-	private String simMatFileName() {
-		String[] split = this.simMatFile.split("/");
-		String name = split[split.length-1];
-		return name;
 	}
 
 }
