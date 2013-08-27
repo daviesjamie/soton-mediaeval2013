@@ -50,6 +50,7 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	final static Logger logger = Logger.getLogger(SolrSimilarityMatrixClustererExperiment.class);
 	private String similarityExp = null;
 	private String similarityRoot;
+	private SparseMatrixSource sparseMatrixSource;
 	
 	/**
 	 * @param similarityFile
@@ -80,7 +81,12 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		this.similarityExp = similarityExp;
 		this.indexFile = indexFile;
 	}
-
+	
+	public static interface SparseMatrixSource{
+		public String name();
+		public SimilarityMatrixWrapper mat();
+	}
+	
 	/**
 	 * @param matname
 	 * @param mat
@@ -88,12 +94,11 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	 * @param start
 	 * @param end
 	 */
-	public SolrSimilarityMatrixClustererExperiment(String matname, SparseMatrix mat, String indexFile, int start, int end) {
-		this.similarityMatrix = new SimilarityMatrixWrapper(mat, start, end);
-		this.start = this.similarityMatrix.start();
-		this.end = this.similarityMatrix.end();
+	public SolrSimilarityMatrixClustererExperiment(SparseMatrixSource source, String indexFile) {
+//		this.similarityMatrix = new SimilarityMatrixWrapper(mat, start, end);
+//		this.similarityMatrixFilename = matname;
+		this.sparseMatrixSource = source;
 		this.indexFile = indexFile;
-		this.similarityMatrixFilename = matname;
 	}
 
 	/**
@@ -184,7 +189,11 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	@Override
 	public void setup() {
 		if(this.similarityMatrix == null){
-			if(this.simMatrixFile!=null){		
+			if(this.sparseMatrixSource != null){
+				this.similarityMatrixFilename = sparseMatrixSource.name();
+				this.similarityMatrix = sparseMatrixSource.mat();
+			}
+			else if(this.simMatrixFile!=null){		
 				try {
 					this.similarityMatrixFilename = new File(this.simMatrixFile).getName();
 					this.similarityMatrix = new SimilarityMatrixWrapper(this.simMatrixFile, start, end);

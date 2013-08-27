@@ -4,17 +4,20 @@ import gnu.trove.stack.TIntStack;
 import gnu.trove.stack.array.TIntArrayStack;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.kohsuke.args4j.Option;
 import org.openimaj.io.IOUtils;
 import org.openimaj.math.matrix.MatlibMatrixUtils;
 import org.openimaj.mediaeval.evaluation.solr.SED2013SolrSimilarityMatrix;
+import org.openimaj.mediaeval.evaluation.solr.SimilarityMatrixWrapper;
+import org.openimaj.mediaeval.evaluation.solr.SolrSimilarityMatrixClustererExperiment.SparseMatrixSource;
 import org.openimaj.util.array.ArrayUtils;
 
 import ch.akuhn.matrix.SparseMatrix;
@@ -38,27 +41,65 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 	public int extraMergeParts = 0;
 	private Iterator<int[]> perms;
 	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
+		name="--weighted-merge-combination-mode", 
+		aliases="-wmcm", 
+		required=false, 
+		usage="How to combine matricies"
+	)
+	public WeightedMergeCombinationMode wmcm = WeightedMergeCombinationMode.SUM;
+	
+	
 	@Override
 	public void setup() {
 		this.perms = perm(2 + extraMergeParts,this.simmat.size()).iterator();
 	}
 	class HashableIntArr{
-		int[] arr;
+		private int[] arr;
+		private double[] proped;
+		public HashableIntArr(int[] arr) {
+			this.arr = arr;
+			proped = new double[arr.length];
+			float sum = ArrayUtils.sumValues(arr);
+			if(sum == 0) return;
+			for (int i = 0; i < proped.length; i++) {
+				proped[i] = arr[i] / sum;
+			}
+		}
 		@Override
 		public int hashCode() {
-			return Arrays.hashCode(arr);
+			int hashCode = Arrays.hashCode(proped);
+			return hashCode;
 		}
 		
 		@Override
 		public boolean equals(Object obj) {
-			return obj instanceof HashableIntArr && Arrays.equals(this.arr, ((HashableIntArr)obj).arr);
+			return obj instanceof HashableIntArr && Arrays.equals(this.proped, ((HashableIntArr)obj).proped);
+		}
+		
+		@Override
+		public String toString() {
+			return Arrays.toString(this.arr);
 		}
 	}
-	private List<int[]> perm(int totalSplits, int totalEntries) {
+	private Collection<int[]> perm(int totalSplits, int totalEntries) {
 		
 		Set<HashableIntArr> hashableRet = new HashSet<HashableIntArr>();
 		perm(totalSplits,totalEntries,hashableRet,new TIntArrayStack(totalSplits+2));
-		List<int[]> ret = new ArrayList<int[]>();
+		Set<int[]> ret = new TreeSet<int[]>(new Comparator<int[]>() {
+			@Override
+			public int compare(int[] o1, int[] o2) {
+				for (int i = 0; i < o2.length; i++) {
+					int cmpret = Integer.compare(o1[i], o2[i]);
+					if(cmpret == 0) continue;
+					return cmpret;
+				}
+				return 0;
+			}
+		});
 		for (HashableIntArr hashableDoubleArr : hashableRet) {
 			ret.add(hashableDoubleArr.arr);
 		}
@@ -66,13 +107,10 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 	}
 	private void perm(int totalSplits, int totalEntries, Set<HashableIntArr> toret, TIntStack stack) {
 		if(totalEntries == 0){
-			HashableIntArr v = new HashableIntArr();
-			v.arr = new int[stack.size()];
-			stack.toArray(v.arr);
-			double sum = 0;
-			for (int i = 0; i < v.arr.length; i++) {
-				sum += v.arr[i];
-			}
+			int[] arr = new int[stack.size()];
+			stack.toArray(arr);
+			HashableIntArr v = new HashableIntArr(arr);
+			double sum = ArrayUtils.sumValues(v.proped);
 			if(sum==0) return;
 			
 			toret.add(v);
@@ -91,49 +129,78 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 
 	@Override
 	public NamedSolrSimilarityMatrixClustererExperiment nextSimmat() {
-		super.setup(); // prepare the simmat iterator
-		int[] curperm = this.perms.next();
-		float curpermSum = ArrayUtils.sumValues(curperm);
-		NamedSolrSimilarityMatrixClustererExperiment ret = new NamedSolrSimilarityMatrixClustererExperiment();
-		SparseMatrix mat = null;
-		String combname = "";
-		int i = 0;
-		try{					
-			while(this.simMatIter.hasNext()){
-				String next = this.simMatIter.next();
-				SparseMatrix newmat = null;
-				float prop = curperm[i]/curpermSum;
-				if(this.simmatRoot != null){
-					if(prop!=0)
-						newmat = SED2013SolrSimilarityMatrix.readSparseMatricies(this.simmatRoot, next).get(next);
-					combname += String.format("%s=%2.2f/",next,prop);
-				}
-				else {
-					File nextf = new File(next);
-					if(prop!=0)
-						newmat = IOUtils.readFromFile(nextf);
-					combname += String.format("%s=%2.2f/",nextf.getName(),prop);
-				}
-				if(newmat!=null)
-				{
-					MatlibMatrixUtils.scaleInplace(newmat, prop);
-					if(mat == null){
-						mat = newmat;
-					}
-					else{
-						MatlibMatrixUtils.plusInplace(mat, newmat);
-					}
-				}
-				i++;
-			}
-		} catch(Exception e){
-			throw new RuntimeException(e);
-		}
 		
-		ret.exp = new SolrSimilarityExperimentTool(combname, mat, index, this.start, this.end);
-		ret.name = String.format("nmats=%d/%s",curperm.length,combname);
+		final int[] curperm = perms.next();
+		final String combname = prepareName(curperm);
+		SparseMatrixSource sps = new SparseMatrixSource() {
+			
+			@Override
+			public String name() {
+				return combname;
+			}
+			
+			@Override
+			public SimilarityMatrixWrapper mat() {
+				WeightedMergeSimMatMode.super.setup(); // prepare the simmat iterator
+				float curpermSum = ArrayUtils.sumValues(curperm);
+				
+				SparseMatrix mat = null;
+				int i = 0;
+				try{					
+					while(simMatIter.hasNext()){
+						String next = simMatIter.next();
+						SparseMatrix newmat = null;
+						float prop = curperm[i]/curpermSum;
+						if(simmatRoot != null){
+							if(prop!=0)
+								newmat = SED2013SolrSimilarityMatrix.readSparseMatricies(simmatRoot, next).get(next);
+						}
+						else {
+							File nextf = new File(next);
+							if(prop!=0)
+								newmat = IOUtils.readFromFile(nextf);
+						}
+						if(newmat!=null)
+						{
+							MatlibMatrixUtils.scaleInplace(newmat, prop);
+							if(mat == null){
+								mat = newmat;
+							}
+							else{
+								mat = wmcm.combine(mat, newmat);
+							}
+						}
+						i++;
+					}
+					return new SimilarityMatrixWrapper(mat, start, end);
+				} catch(Exception e){
+					throw new RuntimeException(e);
+				}
+			}
+		};
+		NamedSolrSimilarityMatrixClustererExperiment ret = new NamedSolrSimilarityMatrixClustererExperiment();
+		ret.exp = new SolrSimilarityExperimentTool(sps, index);
+		ret.name = String.format("combine=%s/nmats=%d/%s",wmcm.name(),curperm.length,combname);
 		
 		return ret;
+	}
+	private String prepareName(int[] curperm) {
+		WeightedMergeSimMatMode.super.setup(); // prepare the simmat iterator
+		
+		String combname = "";
+		int i = 0;					
+		while(simMatIter.hasNext()){
+			String next = simMatIter.next();
+			if(simmatRoot != null){
+				combname += String.format("%s=%d/",next,curperm[i]);
+			}
+			else {
+				File nextf = new File(next);
+				combname += String.format("%s=%d/",nextf.getName(),curperm[i]);
+			}
+			i++;
+		}
+		return combname;
 	}
 
 }

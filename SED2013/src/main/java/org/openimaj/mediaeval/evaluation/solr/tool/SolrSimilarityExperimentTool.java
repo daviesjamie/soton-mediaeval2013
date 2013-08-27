@@ -42,8 +42,8 @@ public class SolrSimilarityExperimentTool extends SolrSimilarityMatrixClustererE
 	 * @param start
 	 * @param end
 	 */
-	public SolrSimilarityExperimentTool(String matname, SparseMatrix mat,String index, int start, int end) {
-		super(matname, mat, index, start, end);
+	public SolrSimilarityExperimentTool(SparseMatrixSource sps,String index) {
+		super(sps, index);
 	}
 
 	@Override
