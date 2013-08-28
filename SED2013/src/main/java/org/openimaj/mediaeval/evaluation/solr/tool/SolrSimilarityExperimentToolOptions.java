@@ -138,6 +138,8 @@ public class SolrSimilarityExperimentToolOptions {
 		reportWriter.println(c);
 		reportWriter.flush();
 		reportWriter.close();
+		correctWriter.close();
+		estimatedWriter.close();
 	}
 
 	private void removeSetupLogger(File setupDir) {

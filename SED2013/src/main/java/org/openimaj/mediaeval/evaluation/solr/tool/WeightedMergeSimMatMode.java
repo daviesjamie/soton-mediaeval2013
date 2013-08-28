@@ -4,15 +4,18 @@ import gnu.trove.stack.TIntStack;
 import gnu.trove.stack.array.TIntArrayStack;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.kohsuke.args4j.Option;
+import org.mortbay.io.RuntimeIOException;
 import org.openimaj.io.IOUtils;
 import org.openimaj.math.matrix.MatlibMatrixUtils;
 import org.openimaj.mediaeval.evaluation.solr.SED2013SolrSimilarityMatrix;
@@ -51,10 +54,16 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 		usage="How to combine matricies"
 	)
 	public WeightedMergeCombinationMode wmcm = WeightedMergeCombinationMode.SUM;
+	private Map<String, SparseMatrix> allmats;
 	
 	
 	@Override
 	public void setup() {
+		try {
+			this.allmats = SED2013SolrSimilarityMatrix.readSparseMatricies(simmatRoot);
+		} catch (IOException e) {
+			throw new RuntimeIOException(e);
+		}
 		this.perms = perm(2 + extraMergeParts,this.simmat.size()).iterator();
 	}
 	class HashableIntArr{
@@ -132,6 +141,7 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 		
 		final int[] curperm = perms.next();
 		final String combname = prepareName(curperm);
+		
 		SparseMatrixSource sps = new SparseMatrixSource() {
 			
 			@Override
@@ -153,7 +163,7 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 						float prop = curperm[i]/curpermSum;
 						if(simmatRoot != null){
 							if(prop!=0)
-								newmat = SED2013SolrSimilarityMatrix.readSparseMatricies(simmatRoot, next).get(next);
+								newmat = allmats.get(next);
 						}
 						else {
 							File nextf = new File(next);
@@ -164,7 +174,7 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 						{
 							MatlibMatrixUtils.scaleInplace(newmat, prop);
 							if(mat == null){
-								mat = newmat;
+								mat = MatlibMatrixUtils.subMatrix(newmat, 0,newmat.rowCount(), 0,newmat.columnCount());
 							}
 							else{
 								mat = wmcm.combine(mat, newmat);
