@@ -39,4 +39,8 @@ public abstract class Time {
 		
 		return secs;
 	}
+
+	public static float MStoS(String msString) {
+		return MStoS(Float.parseFloat(msString));
+	}
 }

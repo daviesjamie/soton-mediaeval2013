@@ -11,11 +11,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queries.BooleanFilter;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.QueryWrapperFilter;
@@ -50,13 +53,15 @@ import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 public class AlphaSearcher implements Searcher {
 	static final Version LUCENE_VERSION = Version.LUCENE_43;
 	
-	static final int NUM_SYNOPSIS_RESULTS = 5;
+	static final int NUM_SYNOPSIS_RESULTS = 3;
 	static final int NUM_TITLE_RESULTS = 100;
 	static final int MAX_SUBS_HITS = 1000;
 	static final int MAX_LIMSI_HITS = 1000;
 	static final int MAX_LIUM_HITS = 1000;
-	//float TITLE_SCALE_FACTOR = 0f;
+	float SYNOPSIS_POWER = 0f;
+	float TITLE_SCALE_FACTOR = 1.5f;
 	float SUBS_SCALE_FACTOR = 1f;
+	float SUBS_POWER = 2f;
 	float LIMSI_SCALE_FACTOR = 0f;
 	float LIUM_SCALE_FACTOR = 0f;
 	float MIN_LENGTH = 60 * 1;
@@ -101,23 +106,23 @@ public class AlphaSearcher implements Searcher {
 												synopsisFilter,
 												NUM_SYNOPSIS_RESULTS);
 
-		ScoreDoc[] scoreDocs = synopses.scoreDocs;
+		ScoreDoc[] synopsisScoreDocs = synopses.scoreDocs;
 		
 		// Normalise synopsis scores.
 		float maxScore = 0;
 		
-		for (ScoreDoc doc : scoreDocs) {
+		for (ScoreDoc doc : synopsisScoreDocs) {
 			maxScore = Math.max(maxScore, doc.score);
 		}
 		
-		for (ScoreDoc doc : scoreDocs) {
-			doc.score /= maxScore;
+		for (ScoreDoc doc : synopsisScoreDocs) {
+			doc.score = (float) Math.pow(doc.score / maxScore, SYNOPSIS_POWER);
 		}
 		
-		/*List<ScoreDoc> scoreDocs = new ArrayList<ScoreDoc>();
+		List<ScoreDoc> scoreDocs = new ArrayList<ScoreDoc>();
 		
 		
-		queryParser.setAnalyzer(new KeywordAnalyzer());
+		/*queryParser.setAnalyzer(new KeywordAnalyzer());
 		
 		// Expand by title.
 		for (ScoreDoc doc : synopsisScoreDocs) {
@@ -130,7 +135,7 @@ public class AlphaSearcher implements Searcher {
 			org.apache.lucene.search.Query seriesQuery = 
 					queryParser.parse("\"" + seriesTitle + "\"",
 									  Field.Title.toString());
-			
+
 			BooleanFilter differentSynopsesFilter = new BooleanFilter();
 			differentSynopsesFilter.add(synopsisFilter, BooleanClause.Occur.MUST);
 			differentSynopsesFilter.add(new QueryWrapperFilter(
@@ -158,7 +163,7 @@ public class AlphaSearcher implements Searcher {
 			}
 		}*/
 		
-		Arrays.sort(scoreDocs, new Comparator<ScoreDoc>() {
+		Arrays.sort(synopsisScoreDocs, new Comparator<ScoreDoc>() {
 			@Override
 			public int compare(ScoreDoc arg0, ScoreDoc arg1) {
 				float diff = arg0.score - arg1.score;
@@ -176,7 +181,7 @@ public class AlphaSearcher implements Searcher {
 		Set<Result> resultSet = new TreeSet<Result>();
 		
 		// 2. Find results within transcripts.
-		for (ScoreDoc synopsis : scoreDocs) {
+		for (ScoreDoc synopsis : synopsisScoreDocs) {
 			Document subsDoc =
 					LuceneUtils.resolveOtherFromProgramme(synopsis.doc,
 														  Type.Subtitles,
@@ -192,7 +197,9 @@ public class AlphaSearcher implements Searcher {
 														  runName,
 														  subsDoc.get(Field.Program.toString()),
 														  subsHits,
-														  SUBS_SCALE_FACTOR * synopsis.score,
+														  SUBS_SCALE_FACTOR,
+														  SUBS_POWER,
+														  synopsis.score,
 														  MIN_LENGTH,
 														  MAX_LENGTH);
 			
@@ -296,16 +303,18 @@ public class AlphaSearcher implements Searcher {
 
 	@Override
 	public void configure(Float[] settings) {
-		//TITLE_SCALE_FACTOR = settings[0];
-		SUBS_SCALE_FACTOR = settings[0];
-		LIMSI_SCALE_FACTOR = settings[1];
-		LIUM_SCALE_FACTOR = settings[2];
-		MIN_LENGTH = settings[3];
-		MAX_LENGTH = settings[4];
+		SYNOPSIS_POWER = settings[0];
+		TITLE_SCALE_FACTOR = settings[1];
+		SUBS_POWER = settings[2];
+		SUBS_SCALE_FACTOR = settings[3];
+		LIMSI_SCALE_FACTOR = settings[4];
+		LIUM_SCALE_FACTOR = settings[5];
+		MIN_LENGTH = settings[6];
+		MAX_LENGTH = settings[7];
 	}
 	
 	@Override
 	public int numSettings() {
-		return 5;
+		return 8;
 	}
 }

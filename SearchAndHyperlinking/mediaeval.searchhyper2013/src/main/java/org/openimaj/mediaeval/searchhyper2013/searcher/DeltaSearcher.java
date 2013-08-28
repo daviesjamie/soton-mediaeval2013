@@ -31,10 +31,11 @@ import org.openimaj.util.pair.ObjectDoublePair;
 public class DeltaSearcher extends AlphaSearcher {
 	public static final int FPS = 25;
 	
-	public int MAX_EXPANSIONS = 10;
-	public int MAX_QUERY_FRAMES = 10;
-	public int MAX_FRAME_HITS = 10;
+	public final int MAX_EXPANSIONS = 100;
+	public final int MAX_FRAME_HITS = 100;
+	public float IMAGE_SYNOPSIS_BALANCE = 0.5f;
 	public float IMAGE_WEIGHT = 0.25f;
+	public float IMAGE_POWER = 2f;
 	
 	Map<String, Map<Integer, String>> shotsDirectoryCache;
 	LSHDataExplorer lshExplorer;
@@ -73,8 +74,8 @@ public class DeltaSearcher extends AlphaSearcher {
 		// Merge within programmes and add to chunked set.
 		for (String programme : programmeResults.keySet()) {
 			chunked.addAll(programmeResults.get(programme)
-							 		   .mergeShortResults(MIN_LENGTH,
-							 					 		  MAX_LENGTH));
+							 		   	   .mergeShortResults(MIN_LENGTH,
+							 		   			   			  MAX_LENGTH));
 		}
 		
 		chunked.addAll(baseResults);
@@ -144,6 +145,7 @@ public class DeltaSearcher extends AlphaSearcher {
 		
 		return imageResults;
 	}
+	
 	private List<String> getFrameFilesForResult(Result result) {
 		int firstFrame = ((int) result.startTime) * FPS;
 		int lastFrame = (((int) result.endTime) + 1) * FPS;
@@ -180,9 +182,9 @@ public class DeltaSearcher extends AlphaSearcher {
 			result.jumpInPoint = result.startTime;
 			result.fileName = frame.programme;
 			
-			result.confidenceScore = (float) (frameHits.get(frame) * scoreScaleFactor
-											 		   		  * IMAGE_WEIGHT
-											 		   		  / maxConf);
+			result.confidenceScore = (float)
+					(IMAGE_SYNOPSIS_BALANCE * IMAGE_WEIGHT * Math.pow(frameHits.get(frame) / maxConf, IMAGE_POWER)) +
+					((1 - IMAGE_SYNOPSIS_BALANCE) * scoreScaleFactor) / 2;
 			
 			ResultList programmeResults = results.get(result.fileName);
 			
@@ -239,12 +241,14 @@ public class DeltaSearcher extends AlphaSearcher {
 	public void configure(Float[] settings) {
 		super.configure(settings);
 		
-		IMAGE_WEIGHT = settings[super.numSettings()];
+		IMAGE_SYNOPSIS_BALANCE = settings[super.numSettings()];
+		IMAGE_WEIGHT 		   = settings[super.numSettings() + 1];
+		IMAGE_POWER 		   = settings[super.numSettings() + 2];
 	}
 	
 	@Override
 	public int numSettings() {
-		return super.numSettings() + 1;
+		return super.numSettings() + 3;
 	}
 	
 	/*public static void main(String[] args) throws IOException {

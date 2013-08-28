@@ -1,6 +1,7 @@
 package org.openimaj.mediaeval.searchhyper2013.searcher;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -40,6 +41,7 @@ import com.github.wcerfgba.adhocstructures.SemanticTable;
  */
 public class BetaSearcher extends AlphaSearcher {
 	float ORIGINAL_QUERY_SCALE_FACTOR = 1f;
+	float EXPANSION_RESULTS_SCALE_FACTOR = 0.2f;
 	public static final int MAX_EXPANSION_TERMS = 100;
 
 	public BetaSearcher(String runName, IndexReader indexReader) {
@@ -79,53 +81,10 @@ public class BetaSearcher extends AlphaSearcher {
 		}
 		
 		for (ScoreDoc doc : synopsisScoreDocs) {
-			doc.score /= maxScore;
+			doc.score = (float) Math.pow(doc.score / maxScore, SYNOPSIS_POWER);
 		}
 		
-		List<ScoreDoc> scoreDocs = new ArrayList<ScoreDoc>();
-		
-		/*queryParser.setAnalyzer(new KeywordAnalyzer());
-		
-		// Expand by title.
-		for (ScoreDoc doc : synopsisScoreDocs) {
-			scoreDocs.add(doc);
-			
-			Document synopsisDoc = indexReader.document(doc.doc);
-			
-			String seriesTitle = synopsisDoc.get(Field.Title.toString()).trim();
-			
-			org.apache.lucene.search.Query seriesQuery = 
-					queryParser.parse("\"" + seriesTitle + "\"",
-									  Field.Title.toString());
-			
-			BooleanFilter differentSynopsesFilter = new BooleanFilter();
-			differentSynopsesFilter.add(synopsisFilter, BooleanClause.Occur.MUST);
-			differentSynopsesFilter.add(new QueryWrapperFilter(
-											new TermQuery(
-												new Term(Field.Program.toString(),
-														 synopsisDoc.get(Field.Program.toString())))),
-										BooleanClause.Occur.MUST_NOT);
-			
-			TopDocs seriesSynopses = indexSearcher.search(seriesQuery,
-														  synopsisFilter,
-														  NUM_TITLE_RESULTS);
-			ScoreDoc[] titleScoreDocs = seriesSynopses.scoreDocs;
-			
-			// Normalise, weight, add to list.
-			float maxTitleScore = 0;
-			
-			for (ScoreDoc titleDoc : titleScoreDocs) {
-				maxTitleScore = Math.max(maxTitleScore, titleDoc.score);
-			}
-			
-			for (ScoreDoc titleDoc : titleScoreDocs) {
-				titleDoc.score *= TITLE_SCALE_FACTOR / maxTitleScore;
-				
-				scoreDocs.add(titleDoc);
-			}
-		}*/
-		
-		Collections.sort(scoreDocs, new Comparator<ScoreDoc>() {
+		Arrays.sort(synopsisScoreDocs, new Comparator<ScoreDoc>() {
 			@Override
 			public int compare(ScoreDoc arg0, ScoreDoc arg1) {
 				float diff = arg0.score - arg1.score;
@@ -143,7 +102,7 @@ public class BetaSearcher extends AlphaSearcher {
 		Set<Result> resultSet = new TreeSet<Result>();
 		
 		// 2. Find results within transcripts.
-		for (ScoreDoc synopsis : synopses.scoreDocs) {			
+		for (ScoreDoc synopsis : synopsisScoreDocs) {			
 			Document subsDoc =
 					LuceneUtils.resolveOtherFromProgramme(synopsis.doc,
 														  Type.Subtitles,
@@ -155,6 +114,10 @@ public class BetaSearcher extends AlphaSearcher {
 								  MAX_SUBS_HITS);
 			ResultList subsResults =
 					super._search(createExpandedQuery(q, subsHits));
+			
+			for (Result result : subsResults) {
+				result.confidenceScore *= EXPANSION_RESULTS_SCALE_FACTOR;
+			}
 			
 			/*Document limsiDoc =
 					LuceneUtils.resolveOtherFromProgram(synopsis.doc,
@@ -197,6 +160,8 @@ public class BetaSearcher extends AlphaSearcher {
 		results.addAll(resultSet);
 		
 		Collections.sort(results);
+		
+		System.out.println(results);
 		
 		return results;
 	}
@@ -284,11 +249,11 @@ public class BetaSearcher extends AlphaSearcher {
 		
 		words.sort(confidenceComparator);
 		
-		if (words.getRow(0)[2] == null) {
-			return null;
-		}
+		float maxConf = 1f;
 		
-		float maxConf = (Float) words.getRow(0)[2];
+		if (words.getRow(0)[2] != null) {
+			maxConf = (Float) words.getRow(0)[2];
+		}
 		
 		for (String word : originalQuery.queryText.split(" ")) {
 			words.add(new Object[] { word, ORIGINAL_QUERY_SCALE_FACTOR * maxConf });
@@ -307,7 +272,7 @@ public class BetaSearcher extends AlphaSearcher {
 		
 		//System.out.println(query.toString());
 		
-		return new Query(originalQuery.queryID + "_expanded",
+		return new Query(originalQuery.queryID + "_expended",
 						 query.toString(),
 						 originalQuery.visualCues);
 	}
@@ -316,11 +281,12 @@ public class BetaSearcher extends AlphaSearcher {
 	public void configure(Float[] settings) {
 		super.configure(settings);
 		
-		ORIGINAL_QUERY_SCALE_FACTOR = settings[super.numSettings()];
+		ORIGINAL_QUERY_SCALE_FACTOR    = settings[super.numSettings()];
+		EXPANSION_RESULTS_SCALE_FACTOR = settings[super.numSettings() + 1];
 	}
 	
 	@Override
 	public int numSettings() {
-		return super.numSettings() + 1;
+		return super.numSettings() + 2;
 	}
 }

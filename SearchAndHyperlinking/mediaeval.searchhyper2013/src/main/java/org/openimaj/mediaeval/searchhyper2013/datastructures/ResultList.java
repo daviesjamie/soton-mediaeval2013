@@ -69,6 +69,7 @@ public class ResultList extends ArrayList<Result> {
 	 * @param fileName
 	 * @param transcripts
 	 * @param confidenceScale
+	 * @param power				Power to raise confidence score to.
 	 * @param minLength
 	 * @param maxLength
 	 * @return
@@ -77,7 +78,9 @@ public class ResultList extends ArrayList<Result> {
 														String runName, 
 														String fileName, 
 														List<HighlightedTranscript> transcripts,
-														float confidenceScale,
+														float resultScaleFactor,
+														float power,
+														float synopsisConfidence,
 														float minLength,
 														float maxLength) {
 		List<HighlightedTranscript> splitTrans =
@@ -97,7 +100,9 @@ public class ResultList extends ArrayList<Result> {
 			result.startTime = transcript.startTime();
 			result.endTime = transcript.endTime();
 			result.jumpInPoint = transcript.startTime();
-			result.confidenceScore = confidenceScale * (transcript.confidence() / totalConf);
+			result.confidenceScore = (float)
+					((Math.pow(transcript.confidence() / totalConf, power) * resultScaleFactor) + 
+					(synopsisConfidence * (1 - resultScaleFactor)) / 2);
 			result.fileName = fileName;
 			
 			results.add(result);

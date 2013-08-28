@@ -67,9 +67,9 @@ public class DeltaSearcherTool {
 		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
-		Float[] initial = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 0f };
-		Float[] increment = { 1f, 1f, 1f, 1f, 1f, 0.05f };
-		Float[] termination = { 1f, 0f, 0f, 60 * 1f, 60 * 10f, 1f };
+		Float[] initial     = { 0f, 1.5f, 2f, 1f, 1f, 0f, 0f, 60 * 1f, 60 * 10f,   0f,   0f,   0f };
+		Float[] increment   = { 1f,   1f, 1f, 1f, 1f, 1f, 1f,      1f,       1f, 0.1f, 0.1f, 0.1f };
+		Float[] termination = { 0f, 1.5f, 2f, 1f, 1f, 0f, 0f, 60 * 1f, 60 * 10f,   1f,   3f,   3f };
 		
 		List<Float[]> evaluation = eval.evaluateOverSettings(expectedResults,
 															 WINDOW,

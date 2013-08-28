@@ -104,12 +104,15 @@ public class LSHDataExplorer {
 			results.add(res);
 
 			if (score) {
+				res.second = 0;
+				
 				final List<DefaultWeightedEdge> path =
 						DijkstraShortestPath.findPathBetween(graph, query, r);
 
 				for (final DefaultWeightedEdge pe : path)
-					res.second += graph.getEdgeWeight(pe);
-				res.second /= path.size();
+					res.second = Math.max(res.second, graph.getEdgeWeight(pe));
+					//res.second += graph.getEdgeWeight(pe);
+				//res.second /= path.size();
 			} else {
 				res.second = 1;
 			}

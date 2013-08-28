@@ -100,7 +100,7 @@ public class EpsilonSearcher extends DeltaSearcher {
 				Map<String, ResultList> results = framesToResults(frames,
 																  q.queryID,
 																  CONCEPT_FRAME_WEIGHT);
-				System.out.println(results);
+				//System.out.println(results);
 				Maps.mergeMap(imageResults, results);
 			}
 		}
