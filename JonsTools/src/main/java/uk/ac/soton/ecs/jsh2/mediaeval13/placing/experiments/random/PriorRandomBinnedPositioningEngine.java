@@ -1,4 +1,4 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments;
+package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.random;
 
 import gnu.trove.list.array.TLongArrayList;
 

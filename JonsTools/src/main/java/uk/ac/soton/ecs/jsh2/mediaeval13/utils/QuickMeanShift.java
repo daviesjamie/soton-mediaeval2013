@@ -56,7 +56,6 @@ public class QuickMeanShift {
 	{
 
 		final int n_samples = X.length;
-		final int n_features = X[0].length;
 		final double stop_thresh = 1e-3 * bandwidth;
 		final TObjectIntHashMap<DoubleFV> center_intensity_dict = new TObjectIntHashMap<DoubleFV>();
 

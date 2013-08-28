@@ -23,7 +23,7 @@ import com.bethecoder.ascii_table.ASCIITableHeader;
  * 
  */
 public class GeoAnalysisResult implements AnalysisResult {
-	private static int[] distances = { 1, 10, 100, 1000, 2000, 4000, 6000, 8000 };
+	private static int[] distances = { 1, 10, 100, 1000 };
 
 	private List<DoubleDoublePair> results;
 
@@ -125,5 +125,10 @@ public class GeoAnalysisResult implements AnalysisResult {
 		};
 
 		return ASCIITable.getInstance().getTable(header, table);
+	}
+
+	@Override
+	public String toString() {
+		return getDetailReport();
 	}
 }

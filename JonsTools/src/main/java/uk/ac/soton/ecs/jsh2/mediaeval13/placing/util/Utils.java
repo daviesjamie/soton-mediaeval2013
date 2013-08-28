@@ -10,6 +10,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.MMapDirectory;
 import org.openimaj.image.FImage;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
@@ -95,5 +100,12 @@ public class Utils {
 		for (int y = 0; y < img.height; y++)
 			for (int x = 0; x < img.width; x++)
 				img.pixels[y][x] = (float) Math.log(img.pixels[y][x] / norm);
+	}
+
+	public static IndexSearcher loadLuceneIndex(File file) throws IOException {
+		final Directory directory = new MMapDirectory(file);
+		final IndexReader reader = DirectoryReader.open(directory);
+		final IndexSearcher luceneIndex = new IndexSearcher(reader);
+		return luceneIndex;
 	}
 }

@@ -1,7 +1,6 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments;
+package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.old.meanshift;
 
 import gnu.trove.list.array.TLongArrayList;
-import gnu.trove.map.hash.TIntIntHashMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +18,9 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
-import org.openimaj.util.pair.IndependentPair;
+import org.openimaj.math.statistics.distribution.MultivariateKernelDensityEstimate;
+import org.openimaj.math.statistics.distribution.kernel.StandardUnivariateKernels;
+import org.openimaj.ml.clustering.meanshift.ExactMeanShift;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
@@ -27,20 +28,15 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.LuceneIndexBuilder;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
-import uk.ac.soton.ecs.jsh2.mediaeval13.utils.QuickMeanShift;
-import uk.ac.soton.ecs.jsh2.mediaeval13.utils.QuickMeanShift.FlatWindow;
 
-public class MeanShiftTagEngine implements GeoPositioningEngine {
-	private static final int MIN_BIN_FREQ = 1;
-	private static final int MAX_ITERATIONS = 300;
-
+public class NewMeanShiftTagEngine implements GeoPositioningEngine {
 	protected IndexSearcher searcher;
 	protected TLongArrayList skipIds;
 	protected List<GeoLocation> prior;
 	protected int sampleCount;
 	protected double bandwidth;
 
-	public MeanShiftTagEngine(File file, TLongArrayList skipIds, int sampleCount, File latlngFile, double bandwidth)
+	public NewMeanShiftTagEngine(File file, TLongArrayList skipIds, int sampleCount, File latlngFile, double bandwidth)
 			throws IOException
 	{
 		final Directory directory = new MMapDirectory(file);
@@ -88,9 +84,8 @@ public class MeanShiftTagEngine implements GeoPositioningEngine {
 				Collections.shuffle(locations);
 				locations = locations.subList(0, sampleCount);
 			} else {
-				final int size = locations.size();
 				while (locations.size() < sampleCount) {
-					locations.add(locations.get((int) (Math.random() * size)));
+					locations.add(locations.get((int) (Math.random() * locations.size())));
 				}
 			}
 
@@ -130,55 +125,28 @@ public class MeanShiftTagEngine implements GeoPositioningEngine {
 			pts.addAll(prior);
 		}
 
-		return computeLocationMeanShift(pts);
-	}
-
-	protected GeoLocationEstimate computeLocationMeanShift(final List<GeoLocation> pts) {
 		final double[][] data = toArray(pts);
 
-		final double[][] seeds = QuickMeanShift.bin_points(data, bandwidth / 2, MIN_BIN_FREQ);
-		final IndependentPair<double[][], int[]> result = QuickMeanShift.meanShift(data, bandwidth, seeds,
-				FlatWindow.INSTANCE, MAX_ITERATIONS);
+		final MultivariateKernelDensityEstimate kde = new MultivariateKernelDensityEstimate(data,
+				StandardUnivariateKernels.Gaussian, bandwidth);
+		final ExactMeanShift esm = new ExactMeanShift(kde);
 
-		final TIntIntHashMap counts = new TIntIntHashMap();
-		for (final int i : result.secondObject())
-			counts.adjustOrPutValue(i, 1, 1);
+		int bestModeIdx = 0;
+		double bestLL = kde.estimateLogProbability(esm.getModes()[0]);
+		for (int i = 1; i < esm.getModes().length; i++) {
+			final double[] mode = esm.getModes()[i];
+			final double ll = kde.estimateLogProbability(mode) * esm.counts[i];
+			// final double ll = esm.counts[i];
 
-		int maxIdx = -1;
-		int maxValue = 0;
-		for (final int idx : counts.keys()) {
-			final int count = counts.get(idx);
-			if (count > maxValue) {
-				maxValue = count;
-				maxIdx = idx;
+			if (ll > bestLL) {
+				bestLL = ll;
+				bestModeIdx = i;
 			}
 		}
 
-		double maxX = -1000;
-		double minX = 1000;
-		double maxY = -1000;
-		double minY = 1000;
-		final double[][] biggest = new double[counts.get(maxIdx)][];
-		for (int i = 0, j = 0; i < data.length; i++) {
-			if (result.secondObject()[i] == maxIdx) {
-				biggest[j++] = data[i];
+		final double[] bestMode = esm.getModes()[bestModeIdx];
 
-				if (data[i][0] > maxX)
-					maxX = data[i][0];
-				if (data[i][0] < minX)
-					minX = data[i][0];
-				if (data[i][1] > maxY)
-					maxY = data[i][1];
-				if (data[i][1] < minY)
-					minY = data[i][1];
-			}
-		}
-
-		final double dx = maxX - minX;
-		final double dy = maxY - minY;
-		final double dist = Math.sqrt((dx * dx) + (dy * dy));
-
-		return new GeoLocationEstimate(result.firstObject()[maxIdx][1], result.firstObject()[maxIdx][0], dist);
+		return new GeoLocationEstimate(bestMode[1], bestMode[0], 1);
 	}
 
 	private double[][] toArray(List<GeoLocation> pts) {

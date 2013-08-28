@@ -1,4 +1,4 @@
-package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments;
+package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.random;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
