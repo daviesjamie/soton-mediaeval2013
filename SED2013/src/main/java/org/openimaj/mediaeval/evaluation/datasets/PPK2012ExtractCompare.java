@@ -43,7 +43,8 @@ public class PPK2012ExtractCompare {
 		@Override
 		public double compare(SparseDoubleFV o1, SparseDoubleFV o2) {
 			double cosSim = SparseDoubleFVComparison.COSINE_SIM.compare(o1, o2);
-			return (cosSim + 1) / 2;
+			if(cosSim <= 0) return 0;
+			return cosSim ;
 		}
 
 		@Override

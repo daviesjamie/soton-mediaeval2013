@@ -73,11 +73,7 @@ public class SED2013SolrSimilarityMatrix {
 		q.setSortField("index", ORDER.asc);
 		this.solrStream = new SolrStream(q, index.getSolrIndex());
 		this.collectionN = solrStream.getNumResults();
-//		q = new SolrQuery("index:18829");
-//		this.solrStream = new SolrStream(q, index.getSolrIndex());
-//		this.collectionN = solrStream.getNumResults();
 		this.fe = PPK2012ExtractCompare.similarity(tfidfLocation, featureCacheLocation);
-//		this.fe = PPK2012ExtractCompare.similarity(tfidfLocation);
 	}
 	
 	/**
@@ -96,6 +92,7 @@ public class SED2013SolrSimilarityMatrix {
 					res = index.query(p.second, solrQueryN,!deactivateSort);
 					SolrDocumentList results = res.getResults();
 					final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
+					
 					Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
 					for (Entry<String, SparseMatrix> namerow : rowmat.entrySet()) {
 						String comparator = namerow.getKey();
@@ -167,18 +164,22 @@ public class SED2013SolrSimilarityMatrix {
 
 		for (SolrDocument photoIndex : results) {
 			IndexedPhoto ip = IndexedPhoto.fromDoc(photoIndex);
+			
 			Map<String, Double> compare = comp.compareAggregation(p.second, ip.second);
-//			if(compare > eps){
-//				tree.add(DoubleObjectPair.pair(compare, ip));
-//			}
+//			
 			for (Entry<String, Double> comparatorScore : compare.entrySet()) {
-				TreeSet<DoubleObjectPair<IndexedPhoto>> tree = treemap.get(comparatorScore.getKey());
+				String comparatorKey = comparatorScore.getKey();
+				String comparatorKeyThresh = "thresholded_" + comparatorKey ;
+				TreeSet<DoubleObjectPair<IndexedPhoto>> tree = treemap.get(comparatorKey);
+				TreeSet<DoubleObjectPair<IndexedPhoto>> treeThresh = treemap.get(comparatorKeyThresh);
 				if(tree == null) {
-					treemap.put(comparatorScore.getKey(), tree = new TreeSet<DoubleObjectPair<IndexedPhoto>>(new DoublePhotoPairComparator()));
+					treemap.put(comparatorKey, tree = new TreeSet<DoubleObjectPair<IndexedPhoto>>(new DoublePhotoPairComparator()));
+					treemap.put(comparatorKeyThresh, treeThresh = new TreeSet<DoubleObjectPair<IndexedPhoto>>(new DoublePhotoPairComparator()));
+					
 				}
-
+				tree.add(DoubleObjectPair.pair(comparatorScore.getValue(), ip));
 				if(comparatorScore.getValue() > eps){
-					tree.add(DoubleObjectPair.pair(comparatorScore.getValue(), ip));
+					treeThresh.add(DoubleObjectPair.pair(comparatorScore.getValue(), ip));
 				}
 
 			}
@@ -188,6 +189,7 @@ public class SED2013SolrSimilarityMatrix {
 			TreeSet<DoubleObjectPair<IndexedPhoto>> tree = nametree.getValue();
 			SparseMatrix rowmat = new SparseMatrix(1, this.collectionN);
 			for (DoubleObjectPair<IndexedPhoto> pair : tree) {
+				
 				rowmat.put(0, (int) pair.second.first, pair.first);
 			}
 			rowmats.put(nametree.getKey(), rowmat);
@@ -214,7 +216,6 @@ public class SED2013SolrSimilarityMatrix {
 			public void perform(IndexedPhoto p) {
 				File outPath = new File(rootFile,"part_" + totalWritten[0]);
 				if(!outPath.exists()){
-					
 					QueryResponse res;
 					try {
 						res = index.query(p.second, solrQueryN,!deactivateSort);
@@ -235,14 +236,9 @@ public class SED2013SolrSimilarityMatrix {
 							Vector newrow = comprow.row(0);
 							
 							for (ch.akuhn.matrix.Vector.Entry rowent : newrow.entries()) {
-								double current = toAlter.get((int)p.first, rowent.index);
-								if(current < rowent.value){
-									toAlter.put((int) p.first, rowent.index, rowent.value);
-								}
-								current = toAlter.get(rowent.index, (int) p.first);
-								if(current < rowent.value){
-									toAlter.put(rowent.index,(int) p.first, rowent.value);
-								}
+								if(Double.isNaN(rowent.value)) continue; // we leave out NaN
+								toAlter.put((int) p.first, rowent.index, rowent.value);
+								toAlter.put(rowent.index,(int) p.first, rowent.value);
 							}
 						}
 					} catch (SolrServerException e) {

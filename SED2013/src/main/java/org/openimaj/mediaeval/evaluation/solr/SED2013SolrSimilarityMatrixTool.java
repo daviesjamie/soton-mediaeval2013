@@ -117,7 +117,7 @@ public class SED2013SolrSimilarityMatrixTool {
 		}
 		else{
 			System.setProperty("sed2013.solr.home", tool.input);
-			simmat = new SED2013SolrSimilarityMatrix(tool.tfidf, tool.featurecache, tool.input);
+			simmat = new SED2013SolrSimilarityMatrix(tool.tfidf, tool.featurecache, null);
 		}
 		
 		simmat.eps = tool.solrEps;

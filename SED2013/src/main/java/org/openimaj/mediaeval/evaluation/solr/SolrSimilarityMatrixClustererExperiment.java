@@ -138,6 +138,7 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 			}
 			clusterList.add(new IndexedPhoto(index, p));
 		}
+		reader.close();
 		return ret ;
 	}
 

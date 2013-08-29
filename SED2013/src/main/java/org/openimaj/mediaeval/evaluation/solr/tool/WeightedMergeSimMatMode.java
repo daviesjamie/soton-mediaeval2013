@@ -5,12 +5,16 @@ import gnu.trove.stack.array.TIntArrayStack;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -48,23 +52,68 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 	 * The eps to start to search
 	 */
 	@Option(
+		name="--weighted-merge-permutations", 
+		aliases="-wmperm", 
+		required=false, 
+		usage="The permutations of weights, overrides the grid search",
+		multiValued=true
+	)
+	public List<String> permStrings = null;
+	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
 		name="--weighted-merge-combination-mode", 
 		aliases="-wmcm", 
 		required=false, 
 		usage="How to combine matricies"
 	)
 	public WeightedMergeCombinationMode wmcm = WeightedMergeCombinationMode.SUM;
-	private Map<String, SparseMatrix> allmats;
+	private Map<String, SimilarityMatrixWrapper> allmats;
 	
 	
 	@Override
 	public void setup() {
 		try {
-			this.allmats = SED2013SolrSimilarityMatrix.readSparseMatricies(simmatRoot);
+			if(simmatRoot!=null)
+			{
+				Map<String, SparseMatrix> allmatsFull = SED2013SolrSimilarityMatrix.readSparseMatricies(simmatRoot);
+				this.allmats = new HashMap<String, SimilarityMatrixWrapper>();
+				for (Entry<String, SparseMatrix> ent : allmatsFull.entrySet()) {
+					this.allmats.put(ent.getKey(), new SimilarityMatrixWrapper(ent.getValue(), start, end));
+				}
+			}
 		} catch (IOException e) {
 			throw new RuntimeIOException(e);
 		}
-		this.perms = perm(2 + extraMergeParts,this.simmat.size()).iterator();
+		if(this.permStrings != null){
+			List<int[]> permIntList = new ArrayList<int[]>();
+			for (String permString : this.permStrings) {
+				// This code turns something like: 0.5,0.5,0.5
+				// into: 1,1,1
+				// and 0.5,7,0 into: 0,2,0
+				// a list of ints will be mostly untransformed
+				String[] permSplits = permString.split(",");
+				double[] permdoubles = new double[permSplits.length];
+				double sum = 0;
+				for (int i = 0; i < permSplits.length; i++) {
+					permdoubles[i] = Double.parseDouble(permSplits[i]);
+					sum += permdoubles[i];
+				}
+				if(sum == 0) continue;
+				int[] permints = new int[permdoubles.length];
+				for (int i = 0; i < permints.length; i++) {
+					permints[i] = (int) ((permdoubles[i]/sum) * permdoubles.length);
+				}
+				permIntList.add(permints);
+			}
+			this.perms = permIntList.iterator();
+		}
+		else{			
+			this.perms = perm(2 + extraMergeParts,this.simmat.size()).iterator();
+		}
+		
 	}
 	class HashableIntArr{
 		private int[] arr;
@@ -154,12 +203,13 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 				WeightedMergeSimMatMode.super.setup(); // prepare the simmat iterator
 				float curpermSum = ArrayUtils.sumValues(curperm);
 				
-				SparseMatrix mat = null;
+				
 				int i = 0;
+				SparseMatrix[] tocombine = new SparseMatrix[curperm.length];
 				try{					
 					while(simMatIter.hasNext()){
 						String next = simMatIter.next();
-						SparseMatrix newmat = null;
+						SimilarityMatrixWrapper newmat = null;
 						float prop = curperm[i]/curpermSum;
 						if(simmatRoot != null){
 							if(prop!=0)
@@ -168,23 +218,35 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 						else {
 							File nextf = new File(next);
 							if(prop!=0)
-								newmat = IOUtils.readFromFile(nextf);
+								newmat = new SimilarityMatrixWrapper((SparseMatrix)IOUtils.readFromFile(nextf), start, end);
 						}
-						if(newmat!=null)
-						{
-							MatlibMatrixUtils.scaleInplace(newmat, prop);
-							if(mat == null){
-								mat = MatlibMatrixUtils.subMatrix(newmat, 0,newmat.rowCount(), 0,newmat.columnCount());
-							}
-							else{
-								mat = wmcm.combine(mat, newmat);
-							}
-						}
+						tocombine[i] = newmat.matrix();
 						i++;
 					}
-					return new SimilarityMatrixWrapper(mat, start, end);
+					SparseMatrix mat = wmcm.combine(tocombine, curperm);
+					SimilarityMatrixWrapper matwrapper = new SimilarityMatrixWrapper(mat, start, end);
+					compareToAggr(matwrapper);
+					return matwrapper;
 				} catch(Exception e){
 					throw new RuntimeException(e);
+				}
+			}
+
+			private void compareToAggr(SimilarityMatrixWrapper matwrapper) {
+				SparseMatrix aggr = allmats.get("aggregationMean.mat").matrix();
+				SimilarityMatrixWrapper aggrwrapper = new SimilarityMatrixWrapper(aggr, start, end);
+				aggr = aggrwrapper.matrix();
+				for (int r = 0; r < aggr.rowCount(); r++) {
+					for (int c = 0; c < aggr.columnCount(); c++) {
+						double vrc = aggr.get(r, c);
+						if(vrc > 0){
+							double matvrc = matwrapper.matrix().get(r, c);
+							double d = Math.abs(vrc - matvrc);
+							if(d > 0.1){
+								System.out.println("Big difference: " + d);
+							};
+						}
+					}
 				}
 			}
 		};

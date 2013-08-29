@@ -3,6 +3,8 @@ package org.openimaj.mediaeval.evaluation.solr.tool;
 import org.openimaj.math.matrix.MatlibMatrixUtils;
 
 import ch.akuhn.matrix.SparseMatrix;
+import ch.akuhn.matrix.Vector;
+import ch.akuhn.matrix.Vector.Entry;
 
 /**
  * Given two sparse matricies, combine them.
@@ -14,28 +16,63 @@ import ch.akuhn.matrix.SparseMatrix;
 public enum WeightedMergeCombinationMode {
 	SUM {
 		@Override
-		public SparseMatrix combine(SparseMatrix a, SparseMatrix b) {
-			return MatlibMatrixUtils.plusInplace(a, b);
+		public SparseMatrix combine(SparseMatrix[] tocombine, int[] curperm) {
+//			return MatlibMatrixUtils.plusInplace(a, b);
+			int nrows = tocombine[0].rowCount();
+			int ncols = tocombine[0].columnCount();
+			SparseMatrix denominator = new SparseMatrix(nrows, ncols);
+			SparseMatrix numerator = new SparseMatrix(nrows, ncols);
+			for (int r = 0; r < nrows; r++) {
+				Vector denomRow = denominator.row(r);
+				Vector numRow = numerator.row(r);
+				for (int i = 0; i < tocombine.length; i++) {
+					Vector row = tocombine[i].row(r);
+					for (Entry ent : row.entries()) {
+						if(r == 0 && ent.index == 1){
+							System.out.println("To combine: " + i);
+							System.out.println("It goes wrong here!");
+						}
+						denomRow.add(ent.index, curperm[i]);
+						numRow.add(ent.index, ent.value * curperm[i]);
+					}
+				}
+			}
+			SparseMatrix out = new SparseMatrix(nrows, ncols);
+			for (int r = 0; r < nrows; r++) {
+				Vector denomRow = denominator.row(r);
+				Vector numRow = numerator.row(r);
+				Vector outRow = out.row(r);
+				for (Entry ent : denomRow.entries()) {
+					if(r == 0 && ent.index == 1){
+						System.out.println("It goes wrong here!");
+					}
+					outRow.put(ent.index,numRow.get(ent.index) / ent.value);
+				}
+			}
+			return out;
 		}
 	}, 
 	MAX {
 		@Override
-		public SparseMatrix combine(SparseMatrix a, SparseMatrix b) {
-			return MatlibMatrixUtils.maxInplace(a, b);
+		public SparseMatrix combine(SparseMatrix[] tocombine, int[] curperm) {
+//			return MatlibMatrixUtils.maxInplace(a, b);
+			return null;
 		}
 	}, 
 	MIN {
 		@Override
-		public SparseMatrix combine(SparseMatrix a, SparseMatrix b) {
-			return MatlibMatrixUtils.minInplace(a, b);
+		public SparseMatrix combine(SparseMatrix[] tocombine, int[] curperm) {
+//			return MatlibMatrixUtils.minInplace(a, b);
+			return null;
 		}
 	}, 
 	PRODUCT {
 		@Override
-		public SparseMatrix combine(SparseMatrix a, SparseMatrix b) {
-			return MatlibMatrixUtils.timesInplace(a, b);
+		public SparseMatrix combine(SparseMatrix[] tocombine, int[] curperm) {
+//			return MatlibMatrixUtils.timesInplace(a, b);
+			return null;
 		}
 	};
 	
-	public abstract SparseMatrix combine(SparseMatrix a, SparseMatrix b);
+	public abstract SparseMatrix combine(SparseMatrix[] tocombine, int[] curperm);
 }

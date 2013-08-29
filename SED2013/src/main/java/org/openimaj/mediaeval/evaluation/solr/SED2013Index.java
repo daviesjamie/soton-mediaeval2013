@@ -13,6 +13,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -33,6 +35,7 @@ import org.openimaj.data.identity.Identifiable;
 import org.openimaj.feature.FeatureVector;
 import org.openimaj.mediaeval.data.util.PhotoUtils;
 import org.openimaj.mediaeval.evaluation.datasets.PPK2012ExtractCompare;
+import org.openimaj.mediaeval.evaluation.solr.SED2013Index.IndexedPhoto;
 import org.openimaj.mediaeval.feature.extractor.CombinedFVComparator;
 import org.openimaj.mediaeval.feature.extractor.CombinedFVComparator.Mean;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity.ExtractorComparator;
@@ -294,6 +297,12 @@ public class SED2013Index {
 		@Override
 		public String getID() {
 			return this.second.getId();
+		}
+
+		public static IndexedPhoto fromDoc(Document in) {
+			long photoIndex = Long.parseLong(in.get("index"));
+			Photo p = PhotoUtils.createPhoto(in);
+			return new IndexedPhoto(photoIndex, p);
 		}
 	}
 
