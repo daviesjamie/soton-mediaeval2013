@@ -44,16 +44,15 @@ public class TimeSimilarity implements DoubleFVComparator{
 		double d = Math.abs(h1n - h2n);
 		// This means its similarity is less than 1 minute, so the same 
 		if(d<=1)return 1.0;
-		double add = Math.log(d) / normaliser;
-		if(add < 0){
-			System.out.println("WHAT THE FUCK");
-		}
+		double logd = Math.log(d);
+		double add = logd / normaliser;
+		if(add > 1) return 0;
 		return 1.0 - add;
 	}
 	
 	public static void main(String[] args) {
 		DoubleFV t1 = new DoubleFV(new double[]{0});
-		DoubleFV t2 = new DoubleFV(new double[]{1000 * 60 * 60 * 24});
+		DoubleFV t2 = new DoubleFV(new double[]{1000l * 60l * 60l * 24l * 366l});
 		
 		System.out.println(new TimeSimilarity().compare(t1, t2));
 	}
