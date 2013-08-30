@@ -210,22 +210,19 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 					while(simMatIter.hasNext()){
 						String next = simMatIter.next();
 						SimilarityMatrixWrapper newmat = null;
-						float prop = curperm[i]/curpermSum;
 						if(simmatRoot != null){
-							if(prop!=0)
-								newmat = allmats.get(next);
+							newmat = allmats.get(next);
 						}
 						else {
 							File nextf = new File(next);
-							if(prop!=0)
-								newmat = new SimilarityMatrixWrapper((SparseMatrix)IOUtils.readFromFile(nextf), start, end);
+							newmat = new SimilarityMatrixWrapper((SparseMatrix)IOUtils.readFromFile(nextf), start, end);
 						}
 						tocombine[i] = newmat.matrix();
 						i++;
 					}
 					SparseMatrix mat = wmcm.combine(tocombine, curperm);
 					SimilarityMatrixWrapper matwrapper = new SimilarityMatrixWrapper(mat, start, end);
-					compareToAggr(matwrapper);
+//					compareToAggr(matwrapper);
 					return matwrapper;
 				} catch(Exception e){
 					throw new RuntimeException(e);

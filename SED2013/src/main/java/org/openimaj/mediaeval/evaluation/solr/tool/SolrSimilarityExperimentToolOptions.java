@@ -143,7 +143,10 @@ public class SolrSimilarityExperimentToolOptions {
 	}
 
 	private void removeSetupLogger(File setupDir) {
+		Appender app = Logger.getRootLogger().getAppender("setupAppender");
+		app.close();
 		Logger.getRootLogger().removeAppender("setupAppender");
+		
 	}
 
 	private void addSetupLogger(File setupDir) {

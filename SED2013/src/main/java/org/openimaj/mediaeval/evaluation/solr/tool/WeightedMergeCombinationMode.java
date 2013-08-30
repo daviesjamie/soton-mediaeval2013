@@ -26,12 +26,9 @@ public enum WeightedMergeCombinationMode {
 				Vector denomRow = denominator.row(r);
 				Vector numRow = numerator.row(r);
 				for (int i = 0; i < tocombine.length; i++) {
+					if(curperm[i] == 0) continue;
 					Vector row = tocombine[i].row(r);
 					for (Entry ent : row.entries()) {
-						if(r == 0 && ent.index == 1){
-							System.out.println("To combine: " + i);
-							System.out.println("It goes wrong here!");
-						}
 						denomRow.add(ent.index, curperm[i]);
 						numRow.add(ent.index, ent.value * curperm[i]);
 					}
@@ -43,9 +40,6 @@ public enum WeightedMergeCombinationMode {
 				Vector numRow = numerator.row(r);
 				Vector outRow = out.row(r);
 				for (Entry ent : denomRow.entries()) {
-					if(r == 0 && ent.index == 1){
-						System.out.println("It goes wrong here!");
-					}
 					outRow.put(ent.index,numRow.get(ent.index) / ent.value);
 				}
 			}

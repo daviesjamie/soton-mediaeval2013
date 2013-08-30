@@ -67,7 +67,8 @@ public class SimilarityMatrixWrapper {
 		for (Vector v : this.similarityMatrix.rows()) {
 			v.put(i, 1);
 			for (Entry ent : v.entries()) {
-				if(Double.isNaN(ent.value)) throw new RuntimeException("NaN in matrix!");
+				if(Double.isNaN(ent.value)) 
+					throw new RuntimeException("NaN in matrix!");
 			}
 			i++;
 		}
