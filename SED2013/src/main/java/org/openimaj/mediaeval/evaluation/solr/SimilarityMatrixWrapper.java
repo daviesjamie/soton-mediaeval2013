@@ -76,12 +76,17 @@ public class SimilarityMatrixWrapper {
 
 	@Override
 	public String toString() {
-		meanmax();
+		meanmaxmin();
 		return String.format("Similarity Matrix. rxc = %d.\n min: %2.5f, max: %2.5f, mean: %2.5f",this.similarityMatrix.rowCount(),minmaxmean[0],minmaxmean[1],minmaxmean[2]);
 	}
 
-	private void meanmax() {
+	private void meanmaxmin() {
 		if(this.minmaxmean!=null) return;
+		this.minmaxmean = SimilarityMatrixWrapper.meanmaxmin(this.similarityMatrix);
+	}
+
+	public static double[] meanmaxmin(SparseMatrix similarityMatrix) {
+		
 		double max = -Double.MAX_VALUE;
 		double min = Double.MAX_VALUE;
 		double mean = 0;
@@ -96,7 +101,7 @@ public class SimilarityMatrixWrapper {
 		}
 		mean/=count;
 		
-		this.minmaxmean = new double[]{min,max,mean};
+		return new double[]{min,max,mean};
 	}
 
 	/**

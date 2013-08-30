@@ -50,6 +50,14 @@ public class SED2013SolrSimilarityMatrixTool {
 	private String featurecache;
 	
 	@Option(
+			name = "--searchcache-location",
+			aliases = "-sc",
+			required = false,
+			usage = "The location of the feature cache."
+		)
+	private String searchcache = null;
+	
+	@Option(
 		name = "--simmat-output",
 		aliases = "-o",
 		required = true,
@@ -123,6 +131,7 @@ public class SED2013SolrSimilarityMatrixTool {
 		simmat.eps = tool.solrEps;
 		simmat.solrQueryN = tool.solrN;
 		simmat.deactivateSort = tool.deactivateSort;
+		simmat.searchcache = tool.searchcache;
 		
 		if(tool.incBuild < 0){			
 			Map<String, SparseMatrix> allmats = simmat.createSimilarityMatricies();

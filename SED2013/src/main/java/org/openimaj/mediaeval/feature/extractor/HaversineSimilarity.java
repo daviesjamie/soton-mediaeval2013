@@ -31,6 +31,16 @@ public class HaversineSimilarity implements DoubleFVComparator{
 	@Override
 	public double compare(double[] h1, double[] h2) {
 		if(Double.isNaN(h1[0] + h2[0] + h1[1] + h2[1])) return Double.NaN;
+		double haversine = haversine(h1, h2);
+		return 1 - haversine/Math.PI;
+	}
+
+	/**
+	 * @param h1
+	 * @param h2
+	 * @return the normalised haversine distance
+	 */
+	public double haversine(double[] h1, double[] h2) {
 		double lat2 = Math.toRadians(h2[0]);
 		double lat1 = Math.toRadians(h1[0]);
 		double lon2 = Math.toRadians(h2[1]);
@@ -44,7 +54,7 @@ public class HaversineSimilarity implements DoubleFVComparator{
 		double phi = (sinLat * sinLat) + cosLat1 * cosLat2 * (sinLon * sinLon);
 		double atanPhi = Math.atan2(Math.sqrt(phi), Math.sqrt(1-phi));
 		double haversine = 2 * atanPhi;
-		return 1 - haversine;
+		return haversine;
 	}
 
 }
