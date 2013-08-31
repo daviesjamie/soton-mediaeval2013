@@ -117,4 +117,20 @@ public abstract class LuceneUtils {
 		
 		return searcher.doc(docs.scoreDocs[0].doc);
 	}
+
+	public static ScoreDoc[] normaliseTopDocs(TopDocs search) {
+		ScoreDoc[] scoreDocs = search.scoreDocs;
+		
+		double maxScore = 0;
+		
+		for (ScoreDoc scoreDoc : scoreDocs) {
+			maxScore = Math.max(maxScore, scoreDoc.score);
+		}
+		
+		for (ScoreDoc scoreDoc : scoreDocs) {
+			scoreDoc.score /= maxScore;
+		}
+		
+		return scoreDocs;
+	}
 }

@@ -6,9 +6,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -35,6 +38,7 @@ import org.openimaj.mediaeval.searchhyper2013.datastructures.HighlightedTranscri
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Result;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
 import org.openimaj.mediaeval.searchhyper2013.lucene.PositionWordFormatter;
@@ -53,14 +57,14 @@ import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 public class AlphaSearcher implements Searcher {
 	static final Version LUCENE_VERSION = Version.LUCENE_43;
 	
-	static final int NUM_SYNOPSIS_RESULTS = 3;
+	static final int NUM_SYNOPSIS_RESULTS = 5;
 	static final int NUM_TITLE_RESULTS = 100;
 	static final int MAX_SUBS_HITS = 1000;
 	static final int MAX_LIMSI_HITS = 1000;
 	static final int MAX_LIUM_HITS = 1000;
-	float SYNOPSIS_POWER = 0f;
-	float TITLE_SCALE_FACTOR = 1.5f;
-	float SUBS_SCALE_FACTOR = 1f;
+	float TITLE_BOOST = 10f;
+	float SYNOPSIS_POWER = 2f;
+	float SUBS_SCALE_FACTOR = 0.5f;
 	float SUBS_POWER = 2f;
 	float LIMSI_SCALE_FACTOR = 0f;
 	float LIUM_SCALE_FACTOR = 0f;
@@ -94,8 +98,17 @@ public class AlphaSearcher implements Searcher {
 		
 		StandardQueryParser queryParser =
 				new StandardQueryParser(englishAnalyzer);
+		
+		String queryString = 
+				"(" + Field.Title.toString() + ":(" + q.queryText + ")^" + TITLE_BOOST + " OR " + 
+				Field.Text.toString() + ":(" + q.queryText + "))";
+		
+		System.out.println("Query string: " + queryString + "\n");
+		
 		org.apache.lucene.search.Query query = 
-				queryParser.parse(q.queryText, Field.Text.toString());
+				queryParser.parse(
+						queryString,
+						Field.Text.toString());
 		
 		// 1. Get synopsis results.
 		Filter synopsisFilter = new QueryWrapperFilter(
@@ -106,7 +119,12 @@ public class AlphaSearcher implements Searcher {
 												synopsisFilter,
 												NUM_SYNOPSIS_RESULTS);
 
-		ScoreDoc[] synopsisScoreDocs = synopses.scoreDocs;
+		List<ScoreDoc> synopsisScoreDocs =
+				new ArrayList<ScoreDoc>(synopses.scoreDocs.length);
+		
+		for (ScoreDoc scoreDoc : synopses.scoreDocs) {
+			synopsisScoreDocs.add(scoreDoc);
+		}
 		
 		// Normalise synopsis scores.
 		float maxScore = 0;
@@ -118,52 +136,8 @@ public class AlphaSearcher implements Searcher {
 		for (ScoreDoc doc : synopsisScoreDocs) {
 			doc.score = (float) Math.pow(doc.score / maxScore, SYNOPSIS_POWER);
 		}
-		
-		List<ScoreDoc> scoreDocs = new ArrayList<ScoreDoc>();
-		
-		
-		/*queryParser.setAnalyzer(new KeywordAnalyzer());
-		
-		// Expand by title.
-		for (ScoreDoc doc : synopsisScoreDocs) {
-			scoreDocs.add(doc);
-			
-			Document synopsisDoc = indexReader.document(doc.doc);
-			
-			String seriesTitle = synopsisDoc.get(Field.Title.toString()).trim();
-			
-			org.apache.lucene.search.Query seriesQuery = 
-					queryParser.parse("\"" + seriesTitle + "\"",
-									  Field.Title.toString());
 
-			BooleanFilter differentSynopsesFilter = new BooleanFilter();
-			differentSynopsesFilter.add(synopsisFilter, BooleanClause.Occur.MUST);
-			differentSynopsesFilter.add(new QueryWrapperFilter(
-											new TermQuery(
-												new Term(Field.Program.toString(),
-														 synopsisDoc.get(Field.Program.toString())))),
-										BooleanClause.Occur.MUST_NOT);
-			
-			TopDocs seriesSynopses = indexSearcher.search(seriesQuery,
-														  synopsisFilter,
-														  NUM_TITLE_RESULTS);
-			ScoreDoc[] titleScoreDocs = seriesSynopses.scoreDocs;
-			
-			// Normalise, weight, add to list.
-			float maxTitleScore = 0;
-			
-			for (ScoreDoc titleDoc : titleScoreDocs) {
-				maxTitleScore = Math.max(maxTitleScore, titleDoc.score);
-			}
-			
-			for (ScoreDoc titleDoc : titleScoreDocs) {
-				titleDoc.score *= TITLE_SCALE_FACTOR / maxTitleScore;
-				
-				scoreDocs.add(titleDoc);
-			}
-		}*/
-		
-		Arrays.sort(synopsisScoreDocs, new Comparator<ScoreDoc>() {
+		Collections.sort(synopsisScoreDocs, new Comparator<ScoreDoc>() {
 			@Override
 			public int compare(ScoreDoc arg0, ScoreDoc arg1) {
 				float diff = arg0.score - arg1.score;
@@ -178,7 +152,89 @@ public class AlphaSearcher implements Searcher {
 			}
 		});
 		
-		Set<Result> resultSet = new TreeSet<Result>();
+		// Filter results on wrong channels.
+		Pattern bbcPattern =
+				Pattern.compile("bbc\\s*(one|1|two|2|three|3|four|4)?",
+								Pattern.CASE_INSENSITIVE);
+		Matcher bbcMatcher = bbcPattern.matcher(q.queryText);
+		
+		String channelString = null;
+		
+		while (bbcMatcher.find()) {
+			String channel = bbcMatcher.group(1);
+			
+			if (channel != null) {
+				if (channel.equals("1")) {
+					channel = "one";
+				} else if (channel.equals("2")) {
+					channel = "two";
+				} else if (channel.equals("3")) {
+					channel = "three";
+				} else if (channel.equals("4")){
+					channel = "four";
+				}
+				
+				channelString = "bbc" + channel;
+			}
+		}
+		
+		if (channelString != null) {
+			Iterator<ScoreDoc> iter = synopsisScoreDocs.iterator();
+			
+			while (iter.hasNext()) {
+				ScoreDoc doc = iter.next();
+				
+				if (!indexReader.document(doc.doc)
+								.get(Field.Program.toString())
+								.contains(channelString)) {
+					iter.remove();
+				}
+			}
+		}
+		
+		/*for (ScoreDoc scoreDoc : synopsisScoreDocs) {
+			Document doc = indexReader.document(scoreDoc.doc);
+			
+			System.out.println("Synopsis hit: " + doc.get(Field.Program.toString()) + " | " + scoreDoc.score);
+			
+			// HIGHLIGHT
+			Highlighter highlighter =
+					new Highlighter(
+						new PositionWordFormatter(),
+						new DefaultEncoder(),
+						new QueryTermScorer(query));
+			
+			
+			TokenStream tokenStream =
+					new EnglishAnalyzer(LUCENE_VERSION)
+								.tokenStream(Field.Text.toString(),
+											 new StringReader(
+												doc.get(Field.Text.toString())));
+			
+			TextFragment[] frag = 
+					highlighter.getBestTextFragments(tokenStream,
+										 doc.get(Field.Text.toString()),
+										 false,
+										 100);
+
+		    //Get text
+		    StringBuilder sb = new StringBuilder();
+		    for (int i = 0; i < frag.length; i++)
+		    {
+		      if ((frag[i] != null) && (frag[i].getScore() > 0))
+		      {
+		        sb.append(frag[i].toString() + "||");
+		      }
+		    }
+		    
+		    tokenStream.close();
+		    
+		    System.out.println(sb.toString() + "\n");
+		}*/
+		
+		System.out.println();
+		
+		ResultSet resultSet = new ResultSet();
 		
 		// 2. Find results within transcripts.
 		for (ScoreDoc synopsis : synopsisScoreDocs) {
@@ -202,6 +258,8 @@ public class AlphaSearcher implements Searcher {
 														  synopsis.score,
 														  MIN_LENGTH,
 														  MAX_LENGTH);
+			
+			System.out.println(subsResults + "\n");
 			
 			//System.out.println(subsResults);
 			/*Document limsiDoc =
@@ -258,9 +316,9 @@ public class AlphaSearcher implements Searcher {
 											  org.apache.lucene.search.Query query,
 											  int maxHits) 
 									throws IOException, InvalidTokenOffsetsException {
-		//System.out.println("Getting highlights for: " + 
-		//				   doc.get(Field.Program.toString()) + 
-		//				   " (" + doc.get(Field.Type.toString()) + ")");
+		System.out.println("Getting highlights for: " + 
+						   doc.get(Field.Program.toString()) + 
+						   " (" + doc.get(Field.Type.toString()) + ")");
 		
 		Highlighter highlighter =
 				new Highlighter(
@@ -292,6 +350,10 @@ public class AlphaSearcher implements Searcher {
 	    }
 	    
 	    tokenStream.close();
+	    
+	    for (String fragt : fragTexts) {
+	   // 	System.out.println(fragt + "||");
+	    }
 
 		List<HighlightedTranscript> hits = 
 				PositionWordFormatter.toHighlightedTranscripts(doc.get(Field.Text.toString()),
@@ -303,10 +365,10 @@ public class AlphaSearcher implements Searcher {
 
 	@Override
 	public void configure(Float[] settings) {
-		SYNOPSIS_POWER = settings[0];
-		TITLE_SCALE_FACTOR = settings[1];
-		SUBS_POWER = settings[2];
-		SUBS_SCALE_FACTOR = settings[3];
+		TITLE_BOOST = settings[0];
+		SYNOPSIS_POWER = settings[1];
+		SUBS_SCALE_FACTOR = settings[2];
+		SUBS_POWER = settings[3];
 		LIMSI_SCALE_FACTOR = settings[4];
 		LIUM_SCALE_FACTOR = settings[5];
 		MIN_LENGTH = settings[6];

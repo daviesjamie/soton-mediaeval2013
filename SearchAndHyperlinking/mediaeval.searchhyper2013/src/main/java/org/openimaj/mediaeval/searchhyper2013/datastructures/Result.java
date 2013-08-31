@@ -15,13 +15,23 @@ public class Result implements Comparable<Result> {
 	public float jumpInPoint;
 	public float confidenceScore;
 	
+	public Result() { }
+	
+	public Result(Result other) {
+		fileName = other.fileName;
+		startTime = other.startTime;
+		endTime = other.endTime;
+		jumpInPoint = other.jumpInPoint;
+		confidenceScore = other.confidenceScore;
+	}
+	
 	public float length() {
 		return endTime - startTime;
 	}
 
 	@Override
 	public int compareTo(Result o) {
-		float confDiff = o.confidenceScore - confidenceScore;
+		double confDiff = o.confidenceScore - confidenceScore;
 		
 		if (confDiff < 0) {
 			return -1;
@@ -32,16 +42,16 @@ public class Result implements Comparable<Result> {
 		}
 	}
 
-	/**
-	 * Overridden to eliminate confidence score being a deciding factor for 
-	 * equality.
-	 * 
+	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(confidenceScore);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + Float.floatToIntBits(endTime);
 		result = prime * result
 				+ ((fileName == null) ? 0 : fileName.hashCode());
@@ -50,10 +60,7 @@ public class Result implements Comparable<Result> {
 		return result;
 	}
 
-	/**
-	 * Overridden to eliminate confidence score being a deciding factor for 
-	 * equality.
-	 * 
+	/* (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -65,6 +72,9 @@ public class Result implements Comparable<Result> {
 		if (getClass() != obj.getClass())
 			return false;
 		Result other = (Result) obj;
+		if (Double.doubleToLongBits(confidenceScore) != Double
+				.doubleToLongBits(other.confidenceScore))
+			return false;
 		if (Float.floatToIntBits(endTime) != Float
 				.floatToIntBits(other.endTime))
 			return false;
@@ -81,12 +91,13 @@ public class Result implements Comparable<Result> {
 			return false;
 		return true;
 	}
-	
+
+	@Override
 	public String toString() {
-		return fileName + " " + 
-			   Time.StoMS(startTime) + " " + 
-			   Time.StoMS(endTime) + " " + 
-			   Time.StoMS(jumpInPoint) + " " + 
+		return fileName + " " +
+			   Time.StoMS(startTime) + " " +
+			   Time.StoMS(endTime) + " " +
+			   Time.StoMS(jumpInPoint) + " " +
 			   confidenceScore;
 	}
 }

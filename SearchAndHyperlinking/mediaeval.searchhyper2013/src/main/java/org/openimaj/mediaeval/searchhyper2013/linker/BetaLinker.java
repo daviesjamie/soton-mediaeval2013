@@ -10,21 +10,47 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.util.Version;
 import org.openimaj.io.IOUtils;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Anchor;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ContextedAnchor;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Frame;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Result;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
+import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
+import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
+import org.openimaj.mediaeval.searchhyper2013.searcher.Searcher;
+import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
 import org.openimaj.mediaeval.searchhyper2013.util.LSHDataExplorer;
 import org.openimaj.util.pair.ObjectDoublePair;
 
 public class BetaLinker extends AlphaLinker {
+	
+	public static final Version LUCENE_VERSION = Version.LUCENE_43;
+	
+	Searcher searcher;
+	IndexReader indexReader;
 
 	public BetaLinker(String runName,
 					   File shotsDirectoryCacheFile,
-					   LSHDataExplorer lshExplorer) throws IOException {
+					   LSHDataExplorer lshExplorer,
+					   Searcher searcher,
+					   IndexReader indexReader) throws IOException {
 		super(runName, shotsDirectoryCacheFile, lshExplorer);
+		
+		this.searcher = searcher;
+		this.indexReader = indexReader;
 	}
 	
 	@Override
@@ -36,9 +62,10 @@ public class BetaLinker extends AlphaLinker {
 		}
 	}
 	
-	private ResultList _link(Anchor q) throws IOException {
+	private ResultList _link(Anchor q) throws IOException, SearcherException {
 		ResultList results = new ResultList(q.anchorID, runName);
 		
+		// Convert Anchor to Result.
 		Result anchorResult = new Result();
 		
 		anchorResult.confidenceScore = 1f;
@@ -102,6 +129,54 @@ public class BetaLinker extends AlphaLinker {
 		}
 		
 		Set<Result> resultSet = new TreeSet<Result>();
+		
+		// Get subs where anchor is.
+		IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+		
+		BooleanQuery boolQuery = new BooleanQuery();
+		
+		boolQuery.add(new BooleanClause(
+					new TermQuery(
+						new Term(anchorResult.fileName,
+								 Field.Program.toString())),
+					BooleanClause.Occur.MUST));
+		
+		boolQuery.add(new BooleanClause(
+					new TermQuery(
+						new Term(Type.Subtitles.toString(),
+								 Field.Type.toString())),
+					BooleanClause.Occur.MUST));
+		
+		TopDocs subsHits = indexSearcher.search(boolQuery, 1);
+		
+		Document subtitles = indexReader.document(subsHits.scoreDocs[0].doc);
+		
+		String[] words = subtitles.get(Field.Text.toString()).split(" ");
+		String[] times = subtitles.get(Field.Times.toString()).split(" ");
+
+		int startIndex = 0;
+		int endIndex = 0;
+		
+		while (Float.parseFloat(times[startIndex]) < anchorResult.startTime) {
+			startIndex++;
+		}
+		startIndex--;
+		
+		while (Float.parseFloat(times[endIndex]) < anchorResult.endTime) {
+			endIndex++;
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		
+		for (int i = startIndex; i < endIndex; i++) {
+			sb.append(words[i] + " ");
+		}
+		
+		Query query = new Query(q.anchorID, sb.toString(), null);
+		
+		ResultList textResults = searcher.search(query);
+		
+		resultSet.addAll(textResults);
 		
 		// Merge within programmes and add to set.
 		for (String programme : resultsByProgramme.keySet()) {

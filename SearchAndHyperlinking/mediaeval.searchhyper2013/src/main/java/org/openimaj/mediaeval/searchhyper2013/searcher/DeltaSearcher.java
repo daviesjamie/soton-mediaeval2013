@@ -18,6 +18,7 @@ import org.openimaj.mediaeval.searchhyper2013.datastructures.Frame;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Result;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultSet;
 import org.openimaj.mediaeval.searchhyper2013.util.LSHDataExplorer;
 import org.openimaj.util.pair.ObjectDoublePair;
 
@@ -34,7 +35,7 @@ public class DeltaSearcher extends AlphaSearcher {
 	public final int MAX_EXPANSIONS = 100;
 	public final int MAX_FRAME_HITS = 100;
 	public float IMAGE_SYNOPSIS_BALANCE = 0.5f;
-	public float IMAGE_WEIGHT = 0.25f;
+	public float IMAGE_WEIGHT = 0.3f;
 	public float IMAGE_POWER = 2f;
 	
 	Map<String, Map<Integer, String>> shotsDirectoryCache;
@@ -59,23 +60,27 @@ public class DeltaSearcher extends AlphaSearcher {
 	ResultList _search(Query q) throws Exception {
 		ResultList results = getBaseResults(q);
 		
-		//System.out.println("\nBase results: \n" + results + "\n");
+		System.out.println("Base results: \n" + results + "\n");
 		
-		Map<String, ResultList> imageResults = getImageResults(results, q);
+		Map<String, ResultSet> imageResults = getImageResults(results, q);
 		
 		ResultList allResults = chunkResults(imageResults, results);
 		
 		return allResults;
 	}
 	
-	ResultList chunkResults(Map<String, ResultList> programmeResults, ResultList baseResults) {
-		Set<Result> chunked = new TreeSet<Result>();
+	ResultList chunkResults(Map<String, ResultSet> programmeResults, ResultList baseResults) {
+		ResultSet chunked = new ResultSet();
 		
 		// Merge within programmes and add to chunked set.
 		for (String programme : programmeResults.keySet()) {
-			chunked.addAll(programmeResults.get(programme)
-							 		   	   .mergeShortResults(MIN_LENGTH,
-							 		   			   			  MAX_LENGTH));
+			ResultSet set = programmeResults.get(programme);
+			
+			ResultList list = new ResultList(baseResults.queryID, baseResults.runName);
+			
+			list.addAll(set);
+			
+			chunked.addAll(list.mergeShortResults(MIN_LENGTH, MAX_LENGTH));
 		}
 		
 		chunked.addAll(baseResults);
@@ -88,9 +93,9 @@ public class DeltaSearcher extends AlphaSearcher {
 		return allResults;
 	}
 	
-	Map<String, ResultList> getImageResults(ResultList baseResults, Query q)
+	Map<String, ResultSet> getImageResults(ResultList baseResults, Query q)
 															throws IOException {
-		Map<String, ResultList> imageResults = new HashMap<String, ResultList>();
+		Map<String, ResultSet> imageResults = new HashMap<String, ResultSet>();
 		
 		// Expand on each base result.
 		for (int i = 0; i < baseResults.size() && i < MAX_EXPANSIONS; i++) {
@@ -104,7 +109,7 @@ public class DeltaSearcher extends AlphaSearcher {
 				 j += (frames.size() / MAX_FRAME_HITS) + 1) {
 				String id = frames.get(j);
 				
-				//System.out.println("\nFrame: " + id + " : " + j);
+				//System.out.println("Frame: " + id + " : " + j);
 				
 				// Frame may not be in the graph, make sure we handle this.
 				List<ObjectDoublePair<String>> rawFrameHits;
@@ -130,14 +135,14 @@ public class DeltaSearcher extends AlphaSearcher {
 
 				// Merge in results.
 				for (String programme : frameResults.keySet()) {
-					//System.out.println("\nProgramme frame results: \n" + frameResults.get(programme) + "\n");
+					//System.out.println("Programme frame results: \n" + frameResults.get(programme) + "\n");
 					
-					ResultList programmeResults = imageResults.get(programme);
+					ResultSet programmeResults = imageResults.get(programme);
 					
 					if (programmeResults != null) {
 						programmeResults.addAll(frameResults.get(programme));
 					} else {
-						imageResults.put(programme, frameResults.get(programme));
+						imageResults.put(programme, programmeResults);
 					}
 				}
 			}

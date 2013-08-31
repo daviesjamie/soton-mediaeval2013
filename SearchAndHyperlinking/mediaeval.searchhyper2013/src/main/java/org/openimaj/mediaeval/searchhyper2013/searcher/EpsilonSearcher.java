@@ -40,6 +40,7 @@ import org.openimaj.mediaeval.searchhyper2013.util.Maps;
  */
 public class EpsilonSearcher extends DeltaSearcher {
 	
+	public float CONCEPT_FRAME_POWER = 2f;
 	public float CONCEPT_FRAME_WEIGHT = 10f;
 	
 	Concepts concepts;
@@ -94,7 +95,7 @@ public class EpsilonSearcher extends DeltaSearcher {
 				}
 				
 				for (Frame frame : frames.keySet()) {
-					frames.put(frame, frames.get(frame) / maxConf);
+					frames.put(frame, (float) Math.pow(frames.get(frame) / maxConf, CONCEPT_FRAME_POWER));
 				}
 				
 				Map<String, ResultList> results = framesToResults(frames,
@@ -178,11 +179,12 @@ public class EpsilonSearcher extends DeltaSearcher {
 	public void configure(Float[] settings) {
 		super.configure(settings);
 		
-		CONCEPT_FRAME_WEIGHT = settings[super.numSettings()];
+		CONCEPT_FRAME_POWER = settings[super.numSettings()];
+		CONCEPT_FRAME_WEIGHT = settings[super.numSettings() + 1];
 	}
 	
 	@Override
 	public int numSettings() {
-		return super.numSettings() + 1;
+		return super.numSettings() + 2;
 	}
 }

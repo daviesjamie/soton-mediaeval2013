@@ -131,7 +131,7 @@ public class SearcherEvaluator {
 		List<Double> asp = new ArrayList<Double>();
 		
 		for (Query query : expectedResults.keySet()) {
-			//System.out.println(query);
+			System.out.println(query);
 			
 			String fileName = expectedResults.get(query).iterator().next().fileName;
 			double qRelStart = expectedResults.get(query).iterator().next().startTime;
@@ -148,8 +148,8 @@ public class SearcherEvaluator {
 				continue;
 			}
 			
-			//System.out.println("\nExpecting: \n" + expectedResults.get(query));
-			//System.out.println("\nResults: \n" + runResults + "\n----");
+			System.out.println("\nExpecting: \n" + expectedResults.get(query));
+			System.out.println("\nResults: \n" + runResults + "\n----");
 			
 			for (int i = 0; i < runResults.size(); i++) {
 				Result result = runResults.get(i);

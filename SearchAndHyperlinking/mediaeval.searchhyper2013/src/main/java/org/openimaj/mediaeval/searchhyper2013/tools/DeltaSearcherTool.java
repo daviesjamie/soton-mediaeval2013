@@ -1,5 +1,7 @@
 package org.openimaj.mediaeval.searchhyper2013.tools;
 
+import gov.sandia.cognition.math.matrix.Vector;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -67,20 +69,19 @@ public class DeltaSearcherTool {
 		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
-		Float[] initial     = { 0f, 1.5f, 2f, 1f, 1f, 0f, 0f, 60 * 1f, 60 * 10f,   0f,   0f,   0f };
-		Float[] increment   = { 1f,   1f, 1f, 1f, 1f, 1f, 1f,      1f,       1f, 0.1f, 0.1f, 0.1f };
-		Float[] termination = { 0f, 1.5f, 2f, 1f, 1f, 0f, 0f, 60 * 1f, 60 * 10f,   1f,   3f,   3f };
+		Float[] initial     = { 0f, 1.5f, 2f, 1f, 1f, 0f, 0f, 60 * 1f, 60 * 10f, 0.5f, 0.3f, 2f };
+		Float[] increment   = { 1f,   1f, 1f, 1f, 1f, 1f, 1f,      1f,       1f,   1f,   1f, 1f };
+		Float[] termination = { 0f, 1.5f, 2f, 1f, 1f, 0f, 0f, 60 * 1f, 60 * 10f, 0.5f, 0.3f, 2f };
 		
-		List<Float[]> evaluation = eval.evaluateOverSettings(expectedResults,
-															 WINDOW,
+		Vector evaluation = eval.evaluateAgainstExpectedResults(expectedResults,
+															 WINDOW)/*,
 															 initial, 
 															 increment, 
-															 termination);
+															 termination)*/;
 		/*Vector evaluation =
 				eval.evaluateAgainstExpectedResults(expectedResults, WINDOW);
-		
+		*/
 		System.out.println(evaluation);
-		System.out.println(SearcherEvaluator.f1Score(evaluation));*/
 	}
 
 }
