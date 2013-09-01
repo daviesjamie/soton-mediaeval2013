@@ -269,26 +269,6 @@ public class SED2013SolrSimilarityMatrix {
 		}
 	}
 	
-	/**
-	 * Read the matricies (either in parts or as a whole) from the root location
-	 * @param root
-	 * @return all matricies in the location
-	 * @throws IOException
-	 */
-	public static Map<String,SparseMatrix> readSparseMatricies(String root, String ... desiredMatricies) throws IOException {
-		File[] parts = new File(root).listFiles(new FilenameFilter() {
-			
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.startsWith("part");
-			}
-		});
-		if(parts == null) throw new IOException("No such file: " + root);
-		if(parts.length != 0) return readMultiPart(parts,desiredMatricies);
-		File[] mats = new File(root).listFiles(matfilter(desiredMatricies));
-		return readFromMats(mats);
-	}
-	
 	private void updateSimilarities(final Map<String, SparseMatrix> seenSimMat,IndexedPhoto p, Map<String, SparseMatrix> newSimMat) {
 		for (Entry<String, SparseMatrix> namerow : newSimMat.entrySet()) {
 			String comparator = namerow.getKey();
@@ -307,65 +287,6 @@ public class SED2013SolrSimilarityMatrix {
 			}
 		}
 	}
-
-	private static FilenameFilter matfilter(final String[] desiredMatricies) {
-		return new FilenameFilter() {
-			
-			@Override
-			public boolean accept(File dir, String name) {
-				if(!name.endsWith("mat")) return false;
-				if(desiredMatricies.length != 0)
-				{
-					for (String string : desiredMatricies) {
-						if(name.matches(string)) return true;
-					}
-					return false;
-				}
-				return true;
-			}
-		};
-	}
-
-	private static Map<String, SparseMatrix> readFromMats(File[] mats) throws IOException {
-		Map<String, SparseMatrix> matMap = new HashMap<String, SparseMatrix>();
-		for (File matf : mats) {
-			logger.debug("Reading: " + matf);
-			matMap.put(matf.getName(), (SparseMatrix) IOUtils.readFromFile(matf));
-			
-		}
-		logger.debug("Done reading sparse matricies.");
-		return matMap ;
-	}
-
-	private static Map<String, SparseMatrix> readMultiPart(File[] parts, String ... desiredMatricies) throws IOException {
-		Map<String, SparseMatrix> combined = null;
-		for (File part : parts) {
-			File[] mats = part.listFiles(matfilter(desiredMatricies));
-			Map<String, SparseMatrix> newpart = readFromMats(mats);
-			if(combined == null){
-				combined = newpart;
-			}
-			else{
-				for (Entry<String, SparseMatrix> mat : combined.entrySet()) {
-					SparseMatrix newsparse = newpart.get(mat.getKey());
-					logger.debug("Combining sparse matrix: " + mat.getKey());
-					int r = 0;
-					for (Vector file : newsparse.rows()) {
-						for (ch.akuhn.matrix.Vector.Entry ent : file.entries()) {							
-							mat.getValue().put(r, ent.index, ent.value);
-						}
-						r++;
-					}
-					logger.debug("Done! new density: " + (double)mat.getValue().used()/((double)mat.getValue().rowCount() * (double)mat.getValue().columnCount()));
-				}
-			}
-		}
-		return combined;
-	}
 	
-	public static void main(String[] args) throws IOException {
-		Map<String, SparseMatrix> found = readSparseMatricies("/home/ss/Experiments/mediaeval/SED2013/training.sed2013.solr.sparsematrix/solrtotal=200/solreps=0.40/inc=10000/","aggregationMean");
-		System.out.println(found.keySet());
-	}
 	
 }

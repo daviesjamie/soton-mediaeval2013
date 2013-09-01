@@ -243,25 +243,15 @@ public class SED2013SolrIndexCreator {
 	 *             if any errors occur
 	 */
 	public int loop(final int counter) throws Exception {
-		final int seen[] = new int[1];
-		this.photoStream.forEach(new Operation<Photo>() {
+		int seen = this.photoStream.forEach(new Operation<Photo>() {
 
 			@Override
 			public void perform(Photo object) {
 				SED2013SolrIndexCreator.this.process(object);
-
 			}
-		}, new Predicate<Photo>() {
-			@Override
-			public boolean test(Photo object) {
-				if(seen[0]%1000 == 0){
-					log.debug("Number of document seen this batch: " + seen[0]);
-				}
-				return ++seen[0]>=counter;
-			}
-		});
+		}, counter);
 
-		return seen[0];
+		return seen;
 	}
 
 	/**
@@ -359,6 +349,7 @@ public class SED2013SolrIndexCreator {
 		try {
 			while(true) {
 				int read = harvester.loop(BATCH_SIZE);
+				
 				count += read;
 				log.info("Rows read: " + count);
 
@@ -371,7 +362,7 @@ public class SED2013SolrIndexCreator {
 				}
 
 				// Did we finish?
-				if (read < BATCH_SIZE) {
+				if (read < BATCH_SIZE ) {
 					break;
 				}
 			}

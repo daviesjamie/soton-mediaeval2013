@@ -30,6 +30,17 @@ public enum SimMatModeOption implements CmdLineOptionsProvider{
 		}
 		
 	},
+	/**
+	 * 
+	 */
+	IWEIGHTEDMERGE{
+
+		@Override
+		public SimMatSetupMode getOptions() {
+			return new IncrementalWeightedMergeMode();
+		}
+		
+	},
 	;
 
 	@Override

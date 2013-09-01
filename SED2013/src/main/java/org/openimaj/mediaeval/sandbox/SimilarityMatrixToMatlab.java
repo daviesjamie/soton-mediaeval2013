@@ -1,10 +1,11 @@
-package org.openimaj.mediaeval.evaluation.solr;
+package org.openimaj.mediaeval.sandbox;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import org.openimaj.math.matrix.MatlibMatrixUtils;
+import org.openimaj.mediaeval.evaluation.solr.SimilarityMatrixWrapper;
 
 import com.jmatio.io.MatFileWriter;
 import com.jmatio.types.MLArray;

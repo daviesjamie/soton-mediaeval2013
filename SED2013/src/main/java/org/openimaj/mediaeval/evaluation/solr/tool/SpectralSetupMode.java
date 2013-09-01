@@ -77,7 +77,7 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 		aliases="-eigsel", 
 		required=false, 
 		usage="The number of eigen values to ask for (proportioned of the total available)", 
-		metaVar="INTEGER"
+		metaVar="DOBULE"
 	)
 	public double eigsel = 0.05;
 	

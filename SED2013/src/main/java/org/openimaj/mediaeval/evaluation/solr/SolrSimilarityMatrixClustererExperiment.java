@@ -5,19 +5,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import org.apache.log4j.Logger;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.NumericRangeQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.SimpleFSDirectory;
-import org.apache.solr.request.ServletSolrParams;
-import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
 import org.openimaj.experiment.ExperimentContext;
@@ -34,13 +21,11 @@ import org.openimaj.experiment.evaluation.cluster.analyser.RandomBaselineSMEAnal
 import org.openimaj.experiment.evaluation.cluster.analyser.RandomBaselineSMEClusterAnalyser;
 import org.openimaj.experiment.evaluation.cluster.analyser.RandomIndexAnalysis;
 import org.openimaj.experiment.evaluation.cluster.processor.Clusterer;
-import org.openimaj.mediaeval.data.util.PhotoUtils;
+import org.openimaj.mediaeval.data.util.SimilarityMatrixReader;
 import org.openimaj.mediaeval.evaluation.solr.SED2013Index.IndexedPhoto;
 import org.openimaj.util.function.Function;
 
 import ch.akuhn.matrix.SparseMatrix;
-
-import com.aetrion.flickr.photos.Photo;
 
 /**
  * @author Jonathan Hare (jsh2@ecs.soton.ac.uk), Sina Samangooei (ss@ecs.soton.ac.uk), David Duplaw (dpd@ecs.soton.ac.uk)
@@ -66,7 +51,7 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	}
 	
 	/**
-	 * This constructor makes this experiment load its {@link SparseMatrix} using {@link SED2013SolrSimilarityMatrix#readSparseMatricies(String, String...)}
+	 * This constructor makes this experiment load its {@link SparseMatrix} using {@link SimilarityMatrixReader#readSparseMatricies(String, String...)}
 	 * 
 	 * @param similarityRoot the root of similarity matricies  
 	 * @param similarityExp the particular similarity matrix
@@ -82,65 +67,31 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		this.indexFile = indexFile;
 	}
 	
+	/**
+	 * @author Sina Samangooei (ss@ecs.soton.ac.uk)
+	 *
+	 */
 	public static interface SparseMatrixSource{
+		/**
+		 * @return name of a sparse matrix source
+		 */
 		public String name();
+		/**
+		 * @return the sparse matrix
+		 */
 		public SimilarityMatrixWrapper mat();
 	}
 	
 	/**
-	 * @param matname
-	 * @param mat
+	 * @param source 
 	 * @param indexFile
-	 * @param start
-	 * @param end
 	 */
 	public SolrSimilarityMatrixClustererExperiment(SparseMatrixSource source, String indexFile) {
-//		this.similarityMatrix = new SimilarityMatrixWrapper(mat, start, end);
-//		this.similarityMatrixFilename = matname;
 		this.sparseMatrixSource = source;
 		this.indexFile = indexFile;
 	}
 
-	/**
-	 * @param indexFile
-	 * @param start
-	 * @param end
-	 * @return dataset from a solr index
-	 * @throws CorruptIndexException
-	 * @throws IOException
-	 */
-	public static MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto> datasetFromSolr(String indexFile, int start, int end) throws CorruptIndexException, IOException {
-//		Query q = NumericRangeQuery.newLongRange("index", 0l, 0l, true, true);
-////		final Query q = new QueryParser(Version.LUCENE_40, "tag", new StandardAnalyzer(Version.LUCENE_40)).parse("cheese");
-		final Directory directory = new SimpleFSDirectory(new File(indexFile));
-		final IndexReader reader = DirectoryReader.open(directory);
-		final IndexSearcher searcher = new IndexSearcher(reader);
-		MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto> ret = new MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto>(){
-			@Override
-			public String toString() {
-				return "Clusters: " + this.size() + " Instances: " + this.numInstances();
-			}
-		};
-		for (int i = start; i < end; i++) {
-			Query q = NumericRangeQuery.newLongRange("index", (long)i, (long)i, true, true);
-			
-			TopDocs docs = searcher.search(q, 1);
-			ScoreDoc scoreDoc = docs.scoreDocs[0];
-			
-			final Document d = searcher.doc(scoreDoc.doc);
-			Photo p = PhotoUtils.createPhoto(d);
-			long index = (Long) d.getField("index").numericValue()-start;
-			long cluster = (Long) d.getField("cluster").numericValue();
-			
-			ListDataset<IndexedPhoto> clusterList = ret.get((int)cluster);
-			if(clusterList==null){
-				ret.put((int) cluster, clusterList = new ListBackedDataset<IndexedPhoto>());
-			}
-			clusterList.add(new IndexedPhoto(index, p));
-		}
-		reader.close();
-		return ret ;
-	}
+
 
 	private String simMatrixFile;
 	private String indexFile;
@@ -203,8 +154,7 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 			}
 			else{
 				try {
-					SparseMatrix sp = SED2013SolrSimilarityMatrix.readSparseMatricies(similarityRoot, this.similarityExp).get(this.similarityExp);
-					this.similarityMatrix = new SimilarityMatrixWrapper(sp, start, end);
+					this.similarityMatrix = SimilarityMatrixReader.readSparseMatricies(start,end,similarityRoot, this.similarityExp).get(this.similarityExp);;
 					this.similarityMatrixFilename = similarityRoot + "#" + similarityExp;
 				} catch (IOException e) {
 				}
@@ -215,7 +165,7 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		if(this.groundtruth == null){
 			logger.debug("Querying lucene index");
 			try {
-				groundtruth = datasetFromSolr(indexFile,start,end);
+				groundtruth = SED2013IndexUtils.datasetFromSolr(indexFile,start,end);
 			} catch (Throwable e) {
 				throw new RuntimeException(e);
 			}

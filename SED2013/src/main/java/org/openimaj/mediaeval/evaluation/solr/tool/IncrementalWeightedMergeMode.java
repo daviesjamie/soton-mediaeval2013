@@ -16,22 +16,27 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FileUtils;
 import org.kohsuke.args4j.Option;
 import org.mortbay.io.RuntimeIOException;
+import org.openimaj.io.IOUtils;
+import org.openimaj.mediaeval.data.util.SimilarityMatrixReader;
+import org.openimaj.mediaeval.evaluation.solr.SED2013SolrSimilarityMatrix;
 import org.openimaj.mediaeval.evaluation.solr.SimilarityMatrixWrapper;
 import org.openimaj.mediaeval.evaluation.solr.SolrSimilarityMatrixClustererExperiment.SparseMatrixSource;
-import org.openimaj.mediaeval.evaluation.solr.tool.IncrementalWeightedMergeMode.HashableIntArr;
 import org.openimaj.util.array.ArrayUtils;
+
+import ch.akuhn.matrix.SparseMatrix;
 
 /**
  *
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  */
-public class WeightedMergeSimMatMode extends SimMatSetupMode {
+public class IncrementalWeightedMergeMode extends SimMatSetupMode {
 	
 	/**
 	 * The eps to start to search
@@ -62,6 +67,17 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 	 * The eps to start to search
 	 */
 	@Option(
+		name="--weighted-merge-combination-mode", 
+		aliases="-wmcm", 
+		required=false, 
+		usage="How to combine matricies"
+	)
+	public IncrementalWeightedMergeCombinationMode wmcm = IncrementalWeightedMergeCombinationMode.SUM;
+	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
 		name="--weighted-merge-permutations-file", 
 		aliases="-wmpermf", 
 		required=false, 
@@ -70,29 +86,15 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 	)
 	public String permStringsFile = null;
 	
-	/**
-	 * The eps to start to search
-	 */
-	@Option(
-		name="--weighted-merge-combination-mode", 
-		aliases="-wmcm", 
-		required=false, 
-		usage="How to combine matricies"
-	)
-	public WeightedMergeCombinationMode wmcm = WeightedMergeCombinationMode.SUM;
-	private Map<String, SimilarityMatrixWrapper> allmats;
-	
 	
 	@Override
 	public void setup() {
-		super.setup();
-		try {
-			this.allmats = super.readSparseMatricies(simmatRoot,this.simmat.toArray(new String[this.simmat.size()]));
-			simmat = new ArrayList<String>();
-			simmat.addAll(this.allmats.keySet());
-			
-		} catch (IOException e) {
-			throw new RuntimeIOException(e);
+		if(this.permStringsFile!=null){
+			try {
+				this.permStrings = FileUtils.readLines(new File(this.permStringsFile));
+			} catch (IOException e) {
+				throw new RuntimeIOException(e);
+			}
 		}
 		if(this.permStrings != null){
 			List<double[]> permIntList = new ArrayList<double[]>();
@@ -199,19 +201,62 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 			
 			@Override
 			public SimilarityMatrixWrapper mat() {
-				WeightedMergeSimMatMode.super.setup(); // prepare the simmat iterator
+				Iterator<SimilarityMatrixWrapper> sparseMatrixIterator = createSparseMatrixIterator();
+				SimilarityMatrixWrapper mat = null;
 				int i = 0;
-				SimilarityMatrixWrapper[] tocombine = new SimilarityMatrixWrapper[curperm.length];
-				try{					
-					while(simMatIter.hasNext()){
-						tocombine[i] = allmats.get(simMatIter.next());
+				int totalperm = 0;
+				try{
+					while(sparseMatrixIterator.hasNext()){
+						// Only load a matrix if it will be weighted by a non zero!
+						if(curperm[i] != 0){
+							SimilarityMatrixWrapper newmat = sparseMatrixIterator.next();
+							mat = IncrementalWeightedMergeMode.this.wmcm.combine(mat, newmat,totalperm,curperm[i]);
+							totalperm += curperm[i];							
+						}
 						i++;
 					}
-					SimilarityMatrixWrapper matwrapper= wmcm.combine(tocombine, curperm);
-					return matwrapper;
+					return mat;
 				} catch(Exception e){
 					throw new RuntimeException(e);
 				}
+			}
+
+			private Iterator<SimilarityMatrixWrapper> createSparseMatrixIterator() {
+				
+				IncrementalWeightedMergeMode.super.setup(); 
+				return new Iterator<SimilarityMatrixWrapper>() {
+					
+					@Override
+					public void remove() {
+						throw new UnsupportedOperationException();
+					}
+					
+					@Override
+					public SimilarityMatrixWrapper next() {
+						String nextSimMat = IncrementalWeightedMergeMode.super.simMatIter.next();
+						SimilarityMatrixWrapper newmat = null;
+						if(simmatRoot != null){
+							try {
+								newmat = IncrementalWeightedMergeMode.this.readSparseMatricies(simmatRoot, nextSimMat).get(nextSimMat);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						}
+						if (newmat == null){
+							try {
+								newmat = SimilarityMatrixReader.readSparseMatricies(nextSimMat).get(new File(nextSimMat).getName());
+							} catch (IOException e) {
+								throw new RuntimeException(e);
+							}
+						}
+						return newmat;
+					}
+					
+					@Override
+					public boolean hasNext() {
+						return IncrementalWeightedMergeMode.super.simMatIter.hasNext();
+					}
+				};
 			}
 		};
 		NamedSolrSimilarityMatrixClustererExperiment ret = new NamedSolrSimilarityMatrixClustererExperiment();
@@ -221,7 +266,7 @@ public class WeightedMergeSimMatMode extends SimMatSetupMode {
 		return ret;
 	}
 	private String prepareName(double[] curperm) {
-		WeightedMergeSimMatMode.super.setup(); // prepare the simmat iterator
+		IncrementalWeightedMergeMode.super.setup(); // prepare the simmat iterator
 		
 		String combname = "";
 		int i = 0;					

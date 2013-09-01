@@ -62,6 +62,22 @@ public class SimilarityMatrixWrapper {
 		confirmMatrixIntegrity();
 	}
 	
+	/**
+	 * Construct a new wrapper which uses the provided {@link SparseMatrix} wholesale and assumes the start/end
+	 * of the new {@link SparseMatrix} are the start/end of the provided {@link SimilarityMatrixWrapper} instances
+	 * @param out
+	 * @param similarityMatrixWrapper
+	 */
+	public SimilarityMatrixWrapper(SparseMatrix out,SimilarityMatrixWrapper similarityMatrixWrapper) {
+		this.end = similarityMatrixWrapper.end;
+		this.start = similarityMatrixWrapper.start;
+		
+		this.similarityMatrix = out;
+		if(out.rowCount() != similarityMatrixWrapper.similarityMatrix.rowCount() || out.columnCount() != similarityMatrixWrapper.similarityMatrix.columnCount()){
+			throw new RuntimeException("The provided matrix is not a valid size according to the start/end of the wrapper");
+		}
+	}
+
 	private void confirmMatrixIntegrity() {
 		int i = 0;
 		for (Vector v : this.similarityMatrix.rows()) {

@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.openimaj.mediaeval.data.util.SimilarityMatrixReader;
 
 import ch.akuhn.matrix.SparseMatrix;
 import ch.akuhn.matrix.Vector;
@@ -87,16 +88,16 @@ public class SimilarityMatrixInformationTool {
 
 	public static void main(String[] args) throws IOException {
 		SimilarityMatrixInformationTool tool = new SimilarityMatrixInformationTool(args);
-		Map<String, SparseMatrix> mats = null;
+		Map<String, SimilarityMatrixWrapper> mats = null;
 		if(tool.matnames == null || tool.matnames.size() == 0){			
-			mats = SED2013SolrSimilarityMatrix.readSparseMatricies(tool.matloc);
+			mats = SimilarityMatrixReader.readSparseMatricies(tool.matloc);
 		}
 		else{
-			mats = SED2013SolrSimilarityMatrix.readSparseMatricies(tool.matloc,tool.matnames.toArray(new String[tool.matnames.size()]));
+			mats = SimilarityMatrixReader.readSparseMatricies(tool.matloc,tool.matnames.toArray(new String[tool.matnames.size()]));
 		}
-		for (Entry<String, SparseMatrix> ent : mats.entrySet()) {
+		for (Entry<String, SimilarityMatrixWrapper> ent : mats.entrySet()) {
 			tool.printMatTitle(ent.getKey());
-			tool.printMatStats(ent.getValue());
+			tool.printMatStats(ent.getValue().matrix());
 			System.out.println(repeat("=",ent.getKey().length()));
 		}
 	}

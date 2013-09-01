@@ -16,6 +16,7 @@ import org.codehaus.staxmate.in.SMHierarchicCursor;
 import org.codehaus.staxmate.in.SMInputCursor;
 import org.codehaus.staxmate.in.SMInputCursor.Tracking;
 import org.openimaj.mediaeval.data.XMLCursorStream.CursorWrapper;
+import org.openimaj.util.function.Operation;
 import org.openimaj.util.stream.AbstractStream;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
@@ -135,6 +136,20 @@ public class XMLCursorStream extends AbstractStream<CursorWrapper> {
 	@Override
 	public CursorWrapper next() {
 		return new CursorWrapper(photoCursor);
+	}
+	
+	public static void main(String[] args) throws FileNotFoundException, XMLStreamException {
+		File f = new File("/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml");
+		XMLCursorStream xmlstream = new XMLCursorStream(f, "photo");
+		final int count[] = new int[]{0};
+		count[0] = xmlstream.forEach(new Operation<XMLCursorStream.CursorWrapper>() {
+			
+			@Override
+			public void perform(CursorWrapper object) {
+				count[0]++;
+			}
+		},600000000);
+		System.out.println(count[0]);
 	}
 
 }

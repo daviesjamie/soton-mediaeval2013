@@ -20,6 +20,19 @@ import org.openimaj.mediaeval.evaluation.solr.tool.SimMatSetupMode.NamedSolrSimi
 
 /**
  *
+ *	TODO: 
+ *
+ *READ THIS FIRST!!!!!
+ *You need to:
+ *	Fix the way similarity matricies are loaded in so it is a bit more sane
+ *	Fix the explicit (i.e. 1,1,1,1,1) weightings specification mode in {@link WeightedMergeSimMatMode}
+ *	Fix where the correct.txt files are maede
+ *	Figure out a range of experiments worth running across more random samples of 5000 items, this should be a smaller subset
+ *	Generate the test solr index
+ *	generate the test similarity matricies
+ *	generate the test IMAGE similarity matricies
+ *
+ * party...
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  */
 public class SolrSimilarityExperimentToolOptions {
@@ -42,6 +55,14 @@ public class SolrSimilarityExperimentToolOptions {
 		usage = "Force the removal of existing experiemnts"
 	)
 	boolean force = false;
+	
+	@Option(
+		name = "--no-logs",
+		aliases = "-nl",
+		required = false,
+		usage = "Don't generate the log file"
+	)
+	boolean nologs = false;
 	
 	@Option(
 		name = "--experiment-mode",
@@ -104,7 +125,7 @@ public class SolrSimilarityExperimentToolOptions {
 	 * @return whether there is a next valid experiment
 	 */
 	public boolean hasNextExperiment() {
-		return experimentSetupModeOp.hasNextSetup() || this.simmatSetupModeOp.hasNextSimmat();
+		return experimentSetupModeOp.hasNextSetup() || this.simmatSetupModeOp.hasNextSimmatConfiguration();
 	}
 
 	/**
@@ -112,37 +133,44 @@ public class SolrSimilarityExperimentToolOptions {
 	 * 
 	 */
 	public void performNextExperiment() throws Exception {
-		if(!experimentSetupModeOp.hasNextSetup()){
-			prepareNextSimmat();
+		PrintWriter reportWriter = null, correctWriter = null, estimatedWriter = null;
+		try{			
+			if(!experimentSetupModeOp.hasNextSetup()){
+				prepareNextSimmat();
+			}
+			NamedClusterer namedClusterer = this.experimentSetupModeOp.nextClusterer();
+			File setupDir= new File(this.experimentRoot,this.experimentSetupMode.name());
+			setupDir= new File(setupDir,String.format("%d_%d",this.simmatSetupModeOp.start,this.simmatSetupModeOp.end));
+			setupDir.mkdirs();
+			correctWriter = new PrintWriter(new File(setupDir,"correct.txt")); // here we generate the "correct.txt", it should be identical for all the same star_end
+			setupDir= new File(setupDir,namedClusterer.name);
+			setupDir.mkdirs();
+			this.experiment.setNextClusterer(namedClusterer.clusterer);
+			File reportFile = new File(setupDir,"report.txt");
+			if(!force && reportFile.exists()) {
+				logger.info("Skipping. Experiement Exists: " + setupDir.getAbsolutePath());
+				return;
+			}
+			estimatedWriter = new PrintWriter(new File(setupDir,"estimated.txt"));
+			logger.info("Starting experiment: " + setupDir.getAbsolutePath());
+			addSetupLogger(setupDir);
+			ExperimentContext c = ExperimentRunner.runExperiment(this.experiment);
+			removeSetupLogger(setupDir);
+			this.experiment.writeIndexClusters(correctWriter, this.experiment.analysis.correct);
+			this.experiment.writeIndexClusters(estimatedWriter, this.experiment.analysis.estimated);
+			reportWriter = new PrintWriter(reportFile);
+			reportWriter.println(c);
+			reportWriter.flush();
+			
+		}finally{
+			if(reportWriter != null) reportWriter.close();
+			if(correctWriter != null) correctWriter.close();
+			if(estimatedWriter != null) estimatedWriter.close();
 		}
-		NamedClusterer namedClusterer = this.experimentSetupModeOp.nextClusterer();
-		File setupDir= new File(this.experimentRoot,this.experimentSetupMode.name());
-		setupDir= new File(setupDir,String.format("%d_%d",this.simmatSetupModeOp.start,this.simmatSetupModeOp.end));
-		setupDir= new File(setupDir,namedClusterer.name);
-		setupDir.mkdirs();
-		this.experiment.setNextClusterer(namedClusterer.clusterer);
-		File reportFile = new File(setupDir,"report.txt");
-		if(!force && reportFile.exists()) {
-			logger.info("Skipping. Experiement Exists: " + setupDir.getAbsolutePath());
-			return;
-		}
-		PrintWriter correctWriter = new PrintWriter(new File(setupDir,"correct.txt"));
-		PrintWriter estimatedWriter = new PrintWriter(new File(setupDir,"estimated.txt"));
-		logger.info("Starting experiment: " + setupDir.getAbsolutePath());
-		addSetupLogger(setupDir);
-		ExperimentContext c = ExperimentRunner.runExperiment(this.experiment);
-		removeSetupLogger(setupDir);
-		this.experiment.writeIndexClusters(correctWriter, this.experiment.analysis.correct);
-		this.experiment.writeIndexClusters(estimatedWriter, this.experiment.analysis.estimated);
-		PrintWriter reportWriter = new PrintWriter(reportFile);
-		reportWriter.println(c);
-		reportWriter.flush();
-		reportWriter.close();
-		correctWriter.close();
-		estimatedWriter.close();
 	}
 
 	private void removeSetupLogger(File setupDir) {
+		if(nologs )return;
 		Appender app = Logger.getRootLogger().getAppender("setupAppender");
 		app.close();
 		Logger.getRootLogger().removeAppender("setupAppender");
@@ -150,6 +178,7 @@ public class SolrSimilarityExperimentToolOptions {
 	}
 
 	private void addSetupLogger(File setupDir) {
+		if(nologs )return;
 		Appender anapp = (Appender) Logger.getRootLogger().getAllAppenders().nextElement();
 		
 		FileAppender app;
@@ -166,7 +195,7 @@ public class SolrSimilarityExperimentToolOptions {
 	}
 
 	private void prepareNextSimmat() {
-		NamedSolrSimilarityMatrixClustererExperiment nextMode = this.simmatSetupModeOp.nextSimmat();
+		NamedSolrSimilarityMatrixClustererExperiment nextMode = this.simmatSetupModeOp.nextSimmatConfiguration();
 		this.experiment = (SolrSimilarityExperimentTool) nextMode.exp;
 		this.experimentRoot = new File(new File(this.root,this.simmatSetupMode.name()),nextMode.name);
 		this.experimentSetupModeOp.setup();
