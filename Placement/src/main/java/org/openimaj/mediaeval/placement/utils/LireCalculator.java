@@ -43,7 +43,7 @@ import org.openimaj.mediaeval.placement.data.LireFeatures;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.LuceneIndexBuilder;
 
-public class LireExtractor {
+public class LireCalculator {
 
     private AutoColorCorrelogram acc;
     private BasicFeatures bf;
@@ -62,7 +62,7 @@ public class LireExtractor {
     private IndexSearcher meta;
     private IndexWriter indexWriter;
 
-    public LireExtractor( String indexPath, IndexSearcher metadata ) throws IOException {
+    public LireCalculator( String indexPath, IndexSearcher metadata ) throws IOException {
         acc = new AutoColorCorrelogram();
         bf = new BasicFeatures();
         cedd = new CEDD();
@@ -147,7 +147,7 @@ public class LireExtractor {
         
         final IndexReader ir = DirectoryReader.open( new SimpleFSDirectory( new File( "data/lucene-meta-index" ) ) );
         final IndexSearcher metadata = new IndexSearcher( ir );
-        LireExtractor lireExtractor = new LireExtractor( "data/lire-feature-index", metadata );
+        LireCalculator lireExtractor = new LireCalculator( "data/lire-feature-index", metadata );
         
         while( ( line = br.readLine() ) != null ) {
             try {
