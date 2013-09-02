@@ -268,4 +268,74 @@ public class SemanticTable implements Collection<Object[]> {
 	public Object[] getRow(int row) {
 		return table[row];
 	}
+	
+	@Override
+	public String toString() {
+		final int LEFT_PADDING = 1;
+		final int RIGHT_PADDING = 1;
+		
+		int[] colWidths = new int[colCap];
+		
+		for (int i = 0; i < rowCap; i++) {
+			for (int j = 0; j < colCap; j++) {
+				int cellWidth = 0;
+				
+				if (table[i][j] != null) {
+					cellWidth = table[i][j].toString().length();
+				}
+				
+				colWidths[j] = Math.max(colWidths[j], cellWidth);
+			}
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		
+		appendRowSeparator(colWidths, sb, LEFT_PADDING, RIGHT_PADDING);
+		
+		for (int i = 0; i < rowCap; i++) {
+			sb.append("|");
+			
+			for (int j = 0; j < colCap; j++) {
+				int cellWidth = 0;
+				String cellString = "";
+				
+				if (table[i][j] != null) {
+					cellString = table[i][j].toString();
+					cellWidth = cellString.length();
+				}
+				
+				for (int p = 0; p < LEFT_PADDING; p++) {
+					sb.append(" ");
+				}
+				
+				sb.append(cellString);
+				
+				int remaining = colWidths[j] - cellWidth;
+				
+				for (int p = 0; p < remaining + RIGHT_PADDING; p++) {
+					sb.append(" ");
+				}
+				
+				sb.append("|");
+			}
+			
+			sb.append("\n");
+			
+			appendRowSeparator(colWidths, sb, LEFT_PADDING, RIGHT_PADDING);
+		}
+		
+		return sb.toString();
+	}
+	
+	private void appendRowSeparator(int[] colWidths, StringBuilder sb, int leftPadding, int rightPadding) {
+		for (int col = 0; col < colWidths.length; col++) {
+			sb.append("+");
+			
+			for (int i = 0; i < leftPadding + colWidths[col] + rightPadding; i++) {
+				sb.append("-");
+			}
+		}
+		
+		sb.append("+\n");
+	}
 }

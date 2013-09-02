@@ -13,8 +13,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.openimaj.image.MBFImage;
-import org.openimaj.time.Timer;
 import org.openimaj.util.pair.LongFloatPair;
 import org.openimaj.util.queue.BoundedPriorityQueue;
 
@@ -45,8 +45,6 @@ public class InMemCEDDSearcher implements VisualSearcher {
 
 		this.ids = tmpIds.toArray();
 		this.data = tmpData.toArray(new byte[tmpData.size()][]);
-
-		System.out.println(ids.length);
 	}
 
 	@Override
@@ -62,7 +60,6 @@ public class InMemCEDDSearcher implements VisualSearcher {
 		final BoundedPriorityQueue<LongFloatPair> results = new BoundedPriorityQueue<LongFloatPair>(numResults,
 				LongFloatPair.SECOND_ITEM_ASCENDING_COMPARATOR);
 
-		final Timer t1 = Timer.timer();
 		LongFloatPair tmp = new LongFloatPair();
 		for (int i = 0; i < numResults; i++)
 			results.add(new LongFloatPair(-1, Float.MAX_VALUE));
@@ -74,9 +71,8 @@ public class InMemCEDDSearcher implements VisualSearcher {
 			tmp = results.offerItem(tmp);
 		}
 
-		System.out.println("Search took: " + t1.duration());
-
-		return linkResults(results.toOrderedListDestructive());
+		final ScoreDoc[] finalres = linkResults(results.toOrderedListDestructive());
+		return finalres;
 	}
 
 	private int findQueryIdx(long flickrId) {
@@ -88,17 +84,20 @@ public class InMemCEDDSearcher implements VisualSearcher {
 		return -1;
 	}
 
-	private ScoreDoc[] linkResults(List<LongFloatPair> search) throws IOException {
-		final ScoreDoc[] docs = new ScoreDoc[search.size()];
+	protected ScoreDoc[] linkResults(List<LongFloatPair> search) throws IOException {
+		final List<ScoreDoc> docs = new ArrayList<ScoreDoc>(search.size());
 
-		for (int i = 0; i < docs.length; i++) {
+		for (int i = 0; i < search.size(); i++) {
 			final LongFloatPair r = search.get(i);
 			final Query q = NumericRangeQuery.newLongRange("id", r.first, r.first, true, true);
-			docs[i] = meta.search(q, 1).scoreDocs[0];
-			docs[i].score = r.second;
+			final TopDocs rr = meta.search(q, 1);
+			if (rr.scoreDocs.length >= 1) {
+				docs.add(rr.scoreDocs[0]);
+				rr.scoreDocs[0].score = r.second;
+			}
 		}
 
-		return docs;
+		return docs.toArray(new ScoreDoc[docs.size()]);
 	}
 
 	public float getDistance(byte[] f1, byte[] f2) { // added by mlux
@@ -135,13 +134,5 @@ public class InMemCEDDSearcher implements VisualSearcher {
 		}
 		return (float) Result;
 
-	}
-
-	private double scalarMult(double[] a, double[] b) {
-		double sum = 0.0;
-		for (int i = 0; i < a.length; i++) {
-			sum += a[i] * b[i];
-		}
-		return sum;
 	}
 }

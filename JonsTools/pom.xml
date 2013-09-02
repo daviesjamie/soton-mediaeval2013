@@ -102,6 +102,11 @@
 		  <artifactId>ImageTerrierTools</artifactId>
 		  <version>3.5-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+      <groupId>info.bliki.wiki</groupId>
+      <artifactId>bliki-core</artifactId>
+      <version>3.0.19</version>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -127,6 +132,16 @@
       <name>Public online Restlet repository</name>
       <url>http://maven.restlet.org</url>
     </repository>
+		<repository>
+     <id>info-bliki-repository</id>
+     <url>http://gwtwiki.googlecode.com/svn/maven-repository/</url>
+     <releases>
+             <enabled>true</enabled>
+     </releases>
+     <snapshots>
+             <enabled>false</enabled>
+     </snapshots>
+		</repository>
   </repositories>
   <build>
     <plugins>
