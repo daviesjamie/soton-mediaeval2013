@@ -1,19 +1,18 @@
-package org.openimaj.mediaeval.searchhyper2013.searcher;
+package org.openimaj.mediaeval.searchhyper2013.searcher.module;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.math3.analysis.function.Gaussian;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.highlight.DefaultEncoder;
@@ -28,97 +27,94 @@ import org.openimaj.mediaeval.searchhyper2013.datastructures.Concepts;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Frame;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.EnglishSynonymAnalyzer;
-import org.openimaj.mediaeval.searchhyper2013.util.LSHDataExplorer;
-import org.openimaj.mediaeval.searchhyper2013.util.Maps;
+import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
 
-/**
- * Extends DeltaSearcher by including additional concept matching frames.
- * 
- * @author John Preston (jlp1g11@ecs.soton.ac.uk)
- *
- */
-public class EpsilonSearcher extends DeltaSearcher {
+public class ConceptModule implements SearcherModule {
 	
-	public float CONCEPT_FRAME_POWER = 2f;
-	public float CONCEPT_FRAME_WEIGHT = 10f;
+	double CONCEPT_WEIGHT = 10;
+	double CONCEPT_POWER = 2;
+	double CONCEPT_WIDTH = 5 * 60;
+	
+	static final int FPS = 25;
 	
 	Concepts concepts;
 	File conceptsDir;
-	File synFile;
-	File stopFile;
 	
-	public EpsilonSearcher(String runName,
-						 IndexReader indexReader,
-						 File shotsDirectoryCacheFile,
-						 LSHDataExplorer lshExplorer,
+	Analyzer analyzer;
+	
+	public ConceptModule(File conceptsFile,
 						 File conceptsDir,
-						 File conceptsFile,
-						 File synFile,
-						 File stopFile) throws IOException {
-		super(runName, indexReader, shotsDirectoryCacheFile, lshExplorer);
-		
+						 Analyzer analyzer) throws IOException {
 		concepts = new Concepts(conceptsFile);
+		
 		this.conceptsDir = conceptsDir;
-		this.synFile = synFile;
-		this.stopFile = stopFile;
+		this.analyzer = analyzer;
 	}
 	
 	@Override
-	ResultList _search(Query q) throws Exception {
-		//System.out.println(q);
-		
-		ResultList baseResults = getBaseResults(q);
-		
-		Map<String, ResultList> imageResults = getImageResults(baseResults, q);
-		
+	public TimelineSet search(Query q, TimelineSet currentSet) 
+													throws SearcherException {
+		try {
+			return _search(q, currentSet);
+		} catch (Exception e) {
+			throw new SearcherException(e);
+		}
+	}
+	
+	public TimelineSet _search(Query q, TimelineSet currentSet)
+															throws Exception {
 		List<String> queryConcepts =
 				getCommonTokens(q.queryText + " " + q.visualCues,
 								this.concepts.conceptsString());
 		
-		//System.out.println(queryConcepts);
-		
 		List<Concept> conceptObjs = new ArrayList<Concept>();
 		
-		for (String concept : queryConcepts) {
-			conceptObjs.add(concepts.loadConcept(concept, conceptsDir));
-		}
-		
-		for (String programme : imageResults.keySet()) {
-			for (Concept concept : conceptObjs) {
-				Map<Frame, Float> frames = concept.findProgrammeFrames(programme);
-				
-				//System.out.println("Concept frames: \n" + frames + "\n");
-				
-				// Normalise
-				float maxConf = 0;
-				
-				for (Float conf : frames.values()) {
-					maxConf = Math.max(maxConf, conf);
-				}
-				
-				for (Frame frame : frames.keySet()) {
-					frames.put(frame, (float) Math.pow(frames.get(frame) / maxConf, CONCEPT_FRAME_POWER));
-				}
-				
-				Map<String, ResultList> results = framesToResults(frames,
-																  q.queryID,
-																  CONCEPT_FRAME_WEIGHT);
-				//System.out.println(results);
-				Maps.mergeMap(imageResults, results);
+		for (String conceptString : queryConcepts) {
+			Concept concept = concepts.loadConcept(conceptString, conceptsDir);
+			
+			if (concept != null) {
+				conceptObjs.add(concept);
 			}
 		}
 		
-		return chunkResults(imageResults, baseResults);
+		TimelineSet timelines = currentSet;
+		
+		for (Timeline timeline : timelines) {
+			for (Concept concept : conceptObjs) {
+				Map<Frame, Float> frames =
+						concept.findProgrammeFrames(timeline.getID());
+				
+				float maxConf = 0;
+				
+				for (Float confidence : frames.values()) {
+					maxConf = Math.max(maxConf, confidence);
+				}
+				
+				for (Frame frame : frames.keySet()) {
+					ConceptFunction function = 
+						new ConceptFunction(CONCEPT_WEIGHT *
+												Math.pow(frames.get(frame) /
+															maxConf,
+														 CONCEPT_POWER),
+											frame.frame / FPS,
+											CONCEPT_WIDTH / 3d);
+					
+					timeline.addFunction(function);
+				}
+			}
+		}
+		
+		return timelines;
 	}
-	
-	public List<String> getCommonTokens(String queryString, String searchString) throws IOException, QueryNodeException, InvalidTokenOffsetsException {
-		
-		EnglishSynonymAnalyzer englishSynonymAnalyzer =
-				new EnglishSynonymAnalyzer(LUCENE_VERSION, synFile, stopFile);
-		
+
+	public List<String> getCommonTokens(String queryString, String searchString)
+		  throws IOException, QueryNodeException, InvalidTokenOffsetsException {
+
 		StandardQueryParser queryParser =
-				new StandardQueryParser(englishSynonymAnalyzer);
+				new StandardQueryParser(analyzer);
 		org.apache.lucene.search.Query query = 
 				queryParser.parse(queryString, "foo");
 		
@@ -137,9 +133,8 @@ public class EpsilonSearcher extends DeltaSearcher {
 			}}, new DefaultEncoder(), new QueryTermScorer(query));
 		
 		TokenStream tokenStream =
-				new EnglishAnalyzer(LUCENE_VERSION)
-							.tokenStream("foo",
-										 new StringReader(searchString));
+				analyzer.tokenStream("foo",
+									 new StringReader(searchString));
 		
 		TextFragment[] frag = 
 				highlighter.getBestTextFragments(tokenStream,
@@ -170,16 +165,21 @@ public class EpsilonSearcher extends DeltaSearcher {
 	    return hits;
 	}
 	
-	@Override
-	public void configure(Float[] settings) {
-		super.configure(settings);
+	public class ConceptFunction extends Gaussian implements JustifiedFunction {
+		List<String> justifications;
 		
-		CONCEPT_FRAME_POWER = settings[super.numSettings()];
-		CONCEPT_FRAME_WEIGHT = settings[super.numSettings() + 1];
-	}
-	
-	@Override
-	public int numSettings() {
-		return super.numSettings() + 2;
+		public ConceptFunction(double a, double b, double c) {
+			super (a, b, c);
+			
+			justifications = new ArrayList<String>();
+		}
+		
+		public boolean addJustification(String justification) {
+			return justifications.add(justification);
+		}
+		
+		public List<String> getJustifications() {
+			return justifications;
+		}
 	}
 }

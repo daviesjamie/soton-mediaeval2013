@@ -14,6 +14,16 @@
 	</properties>
     <dependencies>
         <dependency>
+            <groupId>de.jungblut.math</groupId>
+            <artifactId>tjungblut-math</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>de.jungblut.common</groupId>
+            <artifactId>thomasjungblut-common</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>3.2</version>

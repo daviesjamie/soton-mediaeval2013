@@ -27,18 +27,19 @@ public class TimeStringFormatter implements Formatter {
 	@Override
 	public String highlightTerm(String originalText, TokenGroup tokenGroup) {
 		if (tokenGroup.getTotalScore() > 0) {
-			return ">>>" + 
+			return ">>>" +
+				   originalText + "|" + 
 				   times[transcript.substring(0, tokenGroup.getStartOffset())
 			             		   .split(" ")
 			             		   .length]
 			       + "<<<";
 		}
 		
-		return "";
+		return originalText;
 	}
 
 	public static List<Float> timesFromString(String timeString) {
-		Pattern pattern = Pattern.compile(">>>(\\d+(?:\\.\\d+)?)<<<");
+		Pattern pattern = Pattern.compile(">>>.*?\\|(\\d+(?:\\.\\d+)?)<<<");
 		Matcher matcher = pattern.matcher(timeString);
 		
 		List<Float> times = new ArrayList<Float>();

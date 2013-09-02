@@ -1,26 +1,35 @@
 package org.openimaj.mediaeval.searchhyper2013.datastructures;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.random.EmpiricalDistribution;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.DefaultXYDataset;
 import org.openimaj.data.identity.Identifiable;
 import org.openimaj.image.Image;
+import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedFunction;
+import org.openimaj.mediaeval.searchhyper2013.searcher.module.SynopsisModule.SynopsisFunction;
+import org.openimaj.mediaeval.searchhyper2013.util.UnivariateFunctionDistribution;
+
+import de.jungblut.math.DoubleVector;
+import de.jungblut.math.dense.DenseDoubleVector;
 
 public class Timeline implements Identifiable, UnivariateFunction {
 	String id;
 	public float endTime;
-	Set<UnivariateFunction> functions;
+	Set<JustifiedFunction> functions;
 	
 	public Timeline(String id, float endTime) {
 		this.id = id;
 		this.endTime = endTime;
 		
-		functions = new HashSet<UnivariateFunction>();
+		functions = new HashSet<JustifiedFunction>();
 	}
 	
 	@Override
@@ -34,7 +43,7 @@ public class Timeline implements Identifiable, UnivariateFunction {
 		return interest;
 	}
 	
-	public boolean addFunction(UnivariateFunction f) {
+	public boolean addFunction(JustifiedFunction f) {
 		return functions.add(f);
 	}
 	
@@ -95,9 +104,58 @@ public class Timeline implements Identifiable, UnivariateFunction {
 											  "Time (seconds)",
 											  "Value",
 											  dataset,
-											  PlotOrientation.HORIZONTAL,
+											  PlotOrientation.VERTICAL,
 											  false,
 											  false,
 											  false);
+	}
+	
+	@Override
+	public String toString() {
+		/*StringBuilder sb = new StringBuilder();
+		
+		sb.append("Timeline: " + id + "\n");
+		sb.append("Functions: \n");
+		
+		for (UnivariateFunction function : functions) {
+			sb.append("\t" + function.toString() + "\n");
+		}
+		
+		sb.append("End time: " + endTime);
+		
+		return sb.toString();*/
+		
+		return id + " | " + functions.size() + " | " + endTime;
+	}
+
+	public List<DoubleVector> sample() {
+		final int NUM_SAMPLES = (int) (endTime / 10);
+		
+		UnivariateFunctionDistribution distribution = 
+				new UnivariateFunctionDistribution(this, 0, endTime);
+		
+		double[] samples = distribution.sample(NUM_SAMPLES);
+		
+		List<DoubleVector> vectors = new ArrayList<DoubleVector>(NUM_SAMPLES);
+		
+		for (double sample : samples) {
+			vectors.add(new DenseDoubleVector(1, sample));
+		}
+		
+		return vectors;
+	}
+	
+	public int numFunctions() {
+		return functions.size();
+	}
+
+	public boolean containsInstanceOf(Class<? extends UnivariateFunction> class1) {
+		for (UnivariateFunction function : functions) {
+			if (class1.isInstance(function)) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 }

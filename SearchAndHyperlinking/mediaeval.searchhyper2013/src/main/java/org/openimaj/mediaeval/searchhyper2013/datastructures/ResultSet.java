@@ -35,12 +35,14 @@ public class ResultSet implements Set<Result> {
 				Result resultCopy = new Result(result);
 				
 				if (arg0.endTime <= result.endTime + 0.001) {
-					resultCopy.confidenceScore += arg0.confidenceScore;
+					resultCopy.confidenceScore = 
+						resultCopy.confidenceScore + arg0.confidenceScore;
 					
 					merged = true;
 				} else if (arg0.startTime <= result.endTime + 0.001) {
 					resultCopy.endTime = arg0.endTime;
-					resultCopy.confidenceScore += arg0.confidenceScore;
+					resultCopy.confidenceScore = 
+						resultCopy.confidenceScore + arg0.confidenceScore;
 					
 					merged = true;
 				}
@@ -50,12 +52,14 @@ public class ResultSet implements Set<Result> {
 				Result resultCopy = new Result(arg0);
 				
 				if (result.endTime <= arg0.endTime + 0.001) {
-					resultCopy.confidenceScore += result.confidenceScore;
+					resultCopy.confidenceScore = 
+						resultCopy.confidenceScore + result.confidenceScore;
 					
 					merged = true;
 				} else if (result.startTime <= arg0.endTime + 0.001) {
 					resultCopy.endTime = result.endTime;
-					resultCopy.confidenceScore += result.confidenceScore;
+					resultCopy.confidenceScore = 
+						resultCopy.confidenceScore + result.confidenceScore;
 					
 					merged = true;
 				} else {

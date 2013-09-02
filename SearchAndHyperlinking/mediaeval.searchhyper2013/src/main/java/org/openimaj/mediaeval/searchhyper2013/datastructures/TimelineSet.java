@@ -3,7 +3,15 @@ package org.openimaj.mediaeval.searchhyper2013.datastructures;
 import java.util.HashSet;
 
 public class TimelineSet extends HashSet<Timeline> {
-
+	
+	public TimelineSet() {
+		super();
+	}
+	
+	public TimelineSet(TimelineSet other) {
+		super(other);
+	}
+	
 	/* (non-Javadoc)
 	 * @see java.util.HashSet#add(java.lang.Object)
 	 */
@@ -18,5 +26,16 @@ public class TimelineSet extends HashSet<Timeline> {
 		}
 		
 		return super.add(e);
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		
+		for (Timeline timeline : this) {
+			sb.append(timeline.toString() + "\n\n");
+		}
+		
+		return sb.toString();
 	}
 }
