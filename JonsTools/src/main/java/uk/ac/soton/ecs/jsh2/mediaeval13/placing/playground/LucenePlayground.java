@@ -28,7 +28,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.LuceneIndexBuilder;
  */
 public class LucenePlayground {
 	public static void main(String[] args) throws IOException, ParseException {
-		final Directory directory = new SimpleFSDirectory(new File("/Volumes/SSD/mediaeval13/placing/places.lucene.v2"));
+		final Directory directory = new SimpleFSDirectory(new File("../Placement/data/lucene-meta-index"));
 
 		for (int j = 0; j < 10000; j++) {
 			// final Query q = new QueryParser(Version.LUCENE_43, "tags", new
