@@ -1,7 +1,11 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.diversity;
 
+import gnu.trove.map.hash.TObjectIntHashMap;
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -13,9 +17,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.openimaj.util.pair.ObjectDoublePair;
+import org.openimaj.util.pair.ObjectIntPair;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.utils.FileUtils;
@@ -77,6 +83,10 @@ public class ResultList extends AbstractList<ResultItem> {
 				break;
 			}
 		}
+	}
+
+	ResultList() {
+
 	}
 
 	private List<ObjectDoublePair<String>> probModel;
@@ -142,7 +152,7 @@ public class ResultList extends AbstractList<ResultItem> {
 	private static List<String> loadQueries(File f) throws ParserConfigurationException, SAXException, IOException {
 		final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 		final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		final Document doc = dBuilder.parse(f);
+		final Document doc = dBuilder.parse(new InputSource(new InputStreamReader(new FileInputStream(f), "UTF-8")));
 
 		final List<String> queries = new ArrayList<String>();
 		final NodeList topicList = doc.getElementsByTagName("title");
@@ -196,5 +206,78 @@ public class ResultList extends AbstractList<ResultItem> {
 				};
 			}
 		};
+	}
+
+	public ResultList copy() {
+		final ResultList rl = new ResultList();
+		rl.base = base;
+		rl.latitude = latitude;
+		rl.longitude = longitude;
+		rl.monument = monument;
+		rl.number = number;
+		rl.wikiItem = wikiItem;
+		rl.results = new ArrayList<ResultItem>(this.results);
+		return rl;
+
+	}
+
+	List<ObjectIntPair<String>> titleVocab;
+
+	public List<ObjectIntPair<String>> getTitleVocabulary() {
+		if (titleVocab == null) {
+			titleVocab = new ArrayList<ObjectIntPair<String>>();
+
+			final TObjectIntHashMap<String> tmp = new TObjectIntHashMap<String>();
+			for (final ResultItem ri : this) {
+				for (final String tok : ri.title.split(ResultItem.TOKENISER)) {
+					tmp.adjustOrPutValue(tok, 1, 1);
+				}
+			}
+
+			for (final String s : tmp.keySet()) {
+				titleVocab.add(new ObjectIntPair<String>(s, tmp.get(s)));
+			}
+		}
+		return titleVocab;
+	}
+
+	List<ObjectIntPair<String>> tagVocab;
+
+	public List<ObjectIntPair<String>> getTagVocabulary() {
+		if (tagVocab == null) {
+			tagVocab = new ArrayList<ObjectIntPair<String>>();
+
+			final TObjectIntHashMap<String> tmp = new TObjectIntHashMap<String>();
+			for (final ResultItem ri : this) {
+				for (final String tok : ri.tags) {
+					tmp.adjustOrPutValue(tok, 1, 1);
+				}
+			}
+
+			for (final String s : tmp.keySet()) {
+				tagVocab.add(new ObjectIntPair<String>(s, tmp.get(s)));
+			}
+		}
+		return tagVocab;
+	}
+
+	List<ObjectIntPair<String>> descriptionVocab;
+
+	public List<ObjectIntPair<String>> getDescriptionVocabulary() {
+		if (descriptionVocab == null) {
+			descriptionVocab = new ArrayList<ObjectIntPair<String>>();
+
+			final TObjectIntHashMap<String> tmp = new TObjectIntHashMap<String>();
+			for (final ResultItem ri : this) {
+				for (final String tok : ri.description.split(ResultItem.TOKENISER)) {
+					tmp.adjustOrPutValue(tok, 1, 1);
+				}
+			}
+
+			for (final String s : tmp.keySet()) {
+				descriptionVocab.add(new ObjectIntPair<String>(s, tmp.get(s)));
+			}
+		}
+		return descriptionVocab;
 	}
 }

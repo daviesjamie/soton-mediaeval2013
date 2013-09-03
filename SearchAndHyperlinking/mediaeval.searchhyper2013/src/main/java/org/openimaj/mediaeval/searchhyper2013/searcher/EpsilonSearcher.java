@@ -46,6 +46,7 @@ public class EpsilonSearcher extends DeltaSearcher {
 	Concepts concepts;
 	File conceptsDir;
 	File synFile;
+	File stopFile;
 	
 	public EpsilonSearcher(String runName,
 						 IndexReader indexReader,
@@ -53,12 +54,14 @@ public class EpsilonSearcher extends DeltaSearcher {
 						 LSHDataExplorer lshExplorer,
 						 File conceptsDir,
 						 File conceptsFile,
-						 File synFile) throws IOException {
+						 File synFile,
+						 File stopFile) throws IOException {
 		super(runName, indexReader, shotsDirectoryCacheFile, lshExplorer);
 		
 		concepts = new Concepts(conceptsFile);
 		this.conceptsDir = conceptsDir;
 		this.synFile = synFile;
+		this.stopFile = stopFile;
 	}
 	
 	@Override
@@ -111,16 +114,8 @@ public class EpsilonSearcher extends DeltaSearcher {
 	
 	public List<String> getCommonTokens(String queryString, String searchString) throws IOException, QueryNodeException, InvalidTokenOffsetsException {
 		
-		Map<String, String> analyzerArgs = new HashMap<String, String>();
-		
-		analyzerArgs.put("luceneMatchVersion", LUCENE_VERSION.toString());
-		analyzerArgs.put("synonyms", synFile.getAbsolutePath());
-		analyzerArgs.put("format", "wordnet");
-		analyzerArgs.put("ignoreCase", "true");
-		analyzerArgs.put("expand", "true");
-		
 		EnglishSynonymAnalyzer englishSynonymAnalyzer =
-				new EnglishSynonymAnalyzer(LUCENE_VERSION, analyzerArgs);
+				new EnglishSynonymAnalyzer(LUCENE_VERSION, synFile, stopFile);
 		
 		StandardQueryParser queryParser =
 				new StandardQueryParser(englishSynonymAnalyzer);

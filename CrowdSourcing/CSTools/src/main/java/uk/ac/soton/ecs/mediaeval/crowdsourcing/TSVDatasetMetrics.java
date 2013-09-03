@@ -33,7 +33,7 @@ public class TSVDatasetMetrics
 			@Override
 			public boolean isTrue(final String str)
 			{
-				return str.toLowerCase().equals("yes");
+				return str.toLowerCase().equals("yes") || str.equals("1");
 			}
 		};
 

@@ -23,7 +23,7 @@ public class Frame {
 		String[] components = string.split("/");
 		
 		frame.programme = components[0];
-		frame.frame = Integer.parseInt(components[3].split("\\.")[0]);
+		frame.frame = Integer.parseInt(components[2].split("\\.")[0]);
 		
 		return frame;
 	}

@@ -62,6 +62,12 @@
     </dependency>
     <dependency>
       <groupId>org.openimaj</groupId>
+      <artifactId>faces</artifactId>
+      <version>${openimaj.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openimaj</groupId>
       <artifactId>nearest-neighbour</artifactId>
       <version>${openimaj.version}</version>
       <scope>compile</scope>
@@ -107,6 +113,11 @@
       <artifactId>bliki-core</artifactId>
       <version>3.0.19</version>
     </dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.1</version>
+		</dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

@@ -7,13 +7,11 @@ import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparator;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.ml.clustering.dbscan.DistanceDBSCAN;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
 import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
 import org.openimaj.ml.clustering.dbscan.SparseMatrixDBSCAN;
 import org.openimaj.util.pair.ObjectDoublePair;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.ResultItem;
-import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.ResultList;
 import ch.akuhn.matrix.SparseMatrix;
 
 public class DBScanBasedDiversifier implements Diversifier {
@@ -32,7 +30,7 @@ public class DBScanBasedDiversifier implements Diversifier {
 	}
 
 	@Override
-	public List<ObjectDoublePair<ResultItem>> diversify(ResultList input) {
+	public List<ObjectDoublePair<ResultItem>> diversify(List<ObjectDoublePair<ResultItem>> input) {
 		final SparseMatrix m = buildMatrix(input);
 
 		SparseMatrixDBSCAN dbscan;
@@ -41,20 +39,32 @@ public class DBScanBasedDiversifier implements Diversifier {
 		} else {
 			dbscan = new SimilarityDBSCAN(eps, minPts);
 		}
-		final DoubleDBSCANClusters clusters = dbscan.cluster(m);
+		final int[][] clusters = dbscan.cluster(m).clusters();
 
 		System.out.println(clusters);
 
+		// sort by id so that higher rel items come first
+		// for (int i = 0; i < clusters.length; i++) {
+		// final int[] ids = clusters[i];
+		// Arrays.sort(ids);
+		// }
+		// Arrays.sort(clusters, new Comparator<int[]>() {
+		// @Override
+		// public int compare(int[] o1, int[] o2) {
+		// return o1.length == o2.length ? 0 : o1.length < o2.length ? -1 : 1;
+		// }
+		// });
+
 		final List<ObjectDoublePair<ResultItem>> results = new ArrayList<ObjectDoublePair<ResultItem>>();
 		for (int i = 0, cluster = 0, number = 0; i < Math.min(50, input.size()); i++) {
-			if (number < clusters.clusters()[cluster].length) {
-				final int id = clusters.clusters()[cluster][number];
-				results.add(ObjectDoublePair.pair(input.get(id), 1.0 / (i + 1)));
+			if (number < clusters[cluster].length) {
+				final int id = clusters[cluster][number];
+				results.add(ObjectDoublePair.pair(input.get(id).first, 1.0 / (i + 1)));
 			}
 
 			cluster++;
 
-			if (cluster >= clusters.numClusters()) {
+			if (cluster >= clusters.length) {
 				cluster = 0;
 				number++;
 			}
@@ -63,12 +73,12 @@ public class DBScanBasedDiversifier implements Diversifier {
 		return results;
 	}
 
-	private SparseMatrix buildMatrix(ResultList input) {
+	private SparseMatrix buildMatrix(List<ObjectDoublePair<ResultItem>> input) {
 		final SparseMatrix m = new SparseMatrix(input.size(), input.size());
 
 		final List<DoubleFV> features = new ArrayList<DoubleFV>();
 		for (int i = 0; i < input.size(); i++)
-			features.add(extractor.extractFeature(input.get(i)));
+			features.add(extractor.extractFeature(input.get(i).first));
 
 		for (int i = 0; i < input.size(); i++) {
 			for (int j = i; j < input.size(); j++) {

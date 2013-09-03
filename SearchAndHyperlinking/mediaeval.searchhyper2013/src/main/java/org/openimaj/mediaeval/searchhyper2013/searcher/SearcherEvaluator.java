@@ -5,6 +5,7 @@ import gov.sandia.cognition.math.matrix.mtj.DenseVectorFactoryMTJ;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -96,13 +97,13 @@ public class SearcherEvaluator {
 				result.startTime = Time.MStoS(Float.parseFloat(parts[2]));
 				result.endTime = Time.MStoS(Float.parseFloat(parts[3]));
 				result.jumpInPoint = result.startTime;
-				result.confidenceScore = -1f;
+				result.confidenceScore = -1;
 			} else if (parts.length == 6) {
 				result.fileName = parts[1];
 				result.startTime = Time.MStoS(Float.parseFloat(parts[2]));
 				result.endTime = Time.MStoS(Float.parseFloat(parts[3]));
 			    result.jumpInPoint = Time.MStoS(Float.parseFloat(parts[4]));
-			    result.confidenceScore = Float.parseFloat(parts[5]);
+			    result.confidenceScore = Double.parseDouble(parts[5]);
 			} else {
 				return null;
 			}

@@ -9,7 +9,6 @@ import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.util.pair.ObjectDoublePair;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.ResultItem;
-import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.ResultList;
 
 /**
  * Diversifier based on greedily choosing the item with the max distance from
@@ -55,8 +54,8 @@ public class MaxDistGreedyDiversifier implements Diversifier {
 	}
 
 	@Override
-	public List<ObjectDoublePair<ResultItem>> diversify(ResultList input) {
-		final List<ResultItem> working = new ArrayList<ResultItem>(input);
+	public List<ObjectDoublePair<ResultItem>> diversify(List<ObjectDoublePair<ResultItem>> input) {
+		final List<ResultItem> working = ObjectDoublePair.getFirst(input);
 		final List<ObjectDoublePair<ResultItem>> results = new ArrayList<ObjectDoublePair<ResultItem>>();
 
 		results.add(ObjectDoublePair.pair(working.remove(0), 1));

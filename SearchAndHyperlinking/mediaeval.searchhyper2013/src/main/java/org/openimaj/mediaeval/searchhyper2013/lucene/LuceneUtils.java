@@ -1,6 +1,7 @@
 package org.openimaj.mediaeval.searchhyper2013.lucene;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -119,7 +120,8 @@ public abstract class LuceneUtils {
 	}
 
 	public static ScoreDoc[] normaliseTopDocs(TopDocs search) {
-		ScoreDoc[] scoreDocs = search.scoreDocs;
+		ScoreDoc[] scoreDocs = Arrays.copyOf(search.scoreDocs,
+											 search.scoreDocs.length);
 		
 		double maxScore = 0;
 		
