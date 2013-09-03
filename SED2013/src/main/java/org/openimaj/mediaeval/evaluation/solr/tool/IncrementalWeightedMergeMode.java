@@ -238,7 +238,11 @@ public class IncrementalWeightedMergeMode extends SimMatSetupMode {
 						String nextSimMat = IncrementalWeightedMergeMode.super.simMatIter.next();
 						SimilarityMatrixWrapper newmat = null;
 						try {
-							newmat = IncrementalWeightedMergeMode.this.readSparseMatricies(simmatRoot, nextSimMat).get(nextSimMat);
+							Map<String, SimilarityMatrixWrapper> readSparseMatricies = IncrementalWeightedMergeMode.this.readSparseMatricies(simmatRoot, nextSimMat);
+							newmat = readSparseMatricies.get(nextSimMat);
+							if(newmat == null){
+								newmat = readSparseMatricies.get(new File(nextSimMat).getName());
+							}
 						} catch (Exception e) {
 							throw new RuntimeException(e);
 						}

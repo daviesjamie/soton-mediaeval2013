@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 import sys
 import re
 import os
@@ -29,7 +29,12 @@ def _parseexp(filename):
 				foundstart = True
 			continue
 		if len(x[0]) > 0:
-			exp[x[0]] = True
+			if "_" in x[0]:
+				start,stop = x[0].split("_")
+				exp["start"] = start
+				exp["stop"] = stop
+			else:
+				exp[x[0]] = True
 		else:
 			key = x[1]
 			key = key.replace(".","_")
@@ -51,18 +56,21 @@ coll.drop()
 exps = []
 for fn in sys.stdin:
 	fn = fn.strip()
-	exp = _parseexp(fn)
+	exp = {}
+	exp["details"] = _parseexp(fn)
+
 	size = os.stat(fn).st_size
 	f = open(fn)
 	data = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
 	m = re.search(f1regex, data)
 	f1,b,d = m.groups()
-	exp["f1"] = float(f1)
-	exp["randomf1"] = float(b)
-	exp["correctf1"] = float(d)
+	exp["scores"] = {}
+	exp["scores"]["f1"] = float(f1)
+	exp["scores"]["randomf1"] = float(b)
+	exp["scores"]["correctf1"] = float(d)
 	decdict = dict([x.split("=") for x in re.search(decregex,data).groups()[0].split(",")])
 	for x in decdict:
-		exp[x] = float(decdict[x])
+		exp["scores"][x] = float(decdict[x])
 	coll.insert(exp)
 	
-coll.create_index(("f1",-1))
+coll.create_index("f1",-1)
