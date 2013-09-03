@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.openimaj.mediaeval.searchhyper2013.util.Time;
@@ -102,7 +103,7 @@ public class ResultList extends ArrayList<Result> {
 			result.jumpInPoint = transcript.startTime();
 			result.confidenceScore = (float)
 					((Math.pow(transcript.confidence() / totalConf, power) * resultScaleFactor) + 
-					(synopsisConfidence * (1 - resultScaleFactor)) / 2);
+					(synopsisConfidence * (1 - resultScaleFactor)));
 			result.fileName = fileName;
 			
 			results.add(result);
@@ -216,6 +217,14 @@ public class ResultList extends ArrayList<Result> {
 			
 			return merged.mergeShortResults(minLength, maxLength);
 		} else {
+			Iterator<Result> iter = iterator();
+			
+			while (iter.hasNext()) {
+				if (iter.next().length() < minLength) {
+					iter.remove();
+				}
+			}
+			
 			return this;
 		}
 	}

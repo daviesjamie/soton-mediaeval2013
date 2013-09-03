@@ -13,7 +13,7 @@ public class Anchor {
 	public String toString() {
 		return anchorID + " | " +
 			   anchorName + " | " +
-			   Time.StoMS(startTime) + " | " +
+			   Time.StoMS(startTime) + " - " +
 			   Time.StoMS(endTime) + " | " +
 			   fileName;
 	}

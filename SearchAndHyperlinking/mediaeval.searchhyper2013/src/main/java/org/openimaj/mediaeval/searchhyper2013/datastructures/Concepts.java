@@ -40,7 +40,7 @@ public class Concepts extends HashMap<String, Integer> {
 														throws IOException {
 		Integer conceptID = get(concept);
 		
-		if (conceptID == null) {
+		if (conceptID == null || conceptID == 702) {
 			return null;
 		}
 		

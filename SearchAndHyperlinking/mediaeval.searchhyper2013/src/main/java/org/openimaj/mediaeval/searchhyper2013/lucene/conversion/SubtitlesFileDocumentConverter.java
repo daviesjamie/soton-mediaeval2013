@@ -50,6 +50,7 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 			float pStart = 0f;
 			float pEnd = 0f;
 			int count = 0;
+			boolean inP = false;
 			
 			public void startElement(String uri,
 									 String localName,
@@ -60,6 +61,7 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 					pStart = Time.HMStoS(attributes.getValue("begin"));
 					pEnd = Time.HMStoS(attributes.getValue("end"));
 					count = 0;
+					inP = true;
 				}
 			}
 			
@@ -70,10 +72,12 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 										   throws SAXException {
 				if (localName.equals("p")) {
 					for (int i = 0; i < count; i++) {
-						float wordTime = pStart + ((pEnd - pStart) / count);
+						float wordTime = pStart + (i * (pEnd - pStart) / count);
 						
 						times.append(wordTime + " ");
 					}
+					
+					inP = false;
 				}
 			}
 
@@ -81,20 +85,28 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 								   int start,
 								   int length)
 										   throws SAXException {
-				char[] chars = Arrays.copyOfRange(ch, start, start + length);
-				
-				words.append(chars);
-				count += new String(chars).split(" ").length;
+				if (inP) {
+					char[] chars = Arrays.copyOfRange(ch, start, start + length);
+					
+					String string = new String(chars).trim();
+					string = string.replaceAll("\\s+", " ") + " ";
+					
+					// Kill delete char.
+					//string.replace((char) 0x7f, ' ');
+					
+					words.append(string);
+					count += string.split(" ").length;
+				}
 			}
 		});
 		
 		xr.parse(new InputSource(new FileReader(subsFile)));
 
 		doc.add(new TextField(Field.Text.toString(),
-							  words.toString(),
+							  words.toString().replaceAll("\\s+", " ").trim(),
 							  org.apache.lucene.document.Field.Store.YES));
 		doc.add(new StringField(Field.Times.toString(),
-				  				times.toString(),
+				  				times.toString().trim(),
 				  				org.apache.lucene.document.Field.Store.YES));
 		
 		return doc;

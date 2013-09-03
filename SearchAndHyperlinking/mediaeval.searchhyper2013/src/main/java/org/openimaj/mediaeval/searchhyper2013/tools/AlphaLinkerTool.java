@@ -18,7 +18,7 @@ public class AlphaLinkerTool {
 	public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException, LinkerException {
 		AnchorList anchors = AnchorList.readFromFile(new File(args[0]));
 		
-		LSHDataExplorer lshExplorer = new LSHDataExplorer(new File(args[1]), 3);
+		LSHDataExplorer lshExplorer = new LSHDataExplorer(new File(args[1]), 1);
 		
 		AlphaLinker linker = new AlphaLinker("AlphaLinker", new File(args[2]), lshExplorer);
 		

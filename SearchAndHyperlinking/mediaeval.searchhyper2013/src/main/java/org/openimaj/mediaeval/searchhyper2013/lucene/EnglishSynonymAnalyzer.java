@@ -17,10 +17,13 @@ package org.openimaj.mediaeval.searchhyper2013.lucene;
  * limitations under the License.
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
@@ -43,7 +46,7 @@ import org.apache.lucene.util.Version;
  */
 public final class EnglishSynonymAnalyzer extends StopwordAnalyzerBase {
   private final CharArraySet stemExclusionSet;
-  private final Map<String, String> synonymArgs;
+  Map<String, String> synonymArgs;
   
   /**
    * Returns an unmodifiable instance of the default stop words set.
@@ -63,9 +66,14 @@ public final class EnglishSynonymAnalyzer extends StopwordAnalyzerBase {
 
   /**
    * Builds an analyzer with the default stop words: {@link #getDefaultStopSet}.
+ * @throws IOException 
    */
-  public EnglishSynonymAnalyzer(Version matchVersion, Map<String, String> synonymArgs) {
-    this(matchVersion, DefaultSetHolder.DEFAULT_STOP_SET, synonymArgs);
+  public EnglishSynonymAnalyzer(Version matchVersion, File synonymsFile, File stopwordsFile) throws IOException {
+    this(matchVersion,
+    	 new CharArraySet(matchVersion,
+    			 		  FileUtils.readLines(stopwordsFile),
+    			 		  true),
+    	 synonymsFile);
   }
   
   /**
@@ -74,8 +82,8 @@ public final class EnglishSynonymAnalyzer extends StopwordAnalyzerBase {
    * @param matchVersion lucene compatibility version
    * @param stopwords a stopword set
    */
-  public EnglishSynonymAnalyzer(Version matchVersion, CharArraySet stopwords, Map<String, String> synonymArgs) {
-    this(matchVersion, stopwords, CharArraySet.EMPTY_SET, synonymArgs);
+  public EnglishSynonymAnalyzer(Version matchVersion, CharArraySet stopwords, File synonymsFile) {
+    this(matchVersion, stopwords, CharArraySet.EMPTY_SET, synonymsFile);
   }
 
   /**
@@ -87,11 +95,18 @@ public final class EnglishSynonymAnalyzer extends StopwordAnalyzerBase {
    * @param stopwords a stopword set
    * @param stemExclusionSet a set of terms not to be stemmed
    */
-  public EnglishSynonymAnalyzer(Version matchVersion, CharArraySet stopwords, CharArraySet stemExclusionSet, Map<String, String> synonymArgs) {
+  public EnglishSynonymAnalyzer(Version matchVersion, CharArraySet stopwords, CharArraySet stemExclusionSet, File synonymsFile) {
     super(matchVersion, stopwords);
     this.stemExclusionSet = CharArraySet.unmodifiableSet(CharArraySet.copy(
         matchVersion, stemExclusionSet));
-    this.synonymArgs = synonymArgs;
+    
+    synonymArgs = new HashMap<String, String>();
+    
+    synonymArgs.put("luceneMatchVersion", matchVersion.toString());
+	synonymArgs.put("synonyms", synonymsFile.getAbsolutePath());
+	synonymArgs.put("format", "wordnet");
+	synonymArgs.put("ignoreCase", "true");
+	synonymArgs.put("expand", "true");
   }
 
   /**

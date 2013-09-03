@@ -1,5 +1,7 @@
 package org.openimaj.mediaeval.placement.utils;
 
+import gnu.trove.list.array.TLongArrayList;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,16 +19,16 @@ public class TestSetExtractor {
     private ArrayList<File> inputFiles;
     private String delimiter;
     
-    private ArrayList<Long> testIds;
+    private TLongArrayList testIds;
 
     public TestSetExtractor( ArrayList<File> inputFiles, String delimiter ) throws IOException {
         this.inputFiles = inputFiles;
         this.delimiter = delimiter;
         
-        this.testIds = new ArrayList<Long>();
+        this.testIds = new TLongArrayList();
         
         // Read test IDs into memory
-        System.out.println( "Reading test IDs from " + TEST_ID_FILE.getName() + " into memory." );
+        System.out.println( "Reading test IDs from " + TEST_ID_FILE + " into memory." );
         BufferedReader br = new BufferedReader( new FileReader( TEST_ID_FILE ) );
         String line;
         int count = 0;
@@ -73,6 +75,8 @@ public class TestSetExtractor {
         
         for( int i = 1; i < 10; i++ )
             inputFiles.add( new File( "data/metadata_" + i + ".csv" ) );
+        
+        inputFiles.add( new File( "data/metadata_missingBlocks.csv" ) );
 
         TestSetExtractor tse = new TestSetExtractor( inputFiles, "," );
         tse.run();
