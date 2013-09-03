@@ -68,18 +68,23 @@ public class TitleModule implements SearcherModule {
 		for (ScoreDoc doc : hits) {
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
-			System.out.println("Title hit: " + luceneDocument.get(Field.Program.toString()));
+			//System.out.println("Title hit: " + luceneDocument.get(Field.Program.toString()));
 			
-			System.out.println(luceneDocument.get(Field.Title.toString()));
+			//System.out.println(luceneDocument.get(Field.Title.toString()));
 			
 			Timeline programmeTimeline =
 				new Timeline(luceneDocument.get(Field.Program.toString()),
 							 Float.parseFloat(
 								luceneDocument.get(Field.Length.toString())));
-			programmeTimeline.addFunction(
-					new TitleFunction(TITLE_WEIGHT *
-											Math.pow(doc.score,
-													 TITLE_POWER)));
+			
+			TitleFunction function = new TitleFunction(TITLE_WEIGHT *
+															Math.pow(doc.score,
+													   TITLE_POWER));
+			programmeTimeline.addFunction(function);
+			
+			function.addJustification(
+					"Title match with score " + doc.score + 
+					": " + luceneDocument.get(Field.Title.toString()));
 			
 			timelines.add(programmeTimeline);
 		}
@@ -87,21 +92,30 @@ public class TitleModule implements SearcherModule {
 		return timelines;
 	}
 
-	public class TitleFunction extends Constant implements JustifiedFunction {
+	public class TitleFunction extends Constant
+			  					  implements JustifiedTimedFunction {
 		List<String> justifications;
 		
 		public TitleFunction(double c) {
 			super(c);
-			
+		
 			justifications = new ArrayList<String>();
 		}
-		
 		public boolean addJustification(String justification) {
 			return justifications.add(justification);
 		}
 		
 		public List<String> getJustifications() {
 			return justifications;
+		}
+		
+		public float getTime() {
+			return 0;
+		}
+		
+		@Override
+		public String toString() {
+			return "Title function";
 		}
 	}
 }

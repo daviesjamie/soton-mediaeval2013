@@ -50,5 +50,23 @@ public class TimeStringFormatter implements Formatter {
 		
 		return times;
 	}
+	
+	public static String getWordAndContextAtTime(String timeString,
+												 float time) {
+		int index = timeString.indexOf(Float.toString(time));
+		
+		if (index != -1) {
+			final int WIDTH = 100;
+			
+			return "..." +
+				   timeString.substring(
+						   Math.max(index - WIDTH, 0),
+						   Math.min(index + 15 + WIDTH,
+								    timeString.length())) +
+				   "...";
+		}
+		
+		return null;
+	}
 
 }

@@ -25,8 +25,8 @@ import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
 public class SynopsisModule implements SearcherModule {
 	Version LUCENE_VERSION = Version.LUCENE_43;
 	
-	double SYNOPSIS_WEIGHT = 3;
-	double SYNOPSIS_POWER = 0.5;
+	double SYNOPSIS_WEIGHT = 10;
+	double SYNOPSIS_POWER = 2;
 	
 	StandardQueryParser queryParser;
 	IndexSearcher indexSearcher;
@@ -67,18 +67,34 @@ public class SynopsisModule implements SearcherModule {
 		for (ScoreDoc doc : hits) {
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
-			System.out.println("Synopsis hit: " + luceneDocument.get(Field.Program.toString()));
+			//System.out.println("Synopsis hit: " + luceneDocument.get(Field.Program.toString()));
 			
-			System.out.println(luceneDocument.get(Field.Text.toString()));
+			//System.out.println(luceneDocument.get(Field.Text.toString()));
 			
 			Timeline programmeTimeline =
 				new Timeline(luceneDocument.get(Field.Program.toString()),
 							 Float.parseFloat(
 								luceneDocument.get(Field.Length.toString())));
-			programmeTimeline.addFunction(
+			SynopsisFunction function = 
 					new SynopsisFunction(SYNOPSIS_WEIGHT *
 											Math.pow(doc.score,
-													 SYNOPSIS_POWER)));
+													 SYNOPSIS_POWER));
+			programmeTimeline.addFunction(function);
+			
+			List<String> commonWords =
+				LuceneUtils.getCommonTokens(q.queryText,
+											luceneDocument.get(Field.Text.toString()));
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append("Synopsis matched on ");
+			
+			for (String word : commonWords) {
+				sb.append("'" + word + "', ");
+			}
+			
+			function.addJustification(
+					sb.toString().substring(0, sb.toString().length() - 2) + 
+					" with score " + doc.score);
 			
 			timelines.add(programmeTimeline);
 		}
@@ -86,7 +102,8 @@ public class SynopsisModule implements SearcherModule {
 		return timelines;
 	}
 
-	public class SynopsisFunction extends Constant implements JustifiedFunction {
+	public class SynopsisFunction extends Constant
+								  implements JustifiedTimedFunction {
 		List<String> justifications;
 		
 		public SynopsisFunction(double c) {
@@ -100,6 +117,15 @@ public class SynopsisModule implements SearcherModule {
 		
 		public List<String> getJustifications() {
 			return justifications;
+		}
+		
+		public float getTime() {
+			return 0;
+		}
+		
+		@Override
+		public String toString() {
+			return "Synopsis function";
 		}
 	}
 }

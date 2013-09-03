@@ -49,7 +49,8 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 		xr.setContentHandler(new DefaultHandler() {
 			float pStart = 0f;
 			float pEnd = 0f;
-			int count = 0;
+			//int count = 0;
+			StringBuilder currentPhrase = new StringBuilder();
 			boolean inP = false;
 			
 			public void startElement(String uri,
@@ -60,7 +61,8 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 				if (localName.equals("p")) {
 					pStart = Time.HMStoS(attributes.getValue("begin"));
 					pEnd = Time.HMStoS(attributes.getValue("end"));
-					count = 0;
+					//count = 0;
+					currentPhrase = new StringBuilder();
 					inP = true;
 				}
 			}
@@ -71,13 +73,25 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 								   String qName)
 										   throws SAXException {
 				if (localName.equals("p")) {
-					for (int i = 0; i < count; i++) {
+					/*for (int i = 0; i < count; i++) {
 						float wordTime = pStart + (i * (pEnd - pStart) / count);
 						
 						times.append(wordTime + " ");
 					}
 					
-					inP = false;
+					inP = false;*/
+					String phrase = currentPhrase.toString();
+					
+					if (!words.toString().contains(phrase)) {
+						for (int i = 0; i < phrase.length(); i++) {
+							float wordTime = pStart + (i * (pEnd - pStart) / 
+														phrase.length());
+							
+							times.append(wordTime + " ");
+						}
+						
+						inP = false;
+					}
 				}
 			}
 
@@ -94,8 +108,12 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 					// Kill delete char.
 					//string.replace((char) 0x7f, ' ');
 					
-					words.append(string);
-					count += string.split(" ").length;
+					/*if (words.toString().endsWith(string)) {
+						return;
+					}*/
+					
+					currentPhrase.append(string);
+					//count += string.split(" ").length;
 				}
 			}
 		});

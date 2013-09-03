@@ -28,6 +28,7 @@ import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
 import org.openimaj.mediaeval.searchhyper2013.lucene.TimeStringFormatter;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
+import org.openimaj.mediaeval.searchhyper2013.util.Time;
 
 public class TranscriptModule implements SearcherModule {
 
@@ -83,7 +84,7 @@ public class TranscriptModule implements SearcherModule {
 		for (ScoreDoc doc : hits) {
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
-			System.out.println("Transcript hit: " + luceneDocument.get(Field.Program.toString()));
+			//System.out.println("Transcript hit: " + luceneDocument.get(Field.Program.toString()));
 			
 			Document synopsis =
 					LuceneUtils.resolveOtherFromProgramme(doc.doc,
@@ -113,19 +114,32 @@ public class TranscriptModule implements SearcherModule {
 													 transcript,
 													 1000000, " ");
 			
-			System.out.println(timeString + "\n");
+			//System.out.println(timeString + "\n");
 			
 			tokenStream.close();
 			
 			List<Float> times = TimeStringFormatter.timesFromString(timeString);
 			
 			for (float time : times) {
-				programmeTimeline.addFunction(
+				
+				// Don't add if it's past the end of the programme.
+				if (time > programmeTimeline.endTime + 30) {
+					continue;
+				}
+				
+				TranscriptFunction function = 
 						new TranscriptFunction(TRANSCRIPT_WEIGHT *
-									 			Math.pow(doc.score,
-									 					 TRANSCRIPT_POWER),
-									 		  time,
-									 		  TRANSCRIPT_WIDTH / 3d));
+									 			 Math.pow(doc.score,
+									 					  TRANSCRIPT_POWER),
+									 		   time,
+									 		   TRANSCRIPT_WIDTH / 3d);
+				programmeTimeline.addFunction(function);
+				
+				function.addJustification(
+						"Transcript matched at " + Time.StoMS(time) + " with score " + 
+						doc.score + " and " + "match: " +
+						TimeStringFormatter.getWordAndContextAtTime(timeString,
+																	time));
 			}
 			
 			timelines.add(programmeTimeline);
@@ -134,11 +148,16 @@ public class TranscriptModule implements SearcherModule {
 		return timelines;
 	}
 	
-	public class TranscriptFunction extends Gaussian implements JustifiedFunction {
+	public class TranscriptFunction extends Gaussian
+									implements JustifiedTimedFunction {
 		List<String> justifications;
 		
-		public TranscriptFunction(double a, double b, double c) {
-			super (a, b, c);
+		double mean;
+		
+		public TranscriptFunction(double norm, double mean, double sigma) {
+			super(norm, mean, sigma);
+			
+			this.mean = mean;
 			
 			justifications = new ArrayList<String>();
 		}
@@ -149,6 +168,15 @@ public class TranscriptModule implements SearcherModule {
 		
 		public List<String> getJustifications() {
 			return justifications;
+		}
+		
+		public float getTime() {
+			return (float) mean;
+		}
+		
+		@Override
+		public String toString() {
+			return "Transcript function @ " + Time.StoMS((float) mean);
 		}
 	}
 }

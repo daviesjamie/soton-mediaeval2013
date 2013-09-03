@@ -63,6 +63,7 @@ import org.openimaj.mediaeval.searchhyper2013.lucene.TimeStringFormatter;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.ChannelFilterModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.ConceptModule;
+import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.SearcherModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.SynopsisModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.TitleModule;
@@ -105,11 +106,13 @@ public class ModularSearcher implements Searcher {
 	}
 	
 	public ResultList _search(Query q) throws Exception {
+		Query query = cleanQuery(q);
+		
 		// Accumulated timelines.
 		TimelineSet timelines = new TimelineSet();
 		
 		for (SearcherModule module : searcherModules) {
-			timelines = module.search(q, timelines);
+			timelines = module.search(query, timelines);
 		}
 		
 		//System.out.println("No. timelines: " + timelines.size());
@@ -120,6 +123,20 @@ public class ModularSearcher implements Searcher {
 		ResultSet resultSet = new ResultSet();
 		
 		for (Timeline timeline : timelines) {
+			System.out.println(timeline);
+			
+			List<JustifiedTimedFunction> fs =
+				new ArrayList<JustifiedTimedFunction>(timeline.getFunctions());
+			Collections.sort(fs, new JustifiedTimedFunction.TimeComparator());
+			
+			for (JustifiedTimedFunction f : fs) {
+				System.out.println("\t" + f.toString());
+				
+				for (String j : f.getJustifications()) {
+					System.out.println("\t\t" + j);
+				}
+			}
+			
 			//ChartFrame chartFrame = new ChartFrame(timeline.getID(),
 			//									   timeline.plot());
 			//chartFrame.setVisible(true);
@@ -183,13 +200,28 @@ public class ModularSearcher implements Searcher {
 			}
 		}
 
-		ResultList results = new ResultList(q.queryID, runName);
+		ResultList results = new ResultList(query.queryID, runName);
 		
 		results.addAll(resultSet);
 		
 		Collections.sort(results);
 		
 		return results;
+	}
+	
+	public Query cleanQuery(Query q) {
+		String[] stopwords = { "from" };
+		
+		Query newQ = new Query(q);
+		
+		for (String word : stopwords) {
+			Pattern pattern = Pattern.compile(word, Pattern.CASE_INSENSITIVE);
+			
+			newQ.queryText = pattern.matcher(newQ.queryText).replaceAll("");
+			newQ.visualCues = pattern.matcher(newQ.visualCues).replaceAll("");
+		}
+		
+		return newQ;
 	}
 
 	public boolean addModule(SearcherModule module) {

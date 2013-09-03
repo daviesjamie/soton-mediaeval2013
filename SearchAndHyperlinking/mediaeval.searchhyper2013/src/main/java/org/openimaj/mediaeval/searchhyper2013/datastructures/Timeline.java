@@ -13,8 +13,9 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.DefaultXYDataset;
 import org.openimaj.data.identity.Identifiable;
 import org.openimaj.image.Image;
-import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedFunction;
+import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.SynopsisModule.SynopsisFunction;
+import org.openimaj.mediaeval.searchhyper2013.util.Time;
 import org.openimaj.mediaeval.searchhyper2013.util.UnivariateFunctionDistribution;
 
 import de.jungblut.math.DoubleVector;
@@ -23,13 +24,13 @@ import de.jungblut.math.dense.DenseDoubleVector;
 public class Timeline implements Identifiable, UnivariateFunction {
 	String id;
 	public float endTime;
-	Set<JustifiedFunction> functions;
+	Set<JustifiedTimedFunction> functions;
 	
 	public Timeline(String id, float endTime) {
 		this.id = id;
 		this.endTime = endTime;
 		
-		functions = new HashSet<JustifiedFunction>();
+		functions = new HashSet<JustifiedTimedFunction>();
 	}
 	
 	@Override
@@ -43,7 +44,7 @@ public class Timeline implements Identifiable, UnivariateFunction {
 		return interest;
 	}
 	
-	public boolean addFunction(JustifiedFunction f) {
+	public boolean addFunction(JustifiedTimedFunction f) {
 		return functions.add(f);
 	}
 	
@@ -125,7 +126,7 @@ public class Timeline implements Identifiable, UnivariateFunction {
 		
 		return sb.toString();*/
 		
-		return id + " | " + functions.size() + " | " + endTime;
+		return id + " | Funcs.: " + functions.size() + " | " + Time.StoMS(endTime);
 	}
 
 	public List<DoubleVector> sample() {
@@ -157,5 +158,9 @@ public class Timeline implements Identifiable, UnivariateFunction {
 		}
 		
 		return false;
+	}
+
+	public Set<JustifiedTimedFunction> getFunctions() {
+		return functions;
 	}
 }
