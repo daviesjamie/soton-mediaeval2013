@@ -8,19 +8,19 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.openimaj.util.pair.ObjectDoublePair;
 
-import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.Diversifier;
-import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.RandomDiversifier;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.scoring.Scorer;
 
 public class DiversificationHarness {
-	public static void performDiversification(File baseDir, boolean devset, Diversifier diversifier, File output,
-			String runId)
+	public static void performDiversification(File baseDir, boolean devset, final Scorer diversifier, File output,
+			final String runId)
 			throws Exception
 	{
 		final PrintWriter pw;
-		PrintWriter htmlPw = null;
+		final PrintWriter htmlPw;
 
 		if (output == null) {
 			pw = new PrintWriter(System.out);
+			htmlPw = null;
 		} else {
 			output.getParentFile().mkdirs();
 			pw = new PrintWriter(new FileWriter(output));
@@ -33,16 +33,34 @@ public class DiversificationHarness {
 			htmlPw.println("<body>");
 		}
 
-		for (final ResultList rl : ResultList.loadResultSet(baseDir, devset)) {
+		final Iterable<ResultList> allLists = ResultList.loadResultSet(baseDir, devset);
+		for (final ResultList rl : allLists) {
 			System.err.println("Diversifying " + rl.monument);
 
-			final List<ObjectDoublePair<ResultItem>> results = diversifier.diversify(rl);
+			final List<ObjectDoublePair<ResultItem>> results =
+					diversifier.score(rl);
 
 			formatResults(results, rl, runId, pw);
 
 			if (htmlPw != null)
 				printHtml(results, rl, runId, htmlPw);
 		}
+
+		// Parallel.forEach(allLists, new Operation<ResultList>() {
+		// @Override
+		// public void perform(ResultList rl) {
+		// System.err.println("Diversifying " + rl.monument);
+		//
+		// final List<ObjectDoublePair<ResultItem>> results =
+		// diversifier.diversify(rl);
+		//
+		// formatResults(results, rl, runId, pw);
+		//
+		// if (htmlPw != null) {
+		// printHtml(results, rl, runId, htmlPw);
+		// }
+		// }
+		// });
 
 		if (htmlPw != null) {
 			htmlPw.println("</body>");
@@ -56,12 +74,15 @@ public class DiversificationHarness {
 		}
 
 		if (output != null && devset) {
+			final File metricsFile = new File(output.getParent(), output.getName() + "_metrics.csv");
+			metricsFile.delete();
+
 			// perform the evaluation by running the shell script
 			final Process p = Runtime.getRuntime().exec("./run-eval.sh " + output.getAbsolutePath(), null, baseDir);
 			p.waitFor();
 
 			System.out.println(
-					FileUtils.readFileToString(new File(output.getParent(), output.getName() + "_metrics.csv")));
+					FileUtils.readFileToString(metricsFile));
 		}
 	}
 
@@ -69,7 +90,7 @@ public class DiversificationHarness {
 			PrintWriter htmlPw)
 	{
 		htmlPw.format("<h1>%s</h1>\n", rl.monument);
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < Math.min(10, results.size()); i++) {
 			final File fn = results.get(i).first.getImageFile().getAbsoluteFile();
 			htmlPw.format("<a href=\"file://%s\"><img src=\"file://%s\" width='100'/></a>\n", fn, fn);
 		}
@@ -88,15 +109,5 @@ public class DiversificationHarness {
 
 			pw.format("%s %s %d %d %2.4f %s\n", qid, iter, item.id, rnk, sim, runId);
 		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		final File baseDir = new File("/Users/jon/Data/mediaeval/diversity/");
-		final boolean devset = true;
-		final Diversifier diversifier = new RandomDiversifier();
-		final String runId = "random-top50";
-
-		final File output = new File(baseDir, "experiments/" + runId);
-		performDiversification(baseDir, devset, diversifier, output, runId);
 	}
 }

@@ -12,7 +12,6 @@ import java.net.URL;
 
 import org.apache.commons.io.IOUtils;
 import org.openimaj.feature.DoubleFV;
-import org.openimaj.io.FileUtils;
 
 public class WikipediaItem {
 	public URL url;
@@ -199,26 +198,29 @@ public class WikipediaItem {
 		final File wikitext = new File(container.base, "wikitext" + File.separator + container.monument + ".txt");
 
 		try {
-			if (wikitext.exists()) {
-				return FileUtils.readall(wikitext);
-			} else {
+			// if (wikitext.exists()) {
+			// return FileUtils.readall(wikitext);
+			// } else {
 
-				final String path = url.getPath();
-				final String title = path.substring(path.lastIndexOf("/") + 1);
-				final URL queryurl = new URL("http://en.wikipedia.org/w/index.php?action=raw&title=" + title);
+			final String path = url.getPath();
+			final String domain = url.getHost();
+			final String title = path.substring(path.lastIndexOf("/") + 1);
+			final URL queryurl = new URL("http://" + domain + "/w/index.php?action=raw&title=" + title);
 
-				final String rawcontent = IOUtils.toString(queryurl, "UTF8");
+			System.out.println(queryurl);
 
-				final WikiModel wikiModel = new WikiModel("http://www.mywiki.com/wiki/${image}",
-						"http://www.mywiki.com/wiki/${title}");
-				String plainStr = wikiModel.render(new PlainTextConverter(), rawcontent);
+			final String rawcontent = IOUtils.toString(queryurl, "UTF8");
 
-				plainStr = plainStr.replaceAll("[{]+[^}]*[}]+", "");
+			final WikiModel wikiModel = new WikiModel("http://www.mywiki.com/wiki/${image}",
+					"http://www.mywiki.com/wiki/${title}");
+			String plainStr = wikiModel.render(new PlainTextConverter(), rawcontent);
 
-				wikitext.getParentFile().mkdirs();
-				org.apache.commons.io.FileUtils.write(wikitext, plainStr);
-				return plainStr;
-			}
+			plainStr = plainStr.replaceAll("[{]+[^}]*[}]+", "");
+
+			wikitext.getParentFile().mkdirs();
+			org.apache.commons.io.FileUtils.write(wikitext, plainStr);
+			return plainStr;
+			// }
 		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
