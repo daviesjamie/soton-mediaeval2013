@@ -7,16 +7,9 @@ import java.util.List;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ProxyOptionHandler;
 import org.openimaj.data.DoubleRange;
-import org.openimaj.data.IntegerRange;
-import org.openimaj.mediaeval.evaluation.solr.tool.ExperimentSetupMode.NamedClusterer;
 import org.openimaj.mediaeval.evaluation.solr.tool.SpatialClustererSetupMode.NamedSpecClusterConf;
-import org.openimaj.ml.clustering.dbscan.DBSCANClusters;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
-import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
-import org.openimaj.ml.clustering.incremental.IncrementalSparseClusterer;
 import org.openimaj.ml.clustering.spectral.AbsoluteValueEigenChooser;
 import org.openimaj.ml.clustering.spectral.DoubleSpectralClustering;
-import org.openimaj.util.pair.DoubleIntPair;
 
 /**
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
@@ -85,10 +78,7 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 
 
 	private Iterator<Double> eigIter;
-	private Iterator<Double> mpIter;
 
-	private int currentMP;
-	
 	@Option(
 		name = "--spectral-clustering-mode",
 		aliases = "-scm",
@@ -103,6 +93,7 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 	double currentEig = -1;
 	@Override
 	public void setup() {
+		currentEig = -1;
 		this.experimentSetupModeOp.setup();
 		if(this.eig.size() == 0){
 			this.eigIter = new DoubleRange(eigStart, eigDelta, eigEnd).iterator();
@@ -113,7 +104,9 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 	}
 	@Override
 	public boolean hasNextSetup() {
-		return experimentSetupModeOp.hasNextSetup() || this.eigIter.hasNext();
+		boolean innerExpHasNext = experimentSetupModeOp.hasNextSetup();
+		boolean eigValsHasNext = this.eigIter.hasNext();
+		return innerExpHasNext || eigValsHasNext;
 	}
 	
 	@Override

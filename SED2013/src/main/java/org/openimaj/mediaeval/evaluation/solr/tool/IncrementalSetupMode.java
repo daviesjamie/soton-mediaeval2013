@@ -87,7 +87,9 @@ public class IncrementalSetupMode extends ExperimentSetupMode {
 	}
 	@Override
 	public boolean hasNextSetup() {
-		return experimentSetupModeOp.hasNextSetup() || (this.winSizeIter!= null && this.winSizeIter.hasNext());
+		boolean nextExp = experimentSetupModeOp.hasNextSetup();
+		boolean nextWin = this.winSizeIter.hasNext();
+		return nextExp || nextWin;
 	}
 	
 	@Override
