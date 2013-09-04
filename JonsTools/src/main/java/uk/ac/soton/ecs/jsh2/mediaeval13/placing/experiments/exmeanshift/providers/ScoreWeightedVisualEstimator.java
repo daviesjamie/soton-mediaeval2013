@@ -91,7 +91,7 @@ public class ScoreWeightedVisualEstimator implements GeoDensityEstimateProvider 
 	 */
 	@Override
 	public String toString() {
-		return "ScoreWeightedVisualEstimator [searcher=" + searcher + ", visualSearcher=" + visualSearcher
+		return "ScoreWeightedVisualEstimator[visualSearcher=" + visualSearcher
 				+ ", numResults=" + numResults + ", scaling=" + scaling + "]";
 	}
 

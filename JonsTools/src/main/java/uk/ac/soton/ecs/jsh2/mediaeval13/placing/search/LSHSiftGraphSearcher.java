@@ -133,4 +133,9 @@ public class LSHSiftGraphSearcher implements VisualSearcher {
 		}
 		return null;
 	}
+
+	@Override
+	public String toString() {
+		return "LSHSiftGraphSearcher[expand=" + expand + "]";
+	}
 }

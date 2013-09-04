@@ -32,8 +32,8 @@ public class CeddPlaygroundServer {
 
 	private CeddPlaygroundServer() {
 		try {
-			final String ceddData =
-					"/Volumes/SSD/mediaeval13/placing/cedd.bin";
+			final File ceddData =
+					new File("/Volumes/SSD/mediaeval13/placing/cedd.bin");
 			final String luceneIndex =
 					"/Volumes/SSD/mediaeval13/placing/places.lucene";
 

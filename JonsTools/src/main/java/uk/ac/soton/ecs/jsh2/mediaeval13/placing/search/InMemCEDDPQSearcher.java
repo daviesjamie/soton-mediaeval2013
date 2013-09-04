@@ -1,5 +1,6 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.placing.search;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,6 +10,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.openimaj.data.RandomData;
 import org.openimaj.image.MBFImage;
+import org.openimaj.io.IOUtils;
 import org.openimaj.knn.pq.ByteADCNearestNeighbours;
 import org.openimaj.knn.pq.ByteProductQuantiser;
 import org.openimaj.knn.pq.ByteProductQuantiserUtilities;
@@ -18,22 +20,29 @@ import org.openimaj.util.pair.LongFloatPair;
 public class InMemCEDDPQSearcher extends InMemCEDDSearcher {
 	ByteADCNearestNeighbours nn;
 
-	public InMemCEDDPQSearcher(String ceddDataFile, IndexSearcher meta) throws IOException {
+	public InMemCEDDPQSearcher(File ceddDataFile, IndexSearcher meta) throws IOException {
 		super(ceddDataFile, meta);
 
-		System.out.println("getting samples");
-		final byte[][] sample = new byte[10000][];
-		final int[] sampIds = RandomData.getUniqueRandomInts(sample.length, 0, this.data.length);
-		for (int i = 0; i < sample.length; i++) {
-			sample[i] = data[sampIds[i]];
+		final File adcnn = new File(ceddDataFile.getAbsolutePath().replace(".bin", "-adcnn.bin"));
+		if (!adcnn.exists()) {
+			System.out.println("getting samples");
+			final byte[][] sample = new byte[10000][];
+			final int[] sampIds = RandomData.getUniqueRandomInts(sample.length, 0, this.data.length);
+			for (int i = 0; i < sample.length; i++) {
+				sample[i] = data[sampIds[i]];
+			}
+
+			System.out.println("Building PQ");
+			final ByteProductQuantiser pq = ByteProductQuantiserUtilities.train(sample, 18, 50);
+
+			System.out.println("Building NN");
+			this.nn = new ByteADCNearestNeighbours(pq, this.data);
+			System.out.println("done");
+
+			IOUtils.writeToFile(nn, adcnn);
+		} else {
+			nn = IOUtils.readFromFile(adcnn);
 		}
-
-		System.out.println("Building PQ");
-		final ByteProductQuantiser pq = ByteProductQuantiserUtilities.train(sample, 18, 50);
-
-		System.out.println("Building NN");
-		this.nn = new ByteADCNearestNeighbours(pq, this.data);
-		System.out.println("done");
 	}
 
 	@Override

@@ -1,7 +1,9 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift;
 
 import java.io.File;
+import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.lucene.search.IndexSearcher;
 import org.openimaj.experiment.ExperimentContext;
 import org.openimaj.experiment.ExperimentRunner;
@@ -14,10 +16,20 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.provider
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.ScoreWeightedVisualEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.UploadedBasedEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.VisualEstimator;
+import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.InMemCEDDPQSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.LSHSiftGraphSearcher;
+import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.VLADSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
 
 public class ExperimentHarness {
+	static {
+		try {
+			ExperimentAgent.initialise();
+		} catch (final IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
 	private static File DEFAULT_LUCENE_INDEX = new File("/Volumes/SSD/mediaeval13/placing/places.lucene");
 	private static final File DEFAULT_LAT_LNG_FILE = new File("/Volumes/SSD/mediaeval13/placing/training_latlng");
 	private static final File DEFAULT_CACHE_LOCATION = new File("/Volumes/SSD/tags-cache/");
@@ -30,6 +42,13 @@ public class ExperimentHarness {
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
 						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION));
+			}
+		},
+		PriorOnly {
+			@Override
+			protected RunnableExperiment create() throws Exception {
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE));
 			}
 		},
 		TagsAndPrior {
@@ -63,53 +82,175 @@ public class ExperimentHarness {
 			}
 		},
 		LshOnly {
-			@IndependentVariable
-			int lshMinEdgeCount = 1;
-
-			@IndependentVariable
-			boolean lshExpand = false;
-
-			@IndependentVariable
-			File lshEdges = new File("/Volumes/SSD/mediaeval13/placing/sift1x-dups/edges-v2.txt");
-
 			@Override
 			protected RunnableExperiment create() throws Exception {
+				final int lshMinEdgeCountValue = 1;
+				final boolean lshExpandValue = false;
+				final File lshEdgesFile = new File(
+						"/Volumes/SSD/mediaeval13/placing/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+
 				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
-				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdges, lshMinEdgeCount, luceneIndex);
-				lsh.setExpand(lshExpand);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdgesFile, lshMinEdgeCountValue, luceneIndex);
+				lsh.setExpand(lshExpandValue);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
-						new VisualEstimator(luceneIndex, lsh, 100000));
+						new VisualEstimator(luceneIndex, lsh, 100000))
+				{
+					@IndependentVariable
+					int lshMinEdgeCount = lshMinEdgeCountValue;
+
+					@IndependentVariable
+					boolean lshExpand = lshExpandValue;
+
+					@IndependentVariable
+					File lshEdges = lshEdgesFile;
+				};
 			}
 		},
 		ScoreWeightedLshOnly {
-			@IndependentVariable
-			File lshEdges = new File("/Volumes/SSD/mediaeval13/placing/sift1x-dups/edges-v2.txt");
-
 			@Override
 			protected RunnableExperiment create() throws Exception {
+				final File lshEdgesFile = new File(
+						"/Volumes/SSD/mediaeval13/placing/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+
 				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
-				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdges, 1, luceneIndex);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdgesFile, 1, luceneIndex);
 				lsh.setExpand(false);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
-						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f));
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f))
+				{
+					@IndependentVariable
+					File lshEdges = lshEdgesFile;
+				};
+			}
+		},
+		ScoreWeightedLshAndTags {
+			@Override
+			protected RunnableExperiment create() throws Exception {
+				final File lshEdgesFile = new File(
+						"/Volumes/SSD/mediaeval13/placing/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdgesFile, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f))
+				{
+					@IndependentVariable
+					File lshEdges = lshEdgesFile;
+				};
 			}
 		},
 		ScoreWeightedLshAndTagsAndPrior {
-			@IndependentVariable
-			File lshEdges = new File("/Volumes/SSD/mediaeval13/placing/sift1x-dups/edges-v2.txt");
-
 			@Override
 			protected RunnableExperiment create() throws Exception {
+				final File lshEdgesFile = new File(
+						"/Volumes/SSD/mediaeval13/placing/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+
 				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
-				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdges, 1, luceneIndex);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdgesFile, 1, luceneIndex);
 				lsh.setExpand(false);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
 						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
 						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
-						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f));
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f))
+				{
+					@IndependentVariable
+					File lshEdges = lshEdgesFile;
+				};
+			}
+		},
+		ScoreWeightedLshAndCEDD100AndTagsAndPrior {
+			@Override
+			protected RunnableExperiment create() throws Exception {
+				final File lshEdgesFile = new File(
+						"/Volumes/SSD/mediaeval13/placing/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdgesFile, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				final File ceddData = new File("/Volumes/SSD/mediaeval13/placing/cedd.bin");
+				final InMemCEDDPQSearcher cedd = new InMemCEDDPQSearcher(ceddData, luceneIndex);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
+						new ScoreWeightedVisualEstimator(luceneIndex, cedd, 100, 1.0f)
+				)
+				{
+					@IndependentVariable
+					File lshEdges = lshEdgesFile;
+
+					@IndependentVariable
+					File ceddFile = ceddData;
+				};
+			}
+		},
+		ScoreWeightedLshAndCEDD10AndTagsAndPrior {
+			@Override
+			protected RunnableExperiment create() throws Exception {
+				final File lshEdgesFile = new File(
+						"/Volumes/SSD/mediaeval13/placing/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdgesFile, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				final File ceddData = new File("/Volumes/SSD/mediaeval13/placing/cedd.bin");
+				final InMemCEDDPQSearcher cedd = new InMemCEDDPQSearcher(ceddData, luceneIndex);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
+						new ScoreWeightedVisualEstimator(luceneIndex, cedd, 10, 1.0f)
+				)
+				{
+					@IndependentVariable
+					File lshEdges = lshEdgesFile;
+
+					@IndependentVariable
+					File ceddFile = ceddData;
+				};
+			}
+		},
+		ScoreWeightedLshAndPQVLADAndTagsAndPrior {
+			@Override
+			protected RunnableExperiment create() throws Exception {
+				final File lshEdgesFile = new File(
+						"/Volumes/SSD/mediaeval13/placing/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(lshEdgesFile, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				final File vladIndex =
+						new File("/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx");
+				final File vladFeatures =
+						new File("/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat");
+				final VLADSearcher vlad = new VLADSearcher(vladFeatures, vladIndex, luceneIndex);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
+						new ScoreWeightedVisualEstimator(luceneIndex, vlad, 100, 1.0f)
+				)
+				{
+					@IndependentVariable
+					File lshEdges = lshEdgesFile;
+
+					@IndependentVariable
+					File vladIndexFile = vladIndex;
+
+					@IndependentVariable
+					File vladFeatureFile = vladFeatures;
+				};
 			}
 		},
 		;
@@ -118,12 +259,15 @@ public class ExperimentHarness {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ExperimentAgent.initialise();
+		final Experiments exp = Experiments.ScoreWeightedLshAndPQVLADAndTagsAndPrior;
 
-		final RunnableExperiment exp = Experiments.ScoreWeightedLshAndTagsAndPrior.create();
-
-		final ExperimentContext ctx = ExperimentRunner.runExperiment(exp);
+		final RunnableExperiment expr = exp.create();
+		final ExperimentContext ctx = ExperimentRunner.runExperiment(expr);
 
 		System.out.println(ctx);
+
+		final File report = new File("/Volumes/SSD/mediaeval13/placing/reports/" + exp.name() + ".txt");
+		report.getParentFile().mkdirs();
+		FileUtils.write(report, ctx.toString());
 	}
 }

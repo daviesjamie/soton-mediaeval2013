@@ -31,8 +31,8 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.InMemCEDDKDTreeSearcher;
  */
 public class CeddPlayground {
 	public static void main(String[] args) throws IOException {
-		final String ceddData =
-				"/Volumes/SSD/mediaeval13/placing/cedd.bin";
+		final File ceddData =
+				new File("/Volumes/SSD/mediaeval13/placing/cedd.bin");
 		final String luceneIndex =
 				"/Volumes/SSD/mediaeval13/placing/places.lucene";
 
