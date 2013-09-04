@@ -12,6 +12,7 @@ import org.openimaj.experiment.annotations.IndependentVariable;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.CachingTagBasedEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.PriorEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.ScoreWeightedVisualEstimator;
+import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.UploadedBasedEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.VisualEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.LSHSiftGraphSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
@@ -105,4 +106,24 @@ public class ExperimentHarness {
 
 		System.out.println(ctx);
 	}
+	UploadedOnly {
+	    @Override
+	    protected RunnableExperiment create() throws Exception {
+		final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+
+		return new MeanShiftPlacingExperiment(0.01, 1000,
+			new UploadedBasedEstimator(luceneIndex));
+	    }
+	},
+	UploadedAndTagsAndPrior {
+	    @Override
+	    protected RunnableExperiment create() throws Exception {
+		final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+
+		return new MeanShiftPlacingExperiment(0.01, 1000,
+			new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+			new UploadedBasedEstimator(luceneIndex),
+			new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION));
+	    }
+	},
 }
