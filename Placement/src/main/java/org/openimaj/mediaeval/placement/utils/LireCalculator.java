@@ -3,7 +3,6 @@ package org.openimaj.mediaeval.placement.utils;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -36,7 +35,6 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.openimaj.mediaeval.placement.data.LireFeatures;
@@ -45,127 +43,128 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.LuceneIndexBuilder;
 
 public class LireCalculator {
 
-    private AutoColorCorrelogram acc;
-    private BasicFeatures bf;
-    private CEDD cedd;
-    private ColorLayout col;
-    private EdgeHistogram edge;
-    private FCTH fcth;
-    private FuzzyOpponentHistogram fop;
-    private Gabor gab;
-    private JointHistogram jh;
-    private RankAndOpponent jop;
-    private ScalableColor sc;
-    private SimpleColorHistogram sch;
-    private Tamura tam;
+	private AutoColorCorrelogram acc;
+	private BasicFeatures bf;
+	private CEDD cedd;
+	private ColorLayout col;
+	private EdgeHistogram edge;
+	private FCTH fcth;
+	private FuzzyOpponentHistogram fop;
+	private Gabor gab;
+	private JointHistogram jh;
+	private RankAndOpponent jop;
+	private ScalableColor sc;
+	private SimpleColorHistogram sch;
+	private Tamura tam;
 
-    private IndexSearcher meta;
-    private IndexWriter indexWriter;
+	private IndexSearcher meta;
+	private IndexWriter indexWriter;
 
-    public LireCalculator( String indexPath, IndexSearcher metadata ) throws IOException {
-        acc = new AutoColorCorrelogram();
-        bf = new BasicFeatures();
-        cedd = new CEDD();
-        col = new ColorLayout();
-        edge = new EdgeHistogram();
-        fcth = new FCTH();
-        fop = new FuzzyOpponentHistogram();
-        gab = new Gabor();
-        jh = new JointHistogram();
-        jop = new RankAndOpponent();
-        sc = new ScalableColor();
-        sch = new SimpleColorHistogram();
-        tam = new Tamura();
+	public LireCalculator(String indexPath, IndexSearcher metadata) throws IOException {
+		acc = new AutoColorCorrelogram();
+		bf = new BasicFeatures();
+		cedd = new CEDD();
+		col = new ColorLayout();
+		edge = new EdgeHistogram();
+		fcth = new FCTH();
+		fop = new FuzzyOpponentHistogram();
+		gab = new Gabor();
+		jh = new JointHistogram();
+		jop = new RankAndOpponent();
+		sc = new ScalableColor();
+		sch = new SimpleColorHistogram();
+		tam = new Tamura();
 
-        IndexWriterConfig config = new IndexWriterConfig( LuceneUtils.LUCENE_VERSION, new WhitespaceAnalyzer( LuceneUtils.LUCENE_VERSION ) );
-        config.setOpenMode( IndexWriterConfig.OpenMode.CREATE_OR_APPEND );
-        indexWriter = new IndexWriter( FSDirectory.open( new File( indexPath ) ), config );
-        
-        this.meta = metadata;
-    }
+		IndexWriterConfig config = new IndexWriterConfig(LuceneUtils.LUCENE_VERSION, new WhitespaceAnalyzer(
+				LuceneUtils.LUCENE_VERSION));
+		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+		indexWriter = new IndexWriter(FSDirectory.open(new File(indexPath)), config);
 
-    public void extractFeatures( long flickrId ) throws MalformedURLException, IOException {
-        Query q = NumericRangeQuery.newLongRange( LuceneIndexBuilder.FIELD_ID, flickrId, flickrId, true, true );
-        int did = meta.search( q, 1 ).scoreDocs[ 0 ].doc;
-        String url = meta.doc( did ).get( LuceneIndexBuilder.FIELD_URL );
+		this.meta = metadata;
+	}
 
-        BufferedImage image = ImageIO.read( new URL( url ) );
+	public void extractFeatures(long flickrId) throws MalformedURLException, IOException {
+		Query q = NumericRangeQuery.newLongRange(LuceneIndexBuilder.FIELD_ID, flickrId, flickrId, true, true);
+		int did = meta.search(q, 1).scoreDocs[0].doc;
+		String url = meta.doc(did).get(LuceneIndexBuilder.FIELD_URL);
 
-        Document d = new Document();
-        d.add( new StoredField( LuceneIndexBuilder.FIELD_ID, flickrId ) );
-        
-        acc.extract( image );
-        d.add( new StoredField( LireFeatures.ACC.name, acc.getByteArrayRepresentation() ) );
+		BufferedImage image = ImageIO.read(new URL(url));
 
-        bf.extract( image );
-        d.add( new StoredField( LireFeatures.BF.name, bf.getStringRepresentation() ) );
+		Document d = new Document();
+		d.add(new StoredField(LuceneIndexBuilder.FIELD_ID, flickrId));
 
-        cedd.extract( image );
-        d.add( new StoredField( LireFeatures.CEDD.name, cedd.getByteArrayRepresentation() ) );
+		acc.extract(image);
+		d.add(new StoredField(LireFeatures.ACC.name, acc.getByteArrayRepresentation()));
 
-        col.extract( image );
-        d.add( new StoredField( LireFeatures.COL.name, col.getByteArrayRepresentation() ) );
+		bf.extract(image);
+		d.add(new StoredField(LireFeatures.BF.name, bf.getStringRepresentation()));
 
-        edge.extract( image );
-        d.add( new StoredField( LireFeatures.EDGEHISTOGRAM.name, edge.getByteArrayRepresentation() ) );
+		cedd.extract(image);
+		d.add(new StoredField(LireFeatures.CEDD.name, cedd.getByteArrayRepresentation()));
 
-        fcth.extract( image );
-        d.add( new StoredField( LireFeatures.FCTH.name, fcth.getByteArrayRepresentation() ) );
+		col.extract(image);
+		d.add(new StoredField(LireFeatures.COL.name, col.getByteArrayRepresentation()));
 
-        fop.extract( image );
-        d.add( new StoredField( LireFeatures.OPHIST.name, fcth.getByteArrayRepresentation() ) );
+		edge.extract(image);
+		d.add(new StoredField(LireFeatures.EDGEHISTOGRAM.name, edge.getByteArrayRepresentation()));
 
-        gab.extract( image );
-        d.add( new StoredField( LireFeatures.GABOR.name, gab.getByteArrayRepresentation() ) );
+		fcth.extract(image);
+		d.add(new StoredField(LireFeatures.FCTH.name, fcth.getByteArrayRepresentation()));
 
-        jh.extract( image );
-        d.add( new StoredField( LireFeatures.JHIST.name, jh.getByteArrayRepresentation() ) );
+		fop.extract(image);
+		d.add(new StoredField(LireFeatures.OPHIST.name, fcth.getByteArrayRepresentation()));
 
-        jop.extract( image );
-        d.add( new StoredField( LireFeatures.JOPHIST.name, jop.getByteArrayRepresentation() ) );
+		gab.extract(image);
+		d.add(new StoredField(LireFeatures.GABOR.name, gab.getByteArrayRepresentation()));
 
-        sc.extract( image );
-        d.add( new StoredField( LireFeatures.SCALABLECOLOR.name, sc.getByteArrayRepresentation() ) );
+		jh.extract(image);
+		d.add(new StoredField(LireFeatures.JHIST.name, jh.getByteArrayRepresentation()));
 
-        sch.extract( image );
-        d.add( new StoredField( LireFeatures.RGB.name, sc.getByteArrayRepresentation() ) );
+		jop.extract(image);
+		d.add(new StoredField(LireFeatures.JOPHIST.name, jop.getByteArrayRepresentation()));
 
-        tam.extract( image );
-        d.add( new StoredField( LireFeatures.TAMURA.name, tam.getByteArrayRepresentation() ) );
+		sc.extract(image);
+		d.add(new StoredField(LireFeatures.SCALABLECOLOR.name, sc.getByteArrayRepresentation()));
 
-        indexWriter.addDocument( d );
-        indexWriter.commit();
-    }
+		sch.extract(image);
+		d.add(new StoredField(LireFeatures.RGB.name, sc.getByteArrayRepresentation()));
 
-    public static void main( String args[] ) throws IOException {
-        File input = new File( "data/featureskipped" );
-        BufferedReader br = new BufferedReader( new FileReader( input ) );
-        
-        String line = null;
-        int count = 0;
-        int fails = 0;
-        
-        final IndexReader ir = DirectoryReader.open( new SimpleFSDirectory( new File( "data/lucene-meta-index" ) ) );
-        final IndexSearcher metadata = new IndexSearcher( ir );
-        LireCalculator lireExtractor = new LireCalculator( "data/lire-feature-index", metadata );
-        
-        while( ( line = br.readLine() ) != null ) {
-            try {
-                System.out.println( line );
-                lireExtractor.extractFeatures( Long.parseLong( line ) );
-                count++;
-            } catch( Exception e ) {
-                System.err.println( line + " failed" );
-                fails++;
-            }
-        }
-        
-        br.close();
-        
-        System.out.println( "\nDone!" );
-        System.out.println( count + " photos processed." );
-        if( fails > 0 )
-            System.err.println( fails + " photos failed." );
-    }
+		tam.extract(image);
+		d.add(new StoredField(LireFeatures.TAMURA.name, tam.getByteArrayRepresentation()));
+
+		indexWriter.addDocument(d);
+		indexWriter.commit();
+	}
+
+	public static void main(String args[]) throws IOException {
+		File input = new File("data/featureskipped");
+		BufferedReader br = new BufferedReader(new FileReader(input));
+
+		String line = null;
+		int count = 0;
+		int fails = 0;
+
+		final IndexReader ir = DirectoryReader.open(new SimpleFSDirectory(new File("data/lucene-meta-index")));
+		final IndexSearcher metadata = new IndexSearcher(ir);
+		LireCalculator lireExtractor = new LireCalculator("data/lire-feature-index", metadata);
+
+		while ((line = br.readLine()) != null) {
+			try {
+				System.out.println(line);
+				lireExtractor.extractFeatures(Long.parseLong(line));
+				count++;
+			} catch (Exception e) {
+				System.err.println(line + " failed");
+				fails++;
+			}
+		}
+
+		br.close();
+
+		System.out.println("\nDone!");
+		System.out.println(count + " photos processed.");
+		if (fails > 0)
+			System.err.println(fails + " photos failed.");
+	}
 
 }

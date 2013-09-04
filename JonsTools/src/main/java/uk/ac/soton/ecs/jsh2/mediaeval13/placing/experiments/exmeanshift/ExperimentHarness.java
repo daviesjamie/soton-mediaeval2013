@@ -45,21 +45,21 @@ public class ExperimentHarness {
 		UploadedOnly {
 			@Override
 			protected RunnableExperiment create() throws Exception {
-			final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
 
-			return new MeanShiftPlacingExperiment(0.01, 1000,
-				new UploadedBasedEstimator(luceneIndex));
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new UploadedBasedEstimator(luceneIndex));
 			}
 		},
 		UploadedAndTagsAndPrior {
 			@Override
 			protected RunnableExperiment create() throws Exception {
-			final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
 
-			return new MeanShiftPlacingExperiment(0.01, 1000,
-				new PriorEstimator(DEFAULT_LAT_LNG_FILE),
-				new UploadedBasedEstimator(luceneIndex),
-				new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION));
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new UploadedBasedEstimator(luceneIndex),
+						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION));
 			}
 		},
 		LshOnly {
