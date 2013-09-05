@@ -39,6 +39,7 @@ public class InMemCEDDPQSearcher extends InMemCEDDSearcher {
 			this.nn = new ByteADCNearestNeighbours(pq, this.data);
 			System.out.println("done");
 
+			adcnn.getParentFile().mkdirs();
 			IOUtils.writeToFile(nn, adcnn);
 		} else {
 			nn = IOUtils.readFromFile(adcnn);
