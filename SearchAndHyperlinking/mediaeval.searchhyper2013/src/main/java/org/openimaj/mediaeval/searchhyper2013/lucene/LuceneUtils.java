@@ -1,31 +1,107 @@
 package org.openimaj.mediaeval.searchhyper2013.lucene;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermContext;
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.highlight.DefaultEncoder;
+import org.apache.lucene.search.highlight.Formatter;
+import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.lucene.search.highlight.QueryTermScorer;
+import org.apache.lucene.search.highlight.TextFragment;
+import org.apache.lucene.search.highlight.TokenGroup;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.Spans;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.Version;
 
 public abstract class LuceneUtils {
+	
+	static final Version LUCENE_VERSION = Version.LUCENE_43;
+	
+	public static List<String> getCommonTokens(String queryString, String searchString)
+			  throws IOException, QueryNodeException, InvalidTokenOffsetsException {
+		
+		EnglishAnalyzer analyzer = new EnglishAnalyzer(LUCENE_VERSION);
+		
+		StandardQueryParser queryParser =
+				new StandardQueryParser(analyzer);
+		org.apache.lucene.search.Query query = 
+				queryParser.parse(queryString, "foo");
+		
+		Highlighter highlighter = new Highlighter(new Formatter() {
+
+			@Override
+			public String highlightTerm(String originalText,
+					TokenGroup tokenGroup) {
+				
+				if (tokenGroup.getTotalScore() > 0) {
+					return ">>>" + originalText + "|" + tokenGroup.getTotalScore() + "<<<";
+				} else {
+					return originalText;
+				}
+				
+			}}, new DefaultEncoder(), new QueryTermScorer(query));
+		
+		TokenStream tokenStream =
+				analyzer.tokenStream("foo",
+									 new StringReader(searchString));
+		
+		TextFragment[] frag = 
+				highlighter.getBestTextFragments(tokenStream,
+									 			 searchString,
+									 			 false,
+									 			 1000);
+
+	    //Get text
+		Pattern pattern = Pattern.compile(">>>(.*?)<<<");
+		
+	    List<String> hits = new ArrayList<String>();
+	    
+	    for (int i = 0; i < frag.length; i++)
+	    {
+	      if ((frag[i] != null) && (frag[i].getScore() > 0))
+	      {
+	        Matcher matcher = pattern.matcher(frag[i].toString());
+	        
+	        while (matcher.find()) {
+	        	String[] parts = matcher.group(1).split("\\|");
+	        	hits.add(parts[0]);
+	        }
+	      }
+	    }
+	    
+	    tokenStream.close();
+	    
+	    return hits;
+	}
 	
 	/**
 	 * Converts TopDocs to Map<Document, Float>.
@@ -134,5 +210,22 @@ public abstract class LuceneUtils {
 		}
 		
 		return scoreDocs;
+	}
+
+	public static Document getSynopsisForProgramme(String programme,
+												   IndexSearcher searcher)
+														  throws IOException {
+		
+		BooleanQuery progTypeQuery = new BooleanQuery();
+		progTypeQuery.add(
+				new TermQuery(new Term(Field.Program.toString(), programme)),
+				BooleanClause.Occur.MUST);
+		progTypeQuery.add(
+				new TermQuery(new Term(Field.Type.toString(), Type.Synopsis.toString())),
+				BooleanClause.Occur.MUST);
+		
+		TopDocs docs = searcher.search(progTypeQuery, 1);
+		
+		return searcher.doc(docs.scoreDocs[0].doc);
 	}
 }

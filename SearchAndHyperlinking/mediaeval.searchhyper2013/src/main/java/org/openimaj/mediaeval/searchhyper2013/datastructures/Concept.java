@@ -37,4 +37,9 @@ public class Concept extends HashMap<Frame, Float> {
 		
 		return matches;
 	}
+	
+	@Override
+	public String toString() {
+		return concept;
+	}
 }

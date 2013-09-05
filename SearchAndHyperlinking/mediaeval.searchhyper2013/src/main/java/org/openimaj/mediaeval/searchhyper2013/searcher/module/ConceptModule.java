@@ -28,14 +28,17 @@ import org.openimaj.mediaeval.searchhyper2013.datastructures.Frame;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.EnglishSynonymAnalyzer;
+import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
 import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
+import org.openimaj.mediaeval.searchhyper2013.util.Time;
 
 public class ConceptModule implements SearcherModule {
 	
-	double CONCEPT_WEIGHT = 10;
-	double CONCEPT_POWER = 2;
+	double CONCEPT_WEIGHT = 0.05;
+	double CONCEPT_POWER = 0.5;
 	double CONCEPT_WIDTH = 5 * 60;
 	
 	static final int FPS = 25;
@@ -55,7 +58,8 @@ public class ConceptModule implements SearcherModule {
 	}
 	
 	@Override
-	public TimelineSet search(Query q, TimelineSet currentSet) 
+	public TimelineSet search(Query q,
+							  TimelineSet currentSet) 
 													throws SearcherException {
 		try {
 			return _search(q, currentSet);
@@ -67,8 +71,8 @@ public class ConceptModule implements SearcherModule {
 	public TimelineSet _search(Query q, TimelineSet currentSet)
 															throws Exception {
 		List<String> queryConcepts =
-				getCommonTokens(q.queryText + " " + q.visualCues,
-								this.concepts.conceptsString());
+				LuceneUtils.getCommonTokens(q.queryText + " " + q.visualCues,
+											this.concepts.conceptsString());
 		
 		List<Concept> conceptObjs = new ArrayList<Concept>();
 		
@@ -94,13 +98,25 @@ public class ConceptModule implements SearcherModule {
 				}
 				
 				for (Frame frame : frames.keySet()) {
+					
+					float time = ((float) frame.frame) / FPS;
+					
+					// Don't add if past end.
+					if (time > timeline.getEndTime() + 30) {
+						continue;
+					}
+					
 					ConceptFunction function = 
 						new ConceptFunction(CONCEPT_WEIGHT *
 												Math.pow(frames.get(frame) /
 															maxConf,
 														 CONCEPT_POWER),
-											frame.frame / FPS,
+											time,
 											CONCEPT_WIDTH / 3d);
+					function.addJustification(
+						"Concept '" + concept.toString() + "' matched at " +
+					    Time.StoMS(time) + " with confidence " +
+						frames.get(frame) /	maxConf);
 					
 					timeline.addFunction(function);
 				}
@@ -109,68 +125,18 @@ public class ConceptModule implements SearcherModule {
 		
 		return timelines;
 	}
-
-	public List<String> getCommonTokens(String queryString, String searchString)
-		  throws IOException, QueryNodeException, InvalidTokenOffsetsException {
-
-		StandardQueryParser queryParser =
-				new StandardQueryParser(analyzer);
-		org.apache.lucene.search.Query query = 
-				queryParser.parse(queryString, "foo");
-		
-		Highlighter highlighter = new Highlighter(new Formatter() {
-
-			@Override
-			public String highlightTerm(String originalText,
-					TokenGroup tokenGroup) {
-				
-				if (tokenGroup.getTotalScore() > 0) {
-					return ">>>" + originalText + "|" + tokenGroup.getTotalScore() + "<<<";
-				} else {
-					return originalText;
-				}
-				
-			}}, new DefaultEncoder(), new QueryTermScorer(query));
-		
-		TokenStream tokenStream =
-				analyzer.tokenStream("foo",
-									 new StringReader(searchString));
-		
-		TextFragment[] frag = 
-				highlighter.getBestTextFragments(tokenStream,
-									 			 searchString,
-									 			 false,
-									 			 1000);
-
-	    //Get text
-		Pattern pattern = Pattern.compile(">>>(.*?)<<<");
-		
-	    List<String> hits = new ArrayList<String>();
-	    
-	    for (int i = 0; i < frag.length; i++)
-	    {
-	      if ((frag[i] != null) && (frag[i].getScore() > 0))
-	      {
-	        Matcher matcher = pattern.matcher(frag[i].toString());
-	        
-	        while (matcher.find()) {
-	        	String[] parts = matcher.group(1).split("\\|");
-	        	hits.add(parts[0]);
-	        }
-	      }
-	    }
-	    
-	    tokenStream.close();
-	    
-	    return hits;
-	}
 	
-	public class ConceptFunction extends Gaussian implements JustifiedFunction {
+	public class ConceptFunction extends Gaussian
+									implements JustifiedTimedFunction {
 		List<String> justifications;
 		
-		public ConceptFunction(double a, double b, double c) {
-			super (a, b, c);
-			
+		double mean;
+		
+		public ConceptFunction(double norm, double mean, double sigma) {
+			super(norm, mean, sigma);
+		
+			this.mean = mean;
+		
 			justifications = new ArrayList<String>();
 		}
 		
@@ -180,6 +146,15 @@ public class ConceptModule implements SearcherModule {
 		
 		public List<String> getJustifications() {
 			return justifications;
+		}
+		
+		public float getTime() {
+			return (float) mean;
+		}
+		
+		@Override
+		public String toString() {
+			return "Concept function @ " + Time.StoMS((float) mean);
 		}
 	}
 }

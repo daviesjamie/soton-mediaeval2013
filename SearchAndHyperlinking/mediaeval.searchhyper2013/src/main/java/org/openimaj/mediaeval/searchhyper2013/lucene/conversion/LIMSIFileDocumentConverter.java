@@ -10,8 +10,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 import org.w3c.dom.Element;
@@ -126,10 +128,21 @@ public class LIMSIFileDocumentConverter implements FileDocumentConverter {
 				}
 			}
 		}
+		
+		FieldType fieldType = new FieldType();
+		fieldType.setIndexed(true);
+		fieldType.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
+		fieldType.setStored(true);
+		fieldType.setStoreTermVectors(true);
+		fieldType.setStoreTermVectorOffsets(true);
+		fieldType.setStoreTermVectorPositions(true);
+		fieldType.setStoreTermVectorPayloads(true);
+		fieldType.setTokenized(true);
+		fieldType.freeze();
 	
-		doc.add(new TextField(Field.Text.toString(),
-				wordsBuilder.toString(),
-				org.apache.lucene.document.Field.Store.YES));
+		doc.add(new org.apache.lucene.document.Field(Field.Text.toString(),
+						  							 wordsBuilder.toString(),
+						  							 fieldType));
 		doc.add(new StringField(Field.Times.toString(),
 				timesBuilder.toString(),
 				org.apache.lucene.document.Field.Store.YES));

@@ -16,6 +16,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.Version;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
@@ -31,16 +32,20 @@ public class TitleModule implements SearcherModule {
 	
 	StandardQueryParser queryParser;
 	IndexSearcher indexSearcher;
+	TimelineFactory timelineFactory;
 	
-	public TitleModule(IndexSearcher indexSearcher) {
+	public TitleModule(IndexSearcher indexSearcher,
+					   TimelineFactory timelineFactory) {
 		this.indexSearcher = indexSearcher;
+		this.timelineFactory = timelineFactory;
 		
 		queryParser = new StandardQueryParser(
 						new EnglishAnalyzer(LUCENE_VERSION));
 	}
 	
 	@Override
-	public TimelineSet search(Query q, TimelineSet currentSet)
+	public TimelineSet search(Query q,
+							  TimelineSet currentSet)
 													throws SearcherException {
 		try {
 			return _search(q, currentSet);
@@ -49,7 +54,8 @@ public class TitleModule implements SearcherModule {
 		}
 	}
 
-	public TimelineSet _search(Query q, TimelineSet currentSet)
+	public TimelineSet _search(Query q,
+							   TimelineSet currentSet)
 														throws Exception {
 		org.apache.lucene.search.Query luceneQuery = 
 				queryParser.parse(q.queryText, Field.Title.toString());
@@ -68,18 +74,22 @@ public class TitleModule implements SearcherModule {
 		for (ScoreDoc doc : hits) {
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
-			System.out.println("Title hit: " + luceneDocument.get(Field.Program.toString()));
+			//System.out.println("Title hit: " + luceneDocument.get(Field.Program.toString()));
 			
-			System.out.println(luceneDocument.get(Field.Title.toString()));
+			//System.out.println(luceneDocument.get(Field.Title.toString()));
 			
 			Timeline programmeTimeline =
-				new Timeline(luceneDocument.get(Field.Program.toString()),
-							 Float.parseFloat(
-								luceneDocument.get(Field.Length.toString())));
-			programmeTimeline.addFunction(
-					new TitleFunction(TITLE_WEIGHT *
-											Math.pow(doc.score,
-													 TITLE_POWER)));
+					timelineFactory.makeTimeline(
+							luceneDocument.get(Field.Program.toString()));
+			
+			TitleFunction function = new TitleFunction(TITLE_WEIGHT *
+															Math.pow(doc.score,
+													   TITLE_POWER));
+			programmeTimeline.addFunction(function);
+			
+			function.addJustification(
+					"Title match with score " + doc.score + 
+					": " + luceneDocument.get(Field.Title.toString()));
 			
 			timelines.add(programmeTimeline);
 		}
@@ -87,21 +97,30 @@ public class TitleModule implements SearcherModule {
 		return timelines;
 	}
 
-	public class TitleFunction extends Constant implements JustifiedFunction {
+	public class TitleFunction extends Constant
+			  					  implements JustifiedTimedFunction {
 		List<String> justifications;
 		
 		public TitleFunction(double c) {
 			super(c);
-			
+		
 			justifications = new ArrayList<String>();
 		}
-		
 		public boolean addJustification(String justification) {
 			return justifications.add(justification);
 		}
 		
 		public List<String> getJustifications() {
 			return justifications;
+		}
+		
+		public float getTime() {
+			return 0;
+		}
+		
+		@Override
+		public String toString() {
+			return "Title function";
 		}
 	}
 }
