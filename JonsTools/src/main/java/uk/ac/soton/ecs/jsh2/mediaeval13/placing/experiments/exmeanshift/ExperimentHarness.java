@@ -30,19 +30,20 @@ public class ExperimentHarness {
 		}
 	}
 
-	private static File DEFAULT_LUCENE_INDEX = new File("../Placement/data/lucene-meta-index");
-	private static final File DEFAULT_LAT_LNG_FILE = new File("../Placement/data/training_latlng_complete");
-	private static final File DEFAULT_CACHE_LOCATION = new File("../Placement/data/caches");
-	private static final File DEFAULT_LSH_EDGES_FILE = new File("../Placement/data/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
-	private static final File DEFAULT_VLAD_INDEX = new File("../Placement/data/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx");
-	private static final File DEFAULT_VLAD_FEATURES_FILE = new File("../Placement/data/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat");
-	private static final File DEFAULT_LIRE_FEATURE_LOCATION = new File("../Placement/data/features");
+	private static File BASE = new File("/Volumes/SSD/mediaeval13/placing/");
+	private static File DEFAULT_LUCENE_INDEX = new File(BASE, "places.lucene");
+	private static final File DEFAULT_LAT_LNG_FILE = new File(BASE, "training_latlng");
+	private static final File DEFAULT_CACHE_LOCATION = new File(BASE, "caches");
+	private static final File DEFAULT_LSH_EDGES_FILE = new File(BASE, "sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
+	private static final File DEFAULT_VLAD_INDEX = new File(BASE, "vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx");
+	private static final File DEFAULT_VLAD_FEATURES_FILE = new File(BASE, "vlad-indexes/rgb-sift1x-vlad64n-pca128.dat");
+	private static final File DEFAULT_LIRE_FEATURE_LOCATION = new File(BASE, "features");
 
 	public enum Experiments {
 		Random {
 			@Override
 			protected RunnableExperiment create() throws Exception {
-				return new MeanShiftPlacingExperiment( 0.01, 1000,
+				return new MeanShiftPlacingExperiment(0.01, 1000,
 						new RandomEstimator());
 			}
 		},
@@ -99,7 +100,8 @@ public class ExperimentHarness {
 				final boolean lshExpandValue = false;
 
 				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
-				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, lshMinEdgeCountValue, luceneIndex);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, lshMinEdgeCountValue,
+						luceneIndex);
 				lsh.setExpand(lshExpandValue);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
@@ -250,14 +252,13 @@ public class ExperimentHarness {
 
 				final File ceddData = new File(DEFAULT_LIRE_FEATURE_LOCATION.getAbsolutePath() + "/cedd.bin");
 				final InMemCEDDPQSearcher cedd = new InMemCEDDPQSearcher(ceddData, luceneIndex);
-				
+
 				return new MeanShiftPlacingExperiment(0.01, 1000,
 						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
 						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
 						new ScoreWeightedVisualEstimator(luceneIndex, cedd, 100, 1.0f));
 			}
-		}
-		;
+		};
 
 		protected abstract RunnableExperiment create() throws Exception;
 	}
@@ -270,8 +271,10 @@ public class ExperimentHarness {
 
 		System.out.println(ctx);
 
-//		final File report = new File("/Volumes/SSD/mediaeval13/placing/reports/" + exp.name() + ".txt");
-//		report.getParentFile().mkdirs();
-//		FileUtils.write(report, ctx.toString());
+		// final File report = new
+		// File("/Volumes/SSD/mediaeval13/placing/reports/" + exp.name() +
+		// ".txt");
+		// report.getParentFile().mkdirs();
+		// FileUtils.write(report, ctx.toString());
 	}
 }
