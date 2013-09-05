@@ -163,13 +163,17 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 		this.start = this.similarityMatrix.start();
 		this.end = this.similarityMatrix.end();
 		if(this.groundtruth == null){
-			logger.debug("Querying lucene index");
-			try {
-				groundtruth = SED2013IndexUtils.datasetFromSolr(indexFile,start,end);
-			} catch (Throwable e) {
-				throw new RuntimeException(e);
+			if(indexFile!=null){				
+				logger.debug("Querying lucene index");
+				try {
+					groundtruth = SED2013IndexUtils.datasetFromSolr(indexFile,start,end);
+				} catch (Throwable e) {
+					throw new RuntimeException(e);
+				}
+				logger.debug("Got from index: " + groundtruth.numInstances());
+			}else{
+				this.groundtruth = new MapBackedDataset<Integer, ListDataset<IndexedPhoto>, IndexedPhoto>();
 			}
-			logger.debug("Got from index: " + groundtruth.numInstances());
 		}
 		gen = prepareClusterer();
 		transformFunction = new Function<IndexedPhoto, Integer>() {
@@ -192,17 +196,26 @@ public abstract class SolrSimilarityMatrixClustererExperiment implements Runnabl
 	public abstract Clusterer<SparseMatrix> prepareClusterer();
 
 	@Override
-	public void perform() {	
+	public void perform() {
 		logger.debug("Preparing evaluation");
-		ClusterEvaluator<SparseMatrix, RandomBaselineSMEAnalysis> a = new ClusterEvaluator<SparseMatrix, RandomBaselineSMEAnalysis>(
-			gen,
-			similarityMatrix.matrix(),
-			transformFunction,
-			groundtruth,
-			new RandomBaselineSMEClusterAnalyser()
-		);
-		logger.debug("Evaluating clusterer");
-		this.analysis = a.analyse(a.evaluate());
+		if(indexFile!=null){
+			logger.debug("Running groundtruth evaluation");
+			ClusterEvaluator<SparseMatrix, RandomBaselineSMEAnalysis> a = new ClusterEvaluator<SparseMatrix, RandomBaselineSMEAnalysis>(
+					gen,
+					similarityMatrix.matrix(),
+					transformFunction,
+					groundtruth,
+					new RandomBaselineSMEClusterAnalyser()
+					);
+			logger.debug("Evaluating clusterer");
+			this.analysis = a.analyse(a.evaluate());
+		}
+		else{
+			logger.debug("Running test evaluation");
+			int[][] estimated = gen.performClustering(similarityMatrix.matrix());
+			this.analysis = new RandomBaselineSMEClusterAnalyser().analyse(estimated, estimated);
+			
+		}
 	}
 
 	@Override

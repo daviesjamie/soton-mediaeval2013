@@ -24,12 +24,6 @@ import org.openimaj.mediaeval.evaluation.solr.tool.SimMatSetupMode.NamedSolrSimi
  *
  *READ THIS FIRST!!!!!
  *You need to:
- *	Fix the way similarity matricies are loaded in so it is a bit more sane
- *	Fix the explicit (i.e. 1,1,1,1,1) weightings specification mode in {@link WeightedMergeSimMatMode}
- *	Fix where the correct.txt files are maede
- *	Figure out a range of experiments worth running across more random samples of 5000 items, this should be a smaller subset
- *	Generate the test solr index
- *	generate the test similarity matricies
  *	generate the test IMAGE similarity matricies
  *
  * party...

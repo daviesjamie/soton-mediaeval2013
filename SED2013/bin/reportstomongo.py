@@ -42,6 +42,8 @@ def _parseexp(filename):
 				exp[key] = bool(x[2])
 			elif key == "combine":
 				exp[key] = x[2]
+			elif key == "dist":
+				exp[key] = x[2]
 			else:
 				exp[key] = float(x[2])
 	return exp

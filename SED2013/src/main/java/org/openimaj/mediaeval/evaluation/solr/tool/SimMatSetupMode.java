@@ -97,7 +97,7 @@ public abstract class SimMatSetupMode {
 	@Option(
 		name = "--index",
 		aliases = "-si",
-		required = true,
+		required = false,
 		usage = "The lucene index used to query by the similarity matrix indecies to build the ground truth."
 	)
 	protected String index;

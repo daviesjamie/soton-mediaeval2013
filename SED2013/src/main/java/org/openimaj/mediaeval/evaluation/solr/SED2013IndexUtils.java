@@ -99,6 +99,35 @@ public class SED2013IndexUtils {
 		reader.close();
 		return ret ;
 	}
+	
+	/**
+	 * @param indexFile
+	 * @param start
+	 * @param end
+	 * @return dataset from a solr index
+	 * @throws CorruptIndexException
+	 * @throws IOException
+	 */
+	public static Map<Integer, IndexedPhoto> indexedPhoto(String indexFile, int start, int end) throws CorruptIndexException, IOException {
+		final Directory directory = new SimpleFSDirectory(new File(indexFile));
+		final IndexReader reader = DirectoryReader.open(directory);
+		final IndexSearcher searcher = new IndexSearcher(reader);
+		Map<Integer, IndexedPhoto> ret = new HashMap<Integer, IndexedPhoto>();
+		for (int i = start; i < end; i++) {
+			Query q = NumericRangeQuery.newLongRange("index", (long)i, (long)i, true, true);
+			
+			TopDocs docs = searcher.search(q, 1);
+			ScoreDoc scoreDoc = docs.scoreDocs[0];
+			
+			final Document d = searcher.doc(scoreDoc.doc);
+			Photo p = PhotoUtils.createPhoto(d);
+			long index = (Long) d.getField("index").numericValue()-start;
+			
+			ret.put((int)index,new IndexedPhoto(index, p));
+		}
+		reader.close();
+		return ret ;
+	}
 
 	/**
 	 * Number of documents in a lucene index
