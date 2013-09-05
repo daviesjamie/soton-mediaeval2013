@@ -7,6 +7,8 @@ import org.apache.commons.math3.analysis.function.Constant;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
@@ -29,7 +31,7 @@ public class SynopsisModule implements SearcherModule {
 	double SYNOPSIS_WEIGHT = 10;
 	double SYNOPSIS_POWER = 3;
 	
-	StandardQueryParser queryParser;
+	QueryParser queryParser;
 	IndexSearcher indexSearcher;
 	TimelineFactory timelineFactory;
 	
@@ -38,8 +40,10 @@ public class SynopsisModule implements SearcherModule {
 		this.indexSearcher = indexSearcher;
 		this.timelineFactory = timelineFactory;
 		
-		queryParser = new StandardQueryParser(
-						new EnglishAnalyzer(LUCENE_VERSION));
+		queryParser = new ComplexPhraseQueryParser(
+				LUCENE_VERSION,
+				Field.Text.toString(),
+				new EnglishAnalyzer(LUCENE_VERSION));
 	}
 	
 	@Override
@@ -56,10 +60,11 @@ public class SynopsisModule implements SearcherModule {
 	public TimelineSet _search(Query q,
 							   TimelineSet currentSet)
 														throws Exception {
-		String query = ChannelFilterModule.removeChannel(q.queryText);
+		String query = LuceneUtils.levenstein(QueryParser.escape(
+							ChannelFilterModule.removeChannel(q.queryText)));
 		
 		org.apache.lucene.search.Query luceneQuery = 
-				queryParser.parse(query, Field.Text.toString());
+				queryParser.parse(query);
 		Filter synopsisFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),

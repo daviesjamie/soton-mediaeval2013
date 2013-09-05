@@ -7,6 +7,8 @@ import org.apache.commons.math3.analysis.function.Constant;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
@@ -30,7 +32,7 @@ public class TitleModule implements SearcherModule {
 	double TITLE_WEIGHT = 3;
 	double TITLE_POWER = 0.5;
 	
-	StandardQueryParser queryParser;
+	QueryParser queryParser;
 	IndexSearcher indexSearcher;
 	TimelineFactory timelineFactory;
 	
@@ -39,8 +41,10 @@ public class TitleModule implements SearcherModule {
 		this.indexSearcher = indexSearcher;
 		this.timelineFactory = timelineFactory;
 		
-		queryParser = new StandardQueryParser(
-						new EnglishAnalyzer(LUCENE_VERSION));
+		queryParser = new ComplexPhraseQueryParser(
+				LUCENE_VERSION,
+				Field.Title.toString(),
+				new EnglishAnalyzer(LUCENE_VERSION));
 	}
 	
 	@Override
@@ -58,7 +62,8 @@ public class TitleModule implements SearcherModule {
 							   TimelineSet currentSet)
 														throws Exception {
 		org.apache.lucene.search.Query luceneQuery = 
-				queryParser.parse(q.queryText, Field.Title.toString());
+				queryParser.parse(LuceneUtils.levenstein(
+									QueryParser.escape(q.queryText)));
 		Filter synopsisFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),

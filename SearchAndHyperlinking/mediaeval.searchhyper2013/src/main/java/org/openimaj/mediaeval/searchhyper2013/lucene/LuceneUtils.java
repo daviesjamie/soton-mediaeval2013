@@ -20,6 +20,7 @@ import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermContext;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.BooleanClause;
@@ -54,7 +55,7 @@ public abstract class LuceneUtils {
 		StandardQueryParser queryParser =
 				new StandardQueryParser(analyzer);
 		org.apache.lucene.search.Query query = 
-				queryParser.parse(queryString, "foo");
+				queryParser.parse(QueryParser.escape(queryString), "foo");
 		
 		Highlighter highlighter = new Highlighter(new Formatter() {
 
@@ -227,5 +228,17 @@ public abstract class LuceneUtils {
 		TopDocs docs = searcher.search(progTypeQuery, 1);
 		
 		return searcher.doc(docs.scoreDocs[0].doc);
+	}
+
+	public static String levenstein(String query) {
+		String[] parts = query.trim().split("\\s+");
+		
+		StringBuilder sb = new StringBuilder();
+		
+		for (String part : parts) {
+			sb.append(part + "~2 ");
+		}
+		
+		return sb.toString().trim();
 	}
 }

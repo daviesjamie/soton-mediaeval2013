@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -74,6 +76,8 @@ import org.openimaj.mediaeval.searchhyper2013.searcher.module.TranscriptModule;
 import org.openimaj.mediaeval.searchhyper2013.util.LSHDataExplorer;
 import org.openimaj.mediaeval.searchhyper2013.util.SlidingWindowUnivariateSolver;
 import org.openimaj.mediaeval.searchhyper2013.util.Time;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import de.jungblut.clustering.MeanShiftClustering;
@@ -94,8 +98,6 @@ public class ModularSearcher implements Searcher {
 	StandardQueryParser queryParser;
 	List<SearcherModule> searcherModules;
 	
-	TimelineFactory timelineFactory;
-	
 	public ModularSearcher(String runName,
 						   UnivariateFunction resultWindow) {
 		this.runName = runName;
@@ -103,20 +105,18 @@ public class ModularSearcher implements Searcher {
 		
 		queryParser = new StandardQueryParser();
 		searcherModules = new ArrayList<SearcherModule>();
-		
-		this.timelineFactory = timelineFactory;
 	}
 	
 	@Override
 	public ResultList search(Query q) throws SearcherException {
 		try {
-			return _search(q);
+			return _search(q, null);
 		} catch (Exception e) {
 			throw new SearcherException(e);
 		}
 	}
 	
-	public ResultList _search(Query q) throws Exception {
+	public ResultList _search(Query q, String expectedFile) throws Exception {
 		Query query = cleanQuery(q);
 		
 		// Accumulated timelines.
@@ -133,6 +133,30 @@ public class ModularSearcher implements Searcher {
 		
 		Collections.sort(results);
 		
+		for (int i = 0; i < results.size(); i++) {
+			String resultFile = results.get(i).fileName;
+			
+			if (i < 3 || resultFile.equals(expectedFile)) {
+				Timeline timeline = timelines.getTimelineWithID(resultFile);
+				
+				System.out.println(timeline);
+				
+				List<JustifiedTimedFunction> fs =
+					new ArrayList<JustifiedTimedFunction>(timeline.getFunctions());
+				Collections.sort(fs, new JustifiedTimedFunction.TimeComparator());
+				
+				for (JustifiedTimedFunction f : fs) {
+					System.out.println("\t" + f.toString());
+					
+					for (String j : f.getJustifications()) {
+						System.out.println("\t\t" + j);
+					}
+				}
+				
+				System.out.println("--");
+			}
+		}
+		
 		return results;
 	}
 	
@@ -143,7 +167,7 @@ public class ModularSearcher implements Searcher {
 		ResultSet resultSet = new ResultSet();
 		
 		for (Timeline timeline : timelines) {
-			System.out.println(timeline);
+			/*System.out.println(timeline);
 			
 			List<JustifiedTimedFunction> fs =
 				new ArrayList<JustifiedTimedFunction>(timeline.getFunctions());
@@ -155,7 +179,7 @@ public class ModularSearcher implements Searcher {
 				for (String j : f.getJustifications()) {
 					System.out.println("\t\t" + j);
 				}
-			}
+			}*/
 			
 			float[] shotBoundaries = timeline.getShotBoundaries();
 			
@@ -332,12 +356,187 @@ public class ModularSearcher implements Searcher {
 	}
 	
 	public Query cleanQuery(Query q) {
-		String[] stopwords = { "from" };
+		String[] stopwords 
+			= { "a", 
+				"about", 
+				"above", 
+				"after", 
+				"again", 
+				"against", 
+				"all", 
+				"am", 
+				"an", 
+				"and", 
+				"any", 
+				"are", 
+				"aren't", 
+				"as", 
+				"at", 
+				"be", 
+				"because", 
+				"been", 
+				"before", 
+				"being", 
+				"below", 
+				"between", 
+				"both", 
+				"but", 
+				"by", 
+				"can't", 
+				"cannot", 
+				"could", 
+				"couldn't", 
+				"did", 
+				"didn't", 
+				"do", 
+				"does", 
+				"doesn't", 
+				"doing", 
+				"don't", 
+				"down", 
+				"during", 
+				"each", 
+				"few", 
+				"for", 
+				"from", 
+				"further", 
+				"had", 
+				"hadn't", 
+				"has", 
+				"hasn't", 
+				"have", 
+				"haven't", 
+				"having", 
+				"he", 
+				"he'd", 
+				"he'll", 
+				"he's", 
+				"her", 
+				"here", 
+				"here's", 
+				"hers", 
+				"herself", 
+				"him", 
+				"himself", 
+				"his", 
+				"how", 
+				"how's", 
+				"i", 
+				"i'd", 
+				"i'll", 
+				"i'm", 
+				"i've", 
+				"if", 
+				"in", 
+				"into", 
+				"is", 
+				"isn't", 
+				"it", 
+				"it's", 
+				"its", 
+				"itself", 
+				"let's", 
+				"me", 
+				"more", 
+				"most", 
+				"mustn't", 
+				"my", 
+				"myself", 
+				"no", 
+				"nor", 
+				"not", 
+				"of", 
+				"off", 
+				"on", 
+				"once", 
+				"only", 
+				"or", 
+				"other", 
+				"ought", 
+				"our", 
+				"ours ", 
+				"ourselves", 
+				"out", 
+				"over", 
+				"own", 
+				"same", 
+				"shan't", 
+				"she", 
+				"she'd", 
+				"she'll", 
+				"she's", 
+				"should", 
+				"shouldn't", 
+				"so", 
+				"some", 
+				"such", 
+				"than", 
+				"that", 
+				"that's", 
+				"the", 
+				"their", 
+				"theirs", 
+				"them", 
+				"themselves", 
+				"then", 
+				"there", 
+				"there's", 
+				"these", 
+				"they", 
+				"they'd", 
+				"they'll", 
+				"they're", 
+				"they've", 
+				"this", 
+				"those", 
+				"through", 
+				"to", 
+				"too", 
+				"under", 
+				"until", 
+				"up", 
+				"very", 
+				"was", 
+				"wasn't", 
+				"we", 
+				"we'd", 
+				"we'll", 
+				"we're", 
+				"we've", 
+				"were", 
+				"weren't", 
+				"what", 
+				"what's", 
+				"when", 
+				"when's", 
+				"where", 
+				"where's", 
+				"which", 
+				"while", 
+				"who", 
+				"who's", 
+				"whom", 
+				"why", 
+				"why's", 
+				"with", 
+				"won't", 
+				"would", 
+				"wouldn't", 
+				"you", 
+				"you'd", 
+				"you'll", 
+				"you're", 
+				"you've", 
+				"your", 
+				"yours", 
+				"yourself", 
+				"yourselves" };
 		
 		Query newQ = new Query(q);
 		
 		for (String word : stopwords) {
-			Pattern pattern = Pattern.compile(word, Pattern.CASE_INSENSITIVE);
+			Pattern pattern = Pattern.compile("\\b" + word + "\\b",
+											  Pattern.CASE_INSENSITIVE);
 			
 			newQ.queryText = pattern.matcher(newQ.queryText).replaceAll("");
 			newQ.visualCues = pattern.matcher(newQ.visualCues).replaceAll("");
@@ -362,7 +561,7 @@ public class ModularSearcher implements Searcher {
 		return 0;
 	}
 
-	public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException {
+	public static void main(String[] args) throws Exception {
 		File queriesFile = new File(args[0]);
 		File resultsFile = new File(args[1]);
 		
@@ -404,16 +603,16 @@ public class ModularSearcher implements Searcher {
 		//												   lshGraph,
 		//												   timelineFactory);
 		
-		ModularSearcher searcher = new ModularSearcher("ModularSearcher",
+		ModularSearcher searcher = new ModularSearcher("me13sh_soton-wais2013_S_Sh_S_M",
 													   resultWindow);
 		searcher.addModule(synopsisModule);
 		searcher.addModule(titleModule);
 		searcher.addModule(transcriptModule);
 		searcher.addModule(channelFilterModule);
-		searcher.addModule(conceptModule);
+		//searcher.addModule(conceptModule);
 		//searcher.addModule(lshGraphModule);
 		
-		// Filter for synopsis hits.
+		// Filter for synopsis- and title-only hits.
 		searcher.addModule(new SearcherModule() {
 
 			@Override
@@ -422,9 +621,25 @@ public class ModularSearcher implements Searcher {
 				TimelineSet timelines = new TimelineSet();
 				
 				for (Timeline timeline : currentSet) {
-					if (!(timeline.containsInstanceOf(
-							SynopsisModule.SynopsisFunction.class) &&
-						timeline.numFunctions() == 1)) {
+				   if (!(
+						 (
+							(
+								(timeline.containsInstanceOf(SynopsisModule.SynopsisFunction.class)
+								||
+								timeline.containsInstanceOf(TitleModule.TitleFunction.class)
+								)
+							&&
+							timeline.numFunctions() == 1)
+						 )
+						 || 
+						 (
+							(timeline.containsInstanceOf(SynopsisModule.SynopsisFunction.class)
+							&&
+							timeline.containsInstanceOf(TitleModule.TitleFunction.class)
+							)
+						 &&
+						 timeline.numFunctions() == 2)
+					    )){
 							timelines.add(timeline);
 					}
 				}
@@ -434,15 +649,70 @@ public class ModularSearcher implements Searcher {
 			
 		});
 		
-		SearcherEvaluator evaluator = new SearcherEvaluator(searcher);
+		Map<Query, List<Result>> expectedResults = 
+				SearcherEvaluator.importExpected(queriesFile, resultsFile);
+		
+		for (Query q : expectedResults.keySet()) {
+			Result expected = expectedResults.get(q).get(0);
+			
+			System.out.println(q);
+			System.out.println("Expecting: " + expected);
+			System.out.println(searcher._search(q, expected.fileName));
+			System.out.println("----");
+		}
+		
+		/*SearcherEvaluator evaluator = new SearcherEvaluator(searcher);
 		
 		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
 		Vector results =
 				evaluator.evaluateAgainstExpectedResults(expectedResults,
-														 60 * 5);
+														 60 * 5);*/
 		
-		System.out.println(results);
+		//System.out.println(results);
+	}
+	
+	public static List<Query> importQueries(File queryFile) throws ParserConfigurationException, SAXException, IOException {
+		List<Query> queries = new ArrayList<Query>();
+		
+		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		
+		org.w3c.dom.Document document = builder.parse(queryFile);
+		
+		Element root = document.getDocumentElement();
+		
+		NodeList segmentNodeList = root.getChildNodes();
+		for (int j = 0; j < segmentNodeList.getLength(); j++) {
+			if (segmentNodeList.item(j) instanceof Element) {
+				Element segmentElement = (Element) segmentNodeList.item(j);
+				
+				if (segmentElement.getTagName().equals("top")) {
+					NodeList wordNodeList = segmentElement.getChildNodes();
+					
+					String itemId = null;
+					String queryText = null;
+					String visualQueues = null;
+					
+					for (int k = 0; k < wordNodeList.getLength(); k++) {
+						if (wordNodeList.item(k) instanceof Element) {
+							Element wordElement = (Element) wordNodeList.item(k);
+							
+							if (wordElement.getTagName().equals("itemId")) {
+								itemId = wordElement.getTextContent();
+							} else if (wordElement.getTagName().equals("queryText")) {
+								queryText = wordElement.getTextContent();
+							} else if (wordElement.getTagName().equals("visualQueues")) {
+								visualQueues = wordElement.getTextContent();
+							}
+						}
+					}
+					
+					queries.add(new Query(itemId, queryText, visualQueues));
+				}
+			}
+		}
+		
+		return queries;
 	}
 }

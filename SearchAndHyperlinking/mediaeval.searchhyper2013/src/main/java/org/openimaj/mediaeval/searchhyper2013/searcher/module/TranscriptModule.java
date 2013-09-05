@@ -11,6 +11,8 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
@@ -41,7 +43,7 @@ public class TranscriptModule implements SearcherModule {
 	
 	Version LUCENE_VERSION = Version.LUCENE_43;
 	
-	StandardQueryParser queryParser;
+	QueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Analyzer analyzer;
 	TimelineFactory timelineFactory;
@@ -56,7 +58,9 @@ public class TranscriptModule implements SearcherModule {
 		
 		TRANSCRIPT_TYPE = transcriptType;
 		
-		queryParser = new StandardQueryParser(
+		queryParser = new ComplexPhraseQueryParser(
+						LUCENE_VERSION,
+						Field.Text.toString(),
 						new EnglishAnalyzer(LUCENE_VERSION));
 	}
 	
@@ -72,10 +76,16 @@ public class TranscriptModule implements SearcherModule {
 	
 	public TimelineSet _search(Query q, TimelineSet currentSet)
 														throws Exception {
-		String query = ChannelFilterModule.removeChannel(q.queryText);
+		String query = LuceneUtils.levenstein(QueryParser.escape(
+							ChannelFilterModule.removeChannel(q.queryText)));
+		
+		System.out.println(query);
 		
 		org.apache.lucene.search.Query luceneQuery = 
-				queryParser.parse(query, Field.Text.toString());
+				queryParser.parse(query);
+		
+		System.out.println(luceneQuery);
+		
 		Filter transcriptFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),
@@ -146,7 +156,9 @@ public class TranscriptModule implements SearcherModule {
 																	time));
 			}
 			
-			timelines.add(programmeTimeline);
+			if (programmeTimeline.numFunctions() > 0) {
+				timelines.add(programmeTimeline);
+			}
 		}
 		
 		return timelines;
