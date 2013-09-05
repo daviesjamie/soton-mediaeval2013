@@ -4,6 +4,7 @@ import gnu.trove.list.array.TLongArrayList;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public class InMemCEDDSearcher implements VisualSearcher {
 	byte[][] data;
 	private IndexSearcher meta;
 
-	public InMemCEDDSearcher(String ceddDataFile, IndexSearcher meta) throws IOException {
+	public InMemCEDDSearcher(File ceddDataFile, IndexSearcher meta) throws IOException {
 		this.meta = meta;
 
 		final DataInputStream dis = new DataInputStream(new FileInputStream(ceddDataFile));

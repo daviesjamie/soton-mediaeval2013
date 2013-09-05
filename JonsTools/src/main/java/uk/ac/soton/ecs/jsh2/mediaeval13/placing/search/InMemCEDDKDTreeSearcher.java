@@ -1,5 +1,6 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.placing.search;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,6 +9,7 @@ import java.util.List;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.openimaj.image.MBFImage;
+import org.openimaj.io.IOUtils;
 import org.openimaj.knn.approximate.ByteNearestNeighboursKDTree;
 import org.openimaj.util.pair.IntFloatPair;
 import org.openimaj.util.pair.LongFloatPair;
@@ -15,10 +17,17 @@ import org.openimaj.util.pair.LongFloatPair;
 public class InMemCEDDKDTreeSearcher extends InMemCEDDSearcher {
 	ByteNearestNeighboursKDTree tree;
 
-	public InMemCEDDKDTreeSearcher(String ceddDataFile, IndexSearcher meta) throws IOException {
+	public InMemCEDDKDTreeSearcher(File ceddDataFile, IndexSearcher meta) throws IOException {
 		super(ceddDataFile, meta);
 
-		this.tree = new ByteNearestNeighboursKDTree(data, 8, 720);
+		final File kdtnn = new File(ceddDataFile.getAbsolutePath().replace(".bin", "-kdtree.bin"));
+
+		if (!kdtnn.exists()) {
+			this.tree = new ByteNearestNeighboursKDTree(data, 8, 720);
+			IOUtils.writeToFile(tree, kdtnn);
+		} else {
+			tree = IOUtils.readFromFile(kdtnn);
+		}
 	}
 
 	@Override
