@@ -49,7 +49,8 @@ public class Harness {
 		// getSkipIds(queries), 1, 1000, 0.005
 		// );
 		final GeoPositioningEngine engine = new BasicCEDDEngine(
-				new File("/Volumes/SSD/mediaeval13/placing/places.lucene"), "/Volumes/SSD/mediaeval13/placing/cedd.bin",
+				new File("/Volumes/SSD/mediaeval13/placing/places.lucene"), new File(
+						"/Volumes/SSD/mediaeval13/placing/cedd.bin"),
 				getSkipIds(queries), 100, 1000, 0.005
 				);
 

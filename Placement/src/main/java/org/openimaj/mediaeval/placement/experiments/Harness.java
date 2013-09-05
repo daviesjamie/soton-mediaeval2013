@@ -20,50 +20,50 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
 
 public class Harness {
-    public static void main(String[] args) throws IOException {
-        final TLongObjectHashMap<GeoLocation> groundTruth =
-                GeoEvaluator.readGroundTruth(Harness.class
-                        .getResourceAsStream("/uk/ac/soton/ecs/jsh2/mediaeval13/placing/data/validation_latlng"));
-        final List<QueryImageData> queries = readQueries(Harness.class
-                .getResourceAsStream("/uk/ac/soton/ecs/jsh2/mediaeval13/placing/data/validation.csv"));
+	public static void main(String[] args) throws IOException {
+		final TLongObjectHashMap<GeoLocation> groundTruth =
+				GeoEvaluator.readGroundTruth(Harness.class
+						.getResourceAsStream("/uk/ac/soton/ecs/jsh2/mediaeval13/placing/data/validation_latlng"));
+		final List<QueryImageData> queries = readQueries(Harness.class
+				.getResourceAsStream("/uk/ac/soton/ecs/jsh2/mediaeval13/placing/data/validation.csv"));
 
-        final GeoPositioningEngine engine = new LireFeaturePositioningEngine( LireFeatures.CEDD, 100,
-                new File( "data/lucene-test-index" ),
-                new File( "data/lire-feature-index" ),
-                getSkipIds( queries ) );
+		final GeoPositioningEngine engine = new LireFeaturePositioningEngine(LireFeatures.CEDD, 100,
+				new File("data/lucene-test-index"),
+				new File("data/lire-feature-index"),
+				getSkipIds(queries));
 
-        final GeoEvaluator eval = new GeoEvaluator(groundTruth, engine, queries);
-        final GeoAnalysisResult result = eval.analyse(eval.evaluate());
-        System.out.println(result.getDetailReport());
-    }
+		final GeoEvaluator eval = new GeoEvaluator(groundTruth, engine, queries);
+		final GeoAnalysisResult result = eval.analyse(eval.evaluate());
+		System.out.println(result.getDetailReport());
+	}
 
-    private static TLongArrayList getSkipIds(List<QueryImageData> queries) {
-        final TLongArrayList ids = new TLongArrayList(queries.size());
+	private static TLongArrayList getSkipIds(List<QueryImageData> queries) {
+		final TLongArrayList ids = new TLongArrayList(queries.size());
 
-        for (final QueryImageData q : queries)
-            ids.add(q.flickrId);
+		for (final QueryImageData q : queries)
+			ids.add(q.flickrId);
 
-        return ids;
-    }
+		return ids;
+	}
 
-    private static List<QueryImageData> readQueries(InputStream is) throws IOException {
-        final List<QueryImageData> data = new ArrayList<QueryImageData>();
-        BufferedReader br = null;
+	private static List<QueryImageData> readQueries(InputStream is) throws IOException {
+		final List<QueryImageData> data = new ArrayList<QueryImageData>();
+		BufferedReader br = null;
 
-        try {
-            br = new BufferedReader(new InputStreamReader(is));
+		try {
+			br = new BufferedReader(new InputStreamReader(is));
 
-            String line;
-            while ((line = br.readLine()) != null) {
-                final QueryImageData qid = QueryImageData.parseCSVLine(line);
+			String line;
+			while ((line = br.readLine()) != null) {
+				final QueryImageData qid = QueryImageData.parseCSVLine(line);
 
-                if (qid != null)
-                    data.add(qid);
-            }
-        } finally {
-            if (br != null)
-                br.close();
-        }
-        return data;
-    }
+				if (qid != null)
+					data.add(qid);
+			}
+		} finally {
+			if (br != null)
+				br.close();
+		}
+		return data;
+	}
 }

@@ -18,6 +18,7 @@ import org.openimaj.image.FImage;
 import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
 import org.openimaj.util.pair.ObjectDoublePair;
+import org.openimaj.util.pair.ObjectIntPair;
 import org.w3c.dom.Element;
 
 public class ResultItem {
@@ -355,6 +356,45 @@ public class ResultItem {
 		}
 
 		return tokens;
+	}
+
+	public DoubleFV getNormTitleCounts() {
+		final List<ObjectIntPair<String>> vocab = container.getTitleVocabulary();
+		final List<String> terms = ObjectIntPair.getFirst(vocab);
+
+		final DoubleFV fv = new DoubleFV(terms.size());
+		for (final String tok : title.split(TOKENISER)) {
+			fv.values[terms.indexOf(tok)]++;
+		}
+		fv.normaliseFV();
+
+		return fv;
+	}
+
+	public DoubleFV getNormTagCounts() {
+		final List<ObjectIntPair<String>> vocab = container.getTagVocabulary();
+		final List<String> terms = ObjectIntPair.getFirst(vocab);
+
+		final DoubleFV fv = new DoubleFV(terms.size());
+		for (final String tok : tags) {
+			fv.values[terms.indexOf(tok)]++;
+		}
+		fv.normaliseFV();
+
+		return fv;
+	}
+
+	public DoubleFV getNormDescriptionCounts() {
+		final List<ObjectIntPair<String>> vocab = container.getDescriptionVocabulary();
+		final List<String> terms = ObjectIntPair.getFirst(vocab);
+
+		final DoubleFV fv = new DoubleFV(terms.size());
+		for (final String tok : description.split(TOKENISER)) {
+			fv.values[terms.indexOf(tok)]++;
+		}
+		fv.normaliseFV();
+
+		return fv;
 	}
 
 	@Override

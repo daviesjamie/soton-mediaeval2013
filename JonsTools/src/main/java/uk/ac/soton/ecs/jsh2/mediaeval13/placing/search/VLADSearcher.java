@@ -32,16 +32,16 @@ public class VLADSearcher implements VisualSearcher {
 	private IndexSearcher meta;
 	private RandomAccessFile raf;
 
-	public VLADSearcher(String features, String index, IndexSearcher meta) throws IOException {
+	public VLADSearcher(File features, File index, IndexSearcher meta) throws IOException {
 		ids = readFeatureIds(features);
-		engine = IOUtils.readFromFile(new File(index));
+		engine = IOUtils.readFromFile(index);
 
-		this.raf = new RandomAccessFile(new File(features), "r");
+		this.raf = new RandomAccessFile(features, "r");
 
 		this.meta = meta;
 	}
 
-	private TLongArrayList readFeatureIds(String features) throws IOException {
+	private TLongArrayList readFeatureIds(File features) throws IOException {
 		final TLongArrayList allIds = new TLongArrayList(7800000);
 		final DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(features)));
 		try {
@@ -68,12 +68,26 @@ public class VLADSearcher implements VisualSearcher {
 
 	@Override
 	public ScoreDoc[] search(long flickrId, int numResults) throws IOException {
+		try {
+			final float[] vec = readVector(flickrId);
+
+			return linkResults(engine.search(vec, numResults));
+		} catch (final IllegalArgumentException iae) {
+			if (iae.getMessage().equals("FlickrId not found in features list")) {
+				// image was probably missing/had no features/wasn't downloaded
+				return new ScoreDoc[0];
+			}
+			throw iae;
+		}
+	}
+
+	private synchronized float[] readVector(long flickrId) throws IOException {
 		final long idx = ids.binarySearch(flickrId);
 		if (idx < 0) {
 			throw new IllegalArgumentException("FlickrId not found in features list");
 		}
 
-		final int longOffset = (int) (idx * (8 + 4 * engine.data.numDimensions()));
+		final long longOffset = idx * (8 + 4 * engine.data.numDimensions());
 		raf.seek(longOffset);
 		if (raf.readLong() != flickrId) {
 			throw new IOException("Wrong ID found");
@@ -82,8 +96,7 @@ public class VLADSearcher implements VisualSearcher {
 		final float[] vec = new float[engine.data.numDimensions()];
 		for (int i = 0; i < vec.length; i++)
 			vec[i] = raf.readFloat();
-
-		return linkResults(engine.search(vec, numResults));
+		return vec;
 	}
 
 	private ScoreDoc[] linkResults(List<LongFloatPair> search) throws IOException {

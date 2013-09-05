@@ -83,5 +83,30 @@ public enum ProvidedFeatures implements FeatureExtractor<DoubleFV, ResultItem> {
 		public DoubleFV extractFeature(ResultItem object) {
 			return object.getLBP3x3();
 		}
-	};
+	},
+	DateTaken {
+		@Override
+		public DoubleFV extractFeature(ResultItem object) {
+			return new DoubleFV(new double[] { object.date_taken.getTime() / (1000.0 * 60.0) });
+		}
+	},
+	TitleVector {
+		@Override
+		public DoubleFV extractFeature(ResultItem object) {
+			return object.getNormTitleCounts();
+		}
+	},
+	TagVector {
+		@Override
+		public DoubleFV extractFeature(ResultItem object) {
+			return object.getNormTitleCounts();
+		}
+	},
+	DescriptionVector {
+		@Override
+		public DoubleFV extractFeature(ResultItem object) {
+			return object.getNormDescriptionCounts();
+		}
+	},
+	;
 }

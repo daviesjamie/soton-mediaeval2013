@@ -21,7 +21,7 @@ public class BasicCEDDEngine extends MeanShiftTagEngine {
 	protected InMemCEDDPQSearcher visualSearcher;
 	private int numResults;
 
-	public BasicCEDDEngine(File luceneIndex, String ceddData, TLongArrayList skipIds, int numResults, int sampleCount,
+	public BasicCEDDEngine(File luceneIndex, File ceddData, TLongArrayList skipIds, int numResults, int sampleCount,
 			double bandwidth) throws IOException
 	{
 		super(luceneIndex, skipIds, sampleCount, null, bandwidth);

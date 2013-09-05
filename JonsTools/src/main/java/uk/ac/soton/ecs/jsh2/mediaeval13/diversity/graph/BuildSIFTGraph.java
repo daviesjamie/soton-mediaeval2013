@@ -11,9 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import org.jgrapht.alg.ConnectivityInspector;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.openimaj.feature.local.list.LocalFeatureList;
@@ -110,7 +108,10 @@ public class BuildSIFTGraph {
 		}
 	}
 
-	public static void buildGraph(ResultList rl) throws IOException {
+	public static SimpleWeightedGraph<Long, DefaultWeightedEdge> buildGraph(List<ResultItem> rl, int minEdgeWeight,
+			final int maxBinSize)
+			throws IOException
+	{
 		final TLongObjectHashMap<ResultItem> items = new TLongObjectHashMap<ResultItem>();
 		final Sketcher sk = new Sketcher();
 		final List<TIntObjectMap<TLongSet>> maps = new ArrayList<TIntObjectMap<TLongSet>>();
@@ -120,7 +121,7 @@ public class BuildSIFTGraph {
 		for (final ResultItem ri : rl) {
 			items.put(ri.id, ri);
 
-			final LongObjectPair<LocalFeatureList<Keypoint>> data = LongObjectPair.pair(ri.id, getSIFT2x(ri));
+			final LongObjectPair<LocalFeatureList<Keypoint>> data = LongObjectPair.pair(ri.id, getSIFT1x(ri));
 
 			final long id = data.first;
 			for (final Keypoint kpt : data.second) {
@@ -144,7 +145,7 @@ public class BuildSIFTGraph {
 				@Override
 				public boolean execute(int a, TLongSet b) {
 					// filter out hashes with lots of collisions
-					if (b.size() < 20) {
+					if (b.size() < maxBinSize) {
 						final long[] vals = b.toArray();
 
 						for (int j = 0; j < vals.length; j++) {
@@ -172,28 +173,33 @@ public class BuildSIFTGraph {
 		final List<DefaultWeightedEdge> toRem = new
 				ArrayList<DefaultWeightedEdge>();
 		for (final DefaultWeightedEdge e : graph.edgeSet()) {
-			if (graph.getEdgeWeight(e) < 5)
+			if (graph.getEdgeWeight(e) < minEdgeWeight)
 				toRem.add(e);
 		}
 		graph.removeAllEdges(toRem);
 
-		final ConnectivityInspector<Long, DefaultWeightedEdge> conn = new
-				ConnectivityInspector<Long, DefaultWeightedEdge>(
-						graph);
-		for (final Set<Long> subgraph : conn.connectedSets()) {
-			for (final Long l : subgraph) {
-				System.out.format("<img src=\"file://%s\" width='200'/>\n",
-						items.get(l).getImageFile());
-			}
-
-			System.out.println("<hr/>");
-		}
+		// final PrintWriter pw = new PrintWriter(new
+		// FileWriter("/Users/jsh2/Desktop/lsh-clusters.html", true));
+		// pw.print("<h1>" + rl.get(0).container.monument + "</h1>");
+		// final ConnectivityInspector<Long, DefaultWeightedEdge> conn = new
+		// ConnectivityInspector<Long, DefaultWeightedEdge>(
+		// graph);
+		// for (final Set<Long> subgraph : conn.connectedSets()) {
+		// for (final Long l : subgraph) {
+		// pw.format("<img src=\"file://%s\" width='200'/>\n",
+		// items.get(l).getImageFile());
+		// }
+		//
+		// pw.println("<hr/>");
+		// }
+		// pw.close();
+		return graph;
 	}
 
 	public static void main(String[] args) throws Exception {
 		final ResultList rl = new ResultList(new File(
 				"/Users/jon/Data/mediaeval/diversity/devset/keywordsGPS/devsetkeywordsGPS/xml/Angel of the North.xml"));
 
-		buildGraph(rl);
+		buildGraph(rl, 5, 20);
 	}
 }
