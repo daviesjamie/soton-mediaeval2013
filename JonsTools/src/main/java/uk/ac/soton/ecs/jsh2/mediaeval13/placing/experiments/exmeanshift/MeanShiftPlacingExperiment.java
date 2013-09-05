@@ -18,6 +18,7 @@ import org.openimaj.experiment.annotations.IndependentVariable;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoAnalysisResult;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoEvaluator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
+import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.GeoDensityEstimateProvider;
@@ -45,6 +46,8 @@ public class MeanShiftPlacingExperiment implements RunnableExperiment {
 	private TLongArrayList skipIds;
 	private List<QueryImageData> queries;
 
+	private TLongObjectHashMap<GeoLocationEstimate> rawResult;
+
 	public MeanShiftPlacingExperiment(double bandwidth, int sampleCount,
 			URL queries, URL groundTruthLocation, GeoDensityEstimateProvider... providers) throws IOException
 	{
@@ -56,7 +59,9 @@ public class MeanShiftPlacingExperiment implements RunnableExperiment {
 
 		this.queries = readQueries(queriesLocation);
 		this.skipIds = getSkipIds(this.queries);
-		this.groundTruth = GeoEvaluator.readGroundTruth(groundTruthLocation.openStream());
+
+		if (groundTruthLocation != null)
+			this.groundTruth = GeoEvaluator.readGroundTruth(groundTruthLocation.openStream());
 
 		for (final GeoDensityEstimateProvider p : providers)
 			p.setSkipIds(skipIds);
@@ -84,7 +89,10 @@ public class MeanShiftPlacingExperiment implements RunnableExperiment {
 
 		final GeoEvaluator eval = new GeoEvaluator(groundTruth, engine, queries);
 
-		this.result = eval.analyse(eval.evaluate());
+		rawResult = eval.evaluate();
+
+		if (groundTruth != null)
+			this.result = eval.analyse(rawResult);
 	}
 
 	@Override
@@ -120,6 +128,10 @@ public class MeanShiftPlacingExperiment implements RunnableExperiment {
 				br.close();
 		}
 		return data;
+	}
+
+	public TLongObjectHashMap<GeoLocationEstimate> getRawResult() {
+		return rawResult;
 	}
 
 	@Override
