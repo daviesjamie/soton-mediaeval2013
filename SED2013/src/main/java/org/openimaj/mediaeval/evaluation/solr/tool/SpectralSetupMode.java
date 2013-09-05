@@ -1,29 +1,40 @@
 package org.openimaj.mediaeval.evaluation.solr.tool;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ProxyOptionHandler;
+import org.mortbay.io.RuntimeIOException;
 import org.openimaj.data.DoubleRange;
-import org.openimaj.data.IntegerRange;
-import org.openimaj.mediaeval.evaluation.solr.tool.ExperimentSetupMode.NamedClusterer;
+import org.openimaj.io.IOUtils;
+import org.openimaj.math.matrix.MatlibMatrixUtils;
 import org.openimaj.mediaeval.evaluation.solr.tool.SpatialClustererSetupMode.NamedSpecClusterConf;
-import org.openimaj.ml.clustering.dbscan.DBSCANClusters;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
-import org.openimaj.ml.clustering.dbscan.SimilarityDBSCAN;
-import org.openimaj.ml.clustering.incremental.IncrementalSparseClusterer;
 import org.openimaj.ml.clustering.spectral.AbsoluteValueEigenChooser;
 import org.openimaj.ml.clustering.spectral.DoubleSpectralClustering;
-import org.openimaj.util.pair.DoubleIntPair;
+import org.openimaj.ml.clustering.spectral.GraphLaplacian;
+
+import com.jmatio.io.MatFileWriter;
+import com.jmatio.types.MLArray;
+import com.jmatio.types.MLDouble;
+
+import ch.akuhn.matrix.Matrix;
+import ch.akuhn.matrix.SparseMatrix;
+import ch.akuhn.matrix.Vector;
+import ch.akuhn.matrix.Vector.Entry;
+import ch.akuhn.matrix.eigenvalues.Eigenvalues;
 
 /**
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
  */
 public class SpectralSetupMode extends ExperimentSetupMode{
-	
+	Logger logger = Logger.getLogger(SpectralSetupMode.class);
 	/**
 	 * The absolute eigen value change 
 	 */
@@ -77,11 +88,58 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 		aliases="-eigsel", 
 		required=false, 
 		usage="The number of eigen values to ask for (proportioned of the total available)", 
-		metaVar="DOBULE"
+		metaVar="DOUBLE"
 	)
 	public double eigsel = 0.05;
 	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
+		name="--eig-skip", 
+		aliases="-eigskip", 
+		required=false, 
+		usage="The number of eigen values to ask for (proportioned of the total available)", 
+		metaVar="INTEGER"
+	)
+	public int eigskip = 0;
 	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
+		name="--save-as-matlab", 
+		aliases="-matsave", 
+		required=false, 
+		usage="Save the Laplacian and Adjacency matricies as python matricies, for debugging!", 
+		metaVar="STRING"
+	)
+	String pythonRoot = null;
+	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
+		name="--eigen-cache", 
+		aliases="-eigcache", 
+		required=false, 
+		usage="Save the Laplacian and Adjacency matricies as python matricies, for debugging!", 
+		metaVar="STRING"
+	)
+	String eigCache = null;
+	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
+		name="--force-spectral-threshold", 
+		aliases="-specthresh", 
+		required=false, 
+		usage="Force a thresholding applied directly to the data array", 
+		metaVar="DOUBLE"
+	)
+	Double thresh = null;
+	boolean forceEigenCacheRefresh = true;
 
 
 	private Iterator<Double> eigIter;
@@ -98,9 +156,45 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 	)
 	SpatialClustererSetupOption experimentSetupMode = null;
 	SpatialClustererSetupMode experimentSetupModeOp = null;
+	
+	
+	enum GraphLaplacianMode{
+		UNNORMALISED{
+			@Override
+			public GraphLaplacian lap() {
+				return new GraphLaplacian.Unnormalised();
+			}
+			
+		}, 
+		NORMALISED{
+			@Override
+			public GraphLaplacian lap() {
+				return new GraphLaplacian.Normalised();
+			}
+		}, 
+		WARPED{
+			@Override
+			public GraphLaplacian lap() {
+				return new GraphLaplacian.Warped();
+			}
+		};
+		
+		public abstract GraphLaplacian lap();
+	}
+	
+	// The only GraphLaplacian that actually works is the normalised one, don't let the other modes get used!
+//	@Option(
+//		name = "--spectral-clustering-graph-laplacian",
+//		aliases = "-scgl",
+//		required = true,
+//		usage = "The grpah laplacian used in spectral clustering",
+//		handler = ProxyOptionHandler.class
+//	)
+	GraphLaplacianMode glMode = GraphLaplacianMode.NORMALISED;
 
 	
 	double currentEig = -1;
+	private File eigcachefile;
 	@Override
 	public void setup() {
 		this.experimentSetupModeOp.setup();
@@ -110,6 +204,10 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 		else{
 			this.eigIter = eig.iterator();
 		}
+		forceEigenCacheRefresh = true; // When the eigen
+		File eigdir = new File(eigCache);
+		eigdir.mkdirs();
+		eigcachefile = new File(eigdir,"spectralEigenvalues.dat");
 	}
 	@Override
 	public boolean hasNextSetup() {
@@ -125,8 +223,67 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 		NamedSpecClusterConf nextClusterer = experimentSetupModeOp.nextClusterer();		
 		NamedClusterer ret = new NamedClusterer();
 		nextClusterer.conf.eigenChooser = new AbsoluteValueEigenChooser(currentEig, eigsel);
-		ret.clusterer = new DoubleSpectralClustering(nextClusterer.conf);
-		ret.name = String.format("eiggap=%2.2f/%s/%s",this.currentEig,this.experimentSetupMode.name(),nextClusterer.name);
+		nextClusterer.conf.laplacian = glMode.lap();
+		nextClusterer.conf.skipEigenVectors = this.eigskip;
+		ret.clusterer = new DoubleSpectralClustering(nextClusterer.conf){ 
+			@Override
+			protected Eigenvalues spectralCluster(SparseMatrix data) {
+				saveToPython("W", data);
+				if(thresh != null){
+					logger.info("Thresholding and binarizing the data with: " + thresh);
+					data = MatlibMatrixUtils.threshold(data,thresh);
+					saveToPython("Wthresh", data);
+				}
+				Eigenvalues eigret = null;
+				if(forceEigenCacheRefresh || eigCache == null){					
+					eigret = super.spectralCluster(data);
+					forceEigenCacheRefresh = false;
+					if(eigCache!=null){
+						logger.info("Writing eigenvalues to cache: " + eigcachefile);
+						try{
+							IOUtils.writeToFile(eigret,eigcachefile);
+						} catch(Exception e){
+							throw new RuntimeException(e);
+						}
+						
+					}
+				}
+				else{
+					// Try to load from the cache!
+					logger.info("Loading eigenvalues from cache: " + eigcachefile);
+					
+					try{
+						eigret = IOUtils.readFromFile(eigcachefile);
+					} catch(Exception e){
+						throw new RuntimeException(e);
+					}
+				}
+				
+				
+				return eigret;
+			}
+			
+			@Override
+			protected SparseMatrix laplacian(SparseMatrix data) {
+				SparseMatrix laplacian = super.laplacian(data);
+				saveToPython("L", laplacian);
+				return laplacian;
+			}
+			public void saveToPython(String name, SparseMatrix mat){
+				if(pythonRoot==null)return;
+				new File(pythonRoot).mkdirs();
+				MLDouble ml = MatlibMatrixUtils.asMatlab(mat);
+				ml.name = name;
+				Collection<MLArray> cols = new ArrayList<MLArray>();
+				cols.add(ml);
+				try {
+					new MatFileWriter(new File(pythonRoot,name + ".mat"), cols);
+				} catch (IOException e) {
+					throw new RuntimeIOException(e);
+				}
+			}
+		};
+		ret.name = String.format("eigsel=%2.2f/eigskip=%d/eiggap=%2.2f/%s/%s",this.thresh,this.eigsel,this.eigskip,this.currentEig,this.experimentSetupMode.name(),nextClusterer.name);
 		return ret;
 	}
 	

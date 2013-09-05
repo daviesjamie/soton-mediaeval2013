@@ -1,9 +1,6 @@
 package org.openimaj.mediaeval.evaluation.solr.tool;
 
-import org.openimaj.ml.clustering.IndexClusters;
-import org.openimaj.ml.clustering.SparseMatrixClusterer;
 import org.openimaj.ml.clustering.spectral.SpectralClusteringConf;
-import org.openimaj.ml.clustering.spectral.SpectralClusteringConf.ClustererProvider;
 
 /**
  * The experiment mode

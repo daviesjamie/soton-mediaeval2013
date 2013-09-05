@@ -16,7 +16,18 @@ public enum SpatialClustererSetupOption implements CmdLineOptionsProvider{
 		public SpatialClustererSetupMode getOptions() {
 			return new NNDBSCANSetupMode();
 		}
+	},
+	/**
+	 * 
+	 */
+	KMEANS{
+		@Override
+		public SpatialClustererSetupMode getOptions() {
+			return new KMeansSetupMode();
+		}
+		
 	};
+	
 
 	@Override
 	public abstract SpatialClustererSetupMode getOptions() ;
