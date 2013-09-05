@@ -28,6 +28,7 @@ import org.openimaj.mediaeval.searchhyper2013.datastructures.Frame;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.EnglishSynonymAnalyzer;
 import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
@@ -36,8 +37,8 @@ import org.openimaj.mediaeval.searchhyper2013.util.Time;
 
 public class ConceptModule implements SearcherModule {
 	
-	double CONCEPT_WEIGHT = 0.3;
-	double CONCEPT_POWER = 2;
+	double CONCEPT_WEIGHT = 0.05;
+	double CONCEPT_POWER = 0.5;
 	double CONCEPT_WIDTH = 5 * 60;
 	
 	static final int FPS = 25;
@@ -57,7 +58,8 @@ public class ConceptModule implements SearcherModule {
 	}
 	
 	@Override
-	public TimelineSet search(Query q, TimelineSet currentSet) 
+	public TimelineSet search(Query q,
+							  TimelineSet currentSet) 
 													throws SearcherException {
 		try {
 			return _search(q, currentSet);
@@ -100,7 +102,7 @@ public class ConceptModule implements SearcherModule {
 					float time = ((float) frame.frame) / FPS;
 					
 					// Don't add if past end.
-					if (time > timeline.endTime + 30) {
+					if (time > timeline.getEndTime() + 30) {
 						continue;
 					}
 					

@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,6 +56,7 @@ import org.openimaj.mediaeval.searchhyper2013.datastructures.Result;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultSet;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.EnglishSynonymAnalyzer;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
@@ -64,10 +66,12 @@ import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.ChannelFilterModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.ConceptModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedTimedFunction;
+import org.openimaj.mediaeval.searchhyper2013.searcher.module.LSHGraphModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.SearcherModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.SynopsisModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.TitleModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.TranscriptModule;
+import org.openimaj.mediaeval.searchhyper2013.util.LSHDataExplorer;
 import org.openimaj.mediaeval.searchhyper2013.util.SlidingWindowUnivariateSolver;
 import org.openimaj.mediaeval.searchhyper2013.util.Time;
 import org.xml.sax.SAXException;
@@ -80,12 +84,17 @@ public class ModularSearcher implements Searcher {
 	double SOLUTION_WINDOW = 1 * 60;
 	double MERGE_WINDOW = 5 * 60;
 	double SCORE_WINDOW = 5 * 60;
+	
+	int SHOTS_WIDTH = 10;
+	int MAX_RESULTS_PER_TIMELINE = 10;
 
 	String runName;
 	UnivariateFunction resultWindow;
 	
 	StandardQueryParser queryParser;
 	List<SearcherModule> searcherModules;
+	
+	TimelineFactory timelineFactory;
 	
 	public ModularSearcher(String runName,
 						   UnivariateFunction resultWindow) {
@@ -94,6 +103,8 @@ public class ModularSearcher implements Searcher {
 		
 		queryParser = new StandardQueryParser();
 		searcherModules = new ArrayList<SearcherModule>();
+		
+		this.timelineFactory = timelineFactory;
 	}
 	
 	@Override
@@ -117,6 +128,119 @@ public class ModularSearcher implements Searcher {
 		
 		//System.out.println("No. timelines: " + timelines.size());
 		
+		//ResultList results = kMeans(q, timelines);
+		ResultList results = shotBoundaries(q, timelines);
+		
+		Collections.sort(results);
+		
+		return results;
+	}
+	
+	private ResultList shotBoundaries(Query q, TimelineSet timelines) throws Exception {
+		UnivariateIntegrator integrator = 
+				new TrapezoidIntegrator(1e-3, 1e-3, 2, 64);
+		
+		ResultSet resultSet = new ResultSet();
+		
+		for (Timeline timeline : timelines) {
+			System.out.println(timeline);
+			
+			List<JustifiedTimedFunction> fs =
+				new ArrayList<JustifiedTimedFunction>(timeline.getFunctions());
+			Collections.sort(fs, new JustifiedTimedFunction.TimeComparator());
+			
+			for (JustifiedTimedFunction f : fs) {
+				System.out.println("\t" + f.toString());
+				
+				for (String j : f.getJustifications()) {
+					System.out.println("\t\t" + j);
+				}
+			}
+			
+			float[] shotBoundaries = timeline.getShotBoundaries();
+			
+			double[] integrals = new double[shotBoundaries.length];
+			
+			for (int i = 0; i < shotBoundaries.length; i++) {
+				float start = i == 0 ? 0 : shotBoundaries[i - 1];
+				float end = shotBoundaries[i];
+				
+				integrals[i] = integrator.integrate(10000,
+													timeline,
+													start,
+													end);
+			}
+			
+			double[] bestIntegrals = Arrays.copyOf(integrals, integrals.length);
+			Arrays.sort(bestIntegrals);
+			bestIntegrals =
+					Arrays.copyOfRange(bestIntegrals,
+								   	   Math.max(bestIntegrals.length -
+								   			   		MAX_RESULTS_PER_TIMELINE,
+								   			   	0),
+								   	   bestIntegrals.length);
+			
+			for (double integral : bestIntegrals) {
+				int startIndex = -2;
+				
+				for (int i = 0; i < integrals.length; i++) {
+					if (integrals[i] == integral) {
+						startIndex = i - 1;
+						
+						break;
+					}
+				}
+				
+				if (startIndex == -2) {
+					throw new Exception("OSHIT");
+				}
+				
+				int minBoundaryIndex = startIndex - SHOTS_WIDTH;
+				int maxBoundaryIndex = startIndex + 1 + SHOTS_WIDTH;
+				
+				float start = minBoundaryIndex < 0 ?
+								0 : shotBoundaries[minBoundaryIndex];
+				float jumpIn = startIndex < 0 ? 0 : shotBoundaries[startIndex];
+				float end = maxBoundaryIndex > shotBoundaries.length - 1 ?
+								timeline.getEndTime() : 
+								shotBoundaries[maxBoundaryIndex];
+								
+				double score = integrator.integrate(10000,
+													timeline,
+													start,
+													end);
+				
+				Result result = new Result();
+				
+				result.fileName = timeline.getID();
+				result.startTime = start;
+				result.jumpInPoint = jumpIn;
+				result.endTime = end;
+				result.confidenceScore = score;
+				
+				resultSet.add(result);
+			}
+		}
+		
+		// Normalise.
+		double maxScore = 0;
+		
+		for (Result result : resultSet) {
+			maxScore = Math.max(result.confidenceScore, maxScore);
+		}
+		
+		for (Result result : resultSet) {
+			result.confidenceScore /= maxScore;
+		}
+		
+		ResultList results = new ResultList(q.queryID, runName);
+		
+		results.addAll(resultSet);
+		
+		return results;
+	}
+	
+	private ResultList kMeans(Query q, TimelineSet timelines) {
 		UnivariateIntegrator integrator = 
 				new TrapezoidIntegrator(1e-3, 1e-3, 2, 64);
 		
@@ -192,7 +316,7 @@ public class ModularSearcher implements Searcher {
 							 		 solutionTime - resultWindow.value(score));
 				result.jumpInPoint = result.startTime;
 				result.endTime = 
-					(float) Math.min(timeline.endTime,
+					(float) Math.min(timeline.getEndTime(),
 						 		 	 solutionTime + resultWindow.value(score));
 				result.confidenceScore = score;
 				
@@ -200,11 +324,9 @@ public class ModularSearcher implements Searcher {
 			}
 		}
 
-		ResultList results = new ResultList(query.queryID, runName);
+		ResultList results = new ResultList(q.queryID, runName);
 		
 		results.addAll(resultSet);
-		
-		Collections.sort(results);
 		
 		return results;
 	}
@@ -260,16 +382,27 @@ public class ModularSearcher implements Searcher {
 		EnglishAnalyzer englishAnalyzer =
 				new EnglishAnalyzer(Version.LUCENE_43);
 		
+		TimelineFactory timelineFactory = 
+				new TimelineFactory(indexSearcher, new File(args[3]));
+		
+		//LSHDataExplorer lshGraph = new LSHDataExplorer(new File(args[4]), 20);
+		
 		ChannelFilterModule channelFilterModule = new ChannelFilterModule();
-		SynopsisModule synopsisModule = new SynopsisModule(indexSearcher);
-		TitleModule titleModule = new TitleModule(indexSearcher);
+		SynopsisModule synopsisModule = new SynopsisModule(indexSearcher,
+														   timelineFactory);
+		TitleModule titleModule = new TitleModule(indexSearcher,
+												  timelineFactory);
 		TranscriptModule transcriptModule =
 				new TranscriptModule(indexSearcher,
-									 Type.LIMSI,
-									 englishAnalyzer);
-		ConceptModule conceptModule = new ConceptModule(new File(args[3]),
-														new File(args[4]),
+									 Type.Subtitles,
+									 englishAnalyzer,
+									 timelineFactory);
+		ConceptModule conceptModule = new ConceptModule(new File(args[5]),
+														new File(args[6]),
 														englishAnalyzer);
+		//LSHGraphModule lshGraphModule = new LSHGraphModule(new File(args[7]),
+		//												   lshGraph,
+		//												   timelineFactory);
 		
 		ModularSearcher searcher = new ModularSearcher("ModularSearcher",
 													   resultWindow);
@@ -278,6 +411,7 @@ public class ModularSearcher implements Searcher {
 		searcher.addModule(transcriptModule);
 		searcher.addModule(channelFilterModule);
 		searcher.addModule(conceptModule);
+		//searcher.addModule(lshGraphModule);
 		
 		// Filter for synopsis hits.
 		searcher.addModule(new SearcherModule() {
@@ -308,5 +442,7 @@ public class ModularSearcher implements Searcher {
 		Vector results =
 				evaluator.evaluateAgainstExpectedResults(expectedResults,
 														 60 * 5);
+		
+		System.out.println(results);
 	}
 }

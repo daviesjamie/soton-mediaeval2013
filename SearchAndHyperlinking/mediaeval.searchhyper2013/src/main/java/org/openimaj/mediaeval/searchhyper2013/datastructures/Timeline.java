@@ -23,14 +23,18 @@ import de.jungblut.math.dense.DenseDoubleVector;
 
 public class Timeline implements Identifiable, UnivariateFunction {
 	String id;
-	public float endTime;
 	Set<JustifiedTimedFunction> functions;
+	float[] shotBoundaries;
 	
-	public Timeline(String id, float endTime) {
+	public Timeline(String id, float[] shotBoundaries) {
 		this.id = id;
-		this.endTime = endTime;
+		this.shotBoundaries = shotBoundaries;
 		
 		functions = new HashSet<JustifiedTimedFunction>();
+	}
+	
+	public float[] getShotBoundaries() {
+		return shotBoundaries;
 	}
 	
 	@Override
@@ -89,12 +93,12 @@ public class Timeline implements Identifiable, UnivariateFunction {
 	}
 
 	public JFreeChart plot() {
-		final int noSamples = (int) (10 * endTime) + 1;
+		final int noSamples = (int) (10 * getEndTime()) + 1;
 		
 		double[][] data = new double[2][noSamples];
 		
 		for (int i = 0; i < noSamples; i++) {
-			data[0][i] = ((double) i / noSamples) * endTime;
+			data[0][i] = ((double) i / noSamples) * getEndTime();
 			data[1][i] = value(data[0][i]);
 		}
 		
@@ -126,14 +130,18 @@ public class Timeline implements Identifiable, UnivariateFunction {
 		
 		return sb.toString();*/
 		
-		return id + " | Funcs.: " + functions.size() + " | " + Time.StoMS(endTime);
+		return id + " | Funcs.: " + functions.size() + " | " + Time.StoMS(getEndTime());
+	}
+	
+	public float getEndTime() {
+		return shotBoundaries[shotBoundaries.length - 1];
 	}
 
 	public List<DoubleVector> sample() {
-		final int NUM_SAMPLES = (int) (endTime / 10);
+		final int NUM_SAMPLES = (int) (getEndTime() / 10);
 		
 		UnivariateFunctionDistribution distribution = 
-				new UnivariateFunctionDistribution(this, 0, endTime);
+				new UnivariateFunctionDistribution(this, 0, getEndTime());
 		
 		double[] samples = distribution.sample(NUM_SAMPLES);
 		

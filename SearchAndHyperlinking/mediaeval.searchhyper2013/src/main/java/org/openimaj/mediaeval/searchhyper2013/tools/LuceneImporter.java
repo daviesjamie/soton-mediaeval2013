@@ -13,6 +13,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.openimaj.io.FileUtils;
+import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.lucene.conversion.FileDocumentConverterException;
 import org.openimaj.mediaeval.searchhyper2013.lucene.conversion.LIMSIFileDocumentConverter;
 import org.openimaj.mediaeval.searchhyper2013.lucene.conversion.LIUMFileDocumentConverter;

@@ -5,8 +5,10 @@ import java.io.FileReader;
 import java.util.Arrays;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 import org.openimaj.mediaeval.searchhyper2013.util.Time;
@@ -46,11 +48,12 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 		final StringBuilder words = new StringBuilder();
 		final StringBuilder times = new StringBuilder();
 		
+		final StringBuilder singleWords = new StringBuilder();
+		
 		xr.setContentHandler(new DefaultHandler() {
 			float pStart = 0f;
 			float pEnd = 0f;
-			//int count = 0;
-			StringBuilder currentPhrase = new StringBuilder();
+			int count = 0;
 			boolean inP = false;
 			
 			public void startElement(String uri,
@@ -61,8 +64,7 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 				if (localName.equals("p")) {
 					pStart = Time.HMStoS(attributes.getValue("begin"));
 					pEnd = Time.HMStoS(attributes.getValue("end"));
-					//count = 0;
-					currentPhrase = new StringBuilder();
+					count = 0;
 					inP = true;
 				}
 			}
@@ -73,25 +75,13 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 								   String qName)
 										   throws SAXException {
 				if (localName.equals("p")) {
-					/*for (int i = 0; i < count; i++) {
+					for (int i = 0; i < count; i++) {
 						float wordTime = pStart + (i * (pEnd - pStart) / count);
 						
 						times.append(wordTime + " ");
 					}
 					
-					inP = false;*/
-					String phrase = currentPhrase.toString();
-					
-					if (!words.toString().contains(phrase)) {
-						for (int i = 0; i < phrase.length(); i++) {
-							float wordTime = pStart + (i * (pEnd - pStart) / 
-														phrase.length());
-							
-							times.append(wordTime + " ");
-						}
-						
-						inP = false;
-					}
+					inP = false;
 				}
 			}
 
@@ -103,29 +93,66 @@ public class SubtitlesFileDocumentConverter implements FileDocumentConverter {
 					char[] chars = Arrays.copyOfRange(ch, start, start + length);
 					
 					String string = new String(chars).trim();
-					string = string.replaceAll("\\s+", " ") + " ";
+					string = string.replaceAll("\\s+", " ");
 					
 					// Kill delete char.
 					//string.replace((char) 0x7f, ' ');
 					
-					/*if (words.toString().endsWith(string)) {
-						return;
-					}*/
+					String[] split = string.split(" ");
 					
-					currentPhrase.append(string);
-					//count += string.split(" ").length;
+					// Skip if single word within last 100 chars of current
+					// buffer.
+					if (split.length == 1 && 
+						words.substring(Math.max(0, words.length() - 100))
+							 .contains(split[0])) {
+						
+						singleWords.append(split[0] + " @ " + pStart + " : " + pEnd + " || ");
+						
+						return;
+					}
+					
+					// Test if we need to drop the first word.
+					int i = 0;
+					int wordCount = split.length;
+					
+					if (words.toString().endsWith(split[0] + " ")) {
+						i = 1;
+						wordCount--;
+					}
+					
+					for (; i < split.length; i++) {
+						words.append(split[i] + " ");
+					}
+					
+					count += wordCount;
 				}
 			}
 		});
 		
 		xr.parse(new InputSource(new FileReader(subsFile)));
 
-		doc.add(new TextField(Field.Text.toString(),
-							  words.toString().replaceAll("\\s+", " ").trim(),
-							  org.apache.lucene.document.Field.Store.YES));
+		FieldType fieldType = new FieldType();
+		fieldType.setIndexed(true);
+		fieldType.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
+		fieldType.setStored(true);
+		fieldType.setStoreTermVectors(true);
+		fieldType.setStoreTermVectorOffsets(true);
+		fieldType.setStoreTermVectorPositions(true);
+		fieldType.setStoreTermVectorPayloads(true);
+		fieldType.setTokenized(true);
+		fieldType.freeze();
+	
+		doc.add(new org.apache.lucene.document.Field(Field.Text.toString(),
+													 words.toString().replaceAll("\\s+", " ").trim(),
+						  							 fieldType));
+
 		doc.add(new StringField(Field.Times.toString(),
 				  				times.toString().trim(),
 				  				org.apache.lucene.document.Field.Store.YES));
+		
+		if (singleWords.length() > 0) {
+			System.out.println(">>> " + singleWords.toString());
+		}
 		
 		return doc;
 	}

@@ -211,4 +211,21 @@ public abstract class LuceneUtils {
 		
 		return scoreDocs;
 	}
+
+	public static Document getSynopsisForProgramme(String programme,
+												   IndexSearcher searcher)
+														  throws IOException {
+		
+		BooleanQuery progTypeQuery = new BooleanQuery();
+		progTypeQuery.add(
+				new TermQuery(new Term(Field.Program.toString(), programme)),
+				BooleanClause.Occur.MUST);
+		progTypeQuery.add(
+				new TermQuery(new Term(Field.Type.toString(), Type.Synopsis.toString())),
+				BooleanClause.Occur.MUST);
+		
+		TopDocs docs = searcher.search(progTypeQuery, 1);
+		
+		return searcher.doc(docs.scoreDocs[0].doc);
+	}
 }

@@ -3,6 +3,7 @@ package org.openimaj.mediaeval.searchhyper2013.searcher.module;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math3.analysis.function.Gaussian;
 import org.apache.lucene.analysis.Analyzer;
@@ -22,6 +23,7 @@ import org.apache.lucene.search.highlight.QueryTermScorer;
 import org.apache.lucene.util.Version;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
@@ -33,7 +35,7 @@ import org.openimaj.mediaeval.searchhyper2013.util.Time;
 public class TranscriptModule implements SearcherModule {
 
 	Type TRANSCRIPT_TYPE;
-	double TRANSCRIPT_WEIGHT = 0.1;
+	double TRANSCRIPT_WEIGHT = 0.15;
 	double TRANSCRIPT_POWER = 2;
 	double TRANSCRIPT_WIDTH = 60;
 	
@@ -42,12 +44,15 @@ public class TranscriptModule implements SearcherModule {
 	StandardQueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Analyzer analyzer;
+	TimelineFactory timelineFactory;
 	
 	public TranscriptModule(IndexSearcher indexSearcher,
 							Type transcriptType,
-							Analyzer analyzer) {
+							Analyzer analyzer,
+							TimelineFactory timelineFactory) {
 		this.indexSearcher = indexSearcher;
 		this.analyzer = analyzer;
+		this.timelineFactory = timelineFactory;
 		
 		TRANSCRIPT_TYPE = transcriptType;
 		
@@ -67,8 +72,10 @@ public class TranscriptModule implements SearcherModule {
 	
 	public TimelineSet _search(Query q, TimelineSet currentSet)
 														throws Exception {
+		String query = ChannelFilterModule.removeChannel(q.queryText);
+		
 		org.apache.lucene.search.Query luceneQuery = 
-				queryParser.parse(q.queryText, Field.Text.toString());
+				queryParser.parse(query, Field.Text.toString());
 		Filter transcriptFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),
@@ -86,15 +93,9 @@ public class TranscriptModule implements SearcherModule {
 			
 			//System.out.println("Transcript hit: " + luceneDocument.get(Field.Program.toString()));
 			
-			Document synopsis =
-					LuceneUtils.resolveOtherFromProgramme(doc.doc,
-														  Type.Synopsis,
-														  indexSearcher);
-			
 			Timeline programmeTimeline =
-				new Timeline(luceneDocument.get(Field.Program.toString()),
-							 Float.parseFloat(
-									 synopsis.get(Field.Length.toString())));
+				timelineFactory.makeTimeline(
+						luceneDocument.get(Field.Program.toString()));
 			
 			String transcript = luceneDocument.get(Field.Text.toString());
 			
@@ -102,7 +103,9 @@ public class TranscriptModule implements SearcherModule {
 					new Highlighter(
 						new TimeStringFormatter(
 							transcript,
-							luceneDocument.get(Field.Times.toString())),
+							luceneDocument.get(Field.Times.toString()),
+							indexSearcher.getIndexReader(),
+							doc.doc),
 						new DefaultEncoder(),
 						new QueryTermScorer(luceneQuery));
 			TokenStream tokenStream =
@@ -118,18 +121,19 @@ public class TranscriptModule implements SearcherModule {
 			
 			tokenStream.close();
 			
-			List<Float> times = TimeStringFormatter.timesFromString(timeString);
+			Map<Float, Double> times =
+					TimeStringFormatter.timesFromString(timeString);
 			
-			for (float time : times) {
+			for (Float time : times.keySet()) {
 				
 				// Don't add if it's past the end of the programme.
-				if (time > programmeTimeline.endTime + 30) {
+				if (time > programmeTimeline.getEndTime() + 30) {
 					continue;
 				}
 				
 				TranscriptFunction function = 
-						new TranscriptFunction(TRANSCRIPT_WEIGHT *
-									 			 Math.pow(doc.score,
+						new TranscriptFunction(TRANSCRIPT_WEIGHT * doc.score *
+									 			 Math.pow(times.get(time),
 									 					  TRANSCRIPT_POWER),
 									 		   time,
 									 		   TRANSCRIPT_WIDTH / 3d);
@@ -137,7 +141,7 @@ public class TranscriptModule implements SearcherModule {
 				
 				function.addJustification(
 						"Transcript matched at " + Time.StoMS(time) + " with score " + 
-						doc.score + " and " + "match: " +
+						times.get(time) + " and " + "match: " +
 						TimeStringFormatter.getWordAndContextAtTime(timeString,
 																	time));
 			}
