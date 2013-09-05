@@ -108,6 +108,18 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 	 * The eps to start to search
 	 */
 	@Option(
+		name="--eig-value-scale", 
+		aliases="-eigvscale", 
+		required=false, 
+		usage="Scale the selected eigen vectors by the sqrt of their eigen values. Mostly this should be == 1 but if selecting relatively small but important eigen vectors i might matter!", 
+		metaVar="BOOLEAN"
+	)
+	public boolean eigvscale = false;
+	
+	/**
+	 * The eps to start to search
+	 */
+	@Option(
 		name="--save-as-matlab", 
 		aliases="-matsave", 
 		required=false, 
@@ -205,9 +217,11 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 			this.eigIter = eig.iterator();
 		}
 		forceEigenCacheRefresh = true; // When the eigen
-		File eigdir = new File(eigCache);
-		eigdir.mkdirs();
-		eigcachefile = new File(eigdir,"spectralEigenvalues.dat");
+		if(eigCache!=null){			
+			File eigdir = new File(eigCache);
+			eigdir.mkdirs();
+			eigcachefile = new File(eigdir,"spectralEigenvalues.dat");
+		}
 	}
 	@Override
 	public boolean hasNextSetup() {
@@ -225,6 +239,7 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 		nextClusterer.conf.eigenChooser = new AbsoluteValueEigenChooser(currentEig, eigsel);
 		nextClusterer.conf.laplacian = glMode.lap();
 		nextClusterer.conf.skipEigenVectors = this.eigskip;
+		nextClusterer.conf.eigenValueScale = eigvscale ;
 		ret.clusterer = new DoubleSpectralClustering(nextClusterer.conf){ 
 			@Override
 			protected Eigenvalues spectralCluster(SparseMatrix data) {
@@ -235,7 +250,8 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 					saveToPython("Wthresh", data);
 				}
 				Eigenvalues eigret = null;
-				if(forceEigenCacheRefresh || eigCache == null){					
+				if(forceEigenCacheRefresh || eigCache == null){
+					logger.info("Doing the eigen decomposition (hold on to your butts)");
 					eigret = super.spectralCluster(data);
 					forceEigenCacheRefresh = false;
 					if(eigCache!=null){
@@ -283,7 +299,7 @@ public class SpectralSetupMode extends ExperimentSetupMode{
 				}
 			}
 		};
-		ret.name = String.format("eigsel=%2.2f/eigskip=%d/eiggap=%2.2f/%s/%s",this.thresh,this.eigsel,this.eigskip,this.currentEig,this.experimentSetupMode.name(),nextClusterer.name);
+		ret.name = String.format("eigvscale=%s/eigsel=%2.2f/eigskip=%d/eiggap=%2.2f/%s/%s",eigvscale,this.eigsel,this.eigskip,this.currentEig,this.experimentSetupMode.name(),nextClusterer.name);
 		return ret;
 	}
 	

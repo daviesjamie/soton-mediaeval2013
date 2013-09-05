@@ -2,9 +2,10 @@
 from pymongo import MongoClient
 from IPython import embed
 import pprint
+import sys
 pp = pprint.PrettyPrinter(indent=4)
 mc = MongoClient(host="seurat")
-training = mc.mediaeval.training
+training = mc.mediaeval[sys.argv[1]]
 
 def matkeys(pre="details."):
 	ret = dict([(x,"$%s%s"%(pre,x)) for x in training.find_one()["details"].keys() if "mat" in x])
@@ -14,12 +15,28 @@ def matkeysavg():
 	return ret
 # print dict({"_id":"avg"}.items() + matkeysavg().items())
 results = training.aggregate([
+	# {
+	# 	"$match":{
+	# 		"details.PhotoTime_POSTED_mat":3,
+	# 		"details.PhotoTime_TAKEN_mat":3,
+	# 		"details.LogHaversinePhotoGeo_mat":1,
+	# 		"details.TFIDF_PhotoDescription_mat":1,
+	# 		"details.TFIDF_PhotoTags_mat":3
+	# 	}
+	# },
+	{
+		"$match":{
+			"details.INCREMENTAL":True,
+			"details.SPECTRAL":True,
+		}
+	},
 	{
 		"$group":{
 			"_id":dict(matkeys().items() + {"eps":"$details.eps"}.items()),
 			"f1avg":{"$avg":"$scores.f1"}
 		}
 	},
+	
 	# {
 	# 	"$group":{
 	# 		"_id":{"eps":"$details.eps"},
