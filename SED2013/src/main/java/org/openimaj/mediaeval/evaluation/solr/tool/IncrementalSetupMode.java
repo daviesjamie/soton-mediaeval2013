@@ -78,6 +78,7 @@ public class IncrementalSetupMode extends ExperimentSetupMode {
 	@Override
 	public void setup() {
 		this.experimentSetupModeOp.setup();
+		currentWindow = -1;
 		if(this.winSize.size() == 0){
 			this.winSizeIter = new IntegerRange(winStart, winDelta, winEnd).iterator();
 		}
