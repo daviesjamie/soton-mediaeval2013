@@ -24,12 +24,12 @@ results = training.aggregate([
 	# 		"details.TFIDF_PhotoTags_mat":3
 	# 	}
 	# },
-	{
-		"$match":{
-			"details.INCREMENTAL":True,
-			"details.SPECTRAL":True,
-		}
-	},
+	# {
+	# 	"$match":{
+	# 		"details.INCREMENTAL":True,
+	# 		"details.SPECTRAL":True,
+	# 	}
+	# },
 	{
 		"$group":{
 			"_id":dict(matkeys().items() + {"eps":"$details.eps"}.items()),

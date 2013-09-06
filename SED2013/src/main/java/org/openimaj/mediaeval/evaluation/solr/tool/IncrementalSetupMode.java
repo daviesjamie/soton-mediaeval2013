@@ -62,6 +62,14 @@ public class IncrementalSetupMode extends ExperimentSetupMode {
 	)
 	private List<Integer> winSize = new ArrayList<Integer>();
 	
+//	@Option(
+//		name = "--maximum-window-size-prop",
+//		aliases = "-maxwsprop",
+//		required = false,
+//		usage = ""
+//	)
+//	private double maxWinsizeProp = -1;
+	
 	@Option(
 		name = "--incremental-experiment-mode",
 		aliases = "-iem",
@@ -110,6 +118,7 @@ public class IncrementalSetupMode extends ExperimentSetupMode {
 		return new IncrementalSparseClusterer(
 			clusterer,
 			this.currentWindow
+//			,(int)(this.currentWindow * this.maxWinsizeProp)
 		);
 	}
 	
