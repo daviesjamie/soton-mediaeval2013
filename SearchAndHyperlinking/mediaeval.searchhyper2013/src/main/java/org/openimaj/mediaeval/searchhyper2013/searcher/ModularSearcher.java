@@ -86,7 +86,7 @@ import de.jungblut.math.DoubleVector;
 public class ModularSearcher implements Searcher {
 
 	double SOLUTION_WINDOW = 1 * 60;
-	double MERGE_WINDOW = 5 * 60;
+	float MERGE_WINDOW = 1 * 60;
 	double SCORE_WINDOW = 5 * 60;
 	
 	int SHOTS_WIDTH = 10;
@@ -116,7 +116,7 @@ public class ModularSearcher implements Searcher {
 		}
 	}
 	
-	public ResultList _search(Query q, String expectedFile) throws Exception {
+	public ResultList _search(Query q, String expectedFile, boolean plot) throws Exception {
 		Query query = cleanQuery(q);
 		
 		// Accumulated timelines.
@@ -143,6 +143,10 @@ public class ModularSearcher implements Searcher {
 					expectedFile.equals(timeline.getID())) {
 				System.out.println(timeline);
 				
+				for (String j : timeline.getJustifications()) {
+					System.out.println("\t" + j);
+				}
+				
 				List<JustifiedTimedFunction> fs =
 					new ArrayList<JustifiedTimedFunction>(timeline.getFunctions());
 				Collections.sort(fs, new JustifiedTimedFunction.TimeComparator());
@@ -156,6 +160,8 @@ public class ModularSearcher implements Searcher {
 				}
 				
 				System.out.println("--");
+				
+				if (plot) timeline.plot();
 			}
 		}
 		
@@ -166,23 +172,9 @@ public class ModularSearcher implements Searcher {
 		UnivariateIntegrator integrator = 
 				new TrapezoidIntegrator(1e-3, 1e-3, 2, 64);
 		
-		ResultSet resultSet = new ResultSet();
+		ResultSet resultSet = new ResultSet(MERGE_WINDOW);
 		
-		for (Timeline timeline : timelines) {
-			/*System.out.println(timeline);
-			
-			List<JustifiedTimedFunction> fs =
-				new ArrayList<JustifiedTimedFunction>(timeline.getFunctions());
-			Collections.sort(fs, new JustifiedTimedFunction.TimeComparator());
-			
-			for (JustifiedTimedFunction f : fs) {
-				System.out.println("\t" + f.toString());
-				
-				for (String j : f.getJustifications()) {
-					System.out.println("\t\t" + j);
-				}
-			}*/
-			
+		for (Timeline timeline : timelines) {			
 			float[] shotBoundaries = timeline.getShotBoundaries();
 			
 			double[] integrals = new double[shotBoundaries.length];
@@ -221,8 +213,8 @@ public class ModularSearcher implements Searcher {
 					throw new Exception("OSHIT");
 				}
 				
-				int minBoundaryIndex = startIndex - SHOTS_WIDTH;
-				int maxBoundaryIndex = startIndex + 1 + SHOTS_WIDTH;
+				int minBoundaryIndex = startIndex;// - SHOTS_WIDTH;
+				int maxBoundaryIndex = startIndex + 1;// + SHOTS_WIDTH;
 				
 				float start = minBoundaryIndex < 0 ?
 								0 : shotBoundaries[minBoundaryIndex];
@@ -270,7 +262,7 @@ public class ModularSearcher implements Searcher {
 		UnivariateIntegrator integrator = 
 				new TrapezoidIntegrator(1e-3, 1e-3, 2, 64);
 		
-		ResultSet resultSet = new ResultSet();
+		ResultSet resultSet = new ResultSet(MERGE_WINDOW);
 		
 		for (Timeline timeline : timelines) {
 			System.out.println(timeline);
@@ -628,6 +620,14 @@ public class ModularSearcher implements Searcher {
 				TimelineSet timelines = new TimelineSet();
 				
 				for (Timeline timeline : currentSet) {
+					if (timeline.numFunctions() > 0) {
+						timelines.add(timeline);
+					}
+				}
+				
+				return timelines;
+				
+				/*for (Timeline timeline : currentSet) {
 				   if (!(
 						 (
 							(
@@ -651,7 +651,7 @@ public class ModularSearcher implements Searcher {
 					}
 				}
 				
-				return timelines;
+				return timelines;*/
 			}
 			
 		});
@@ -659,9 +659,11 @@ public class ModularSearcher implements Searcher {
 		Map<Query, List<Result>> expectedResults = 
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
+		boolean plot = args.length > 9;
+		
 		for (Query q : expectedResults.keySet()) {
 
-			if (args.length > 8 && !q.queryID.equals(args[9])) {
+			if (args.length > 9 && !q.queryID.equals(args[9])) {
 				continue;
 			}
 			
@@ -669,7 +671,7 @@ public class ModularSearcher implements Searcher {
 			
 			System.out.println(q);
 			System.out.println("Expecting: " + expected);
-			System.out.println(searcher._search(q, expected.fileName));
+			System.out.println(searcher._search(q, expected.fileName, plot));
 			System.out.println("----");
 		}
 		

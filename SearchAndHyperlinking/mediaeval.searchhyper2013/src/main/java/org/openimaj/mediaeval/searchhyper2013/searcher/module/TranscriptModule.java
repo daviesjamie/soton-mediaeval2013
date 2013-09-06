@@ -121,8 +121,9 @@ public class TranscriptModule implements SearcherModule {
 				programmeTimeline =	timelineFactory.makeTimeline(id);
 			}
 			
-			if (programmeTimeline.containsInstanceOf(
-					TitleModule.TitleFunction.class)) {
+			// Unneeded test.
+			//if (programmeTimeline.containsInstanceOf(
+			//		TitleModule.TitleFunction.class)) {
 				Document synopsisDocument =
 						LuceneUtils.getSynopsisForProgramme(id, indexSearcher);
 				String[] titleWords =
@@ -145,7 +146,7 @@ public class TranscriptModule implements SearcherModule {
 				}
 				
 				luceneQuery = queryParser.parse(sb.toString().trim());
-			}
+			//}
 			
 			String transcript = luceneDocument.get(Field.Text.toString());
 			
@@ -198,7 +199,7 @@ public class TranscriptModule implements SearcherModule {
 						new TranscriptFunction(TRANSCRIPT_WEIGHT * doc.score *
 									 			 Math.pow(score,
 									 					  TRANSCRIPT_POWER),
-									 		   (end - start) / 2,
+									 		   start + ((end - start) / 2),
 									 		   ((end - start) + TRANSCRIPT_WIDTH)
 									 		   		/ 3d);
 				programmeTimeline.addFunction(function);

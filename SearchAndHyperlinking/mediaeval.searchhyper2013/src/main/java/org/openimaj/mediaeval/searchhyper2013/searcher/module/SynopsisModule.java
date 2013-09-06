@@ -94,11 +94,14 @@ public class SynopsisModule implements SearcherModule {
 			Timeline programmeTimeline =
 				timelineFactory.makeTimeline(
 						luceneDocument.get(Field.Program.toString()));
-			SynopsisFunction function = 
+			/*SynopsisFunction function = 
 					new SynopsisFunction(SYNOPSIS_WEIGHT *
 											Math.pow(doc.score,
 													 SYNOPSIS_POWER));
-			programmeTimeline.addFunction(function);
+			programmeTimeline.addFunction(function);*/
+			programmeTimeline.scaleMultiplier(SYNOPSIS_WEIGHT *
+												Math.pow(doc.score,
+														 SYNOPSIS_POWER));
 			
 			List<String> commonWords =
 				LuceneUtils.getCommonTokens(q.queryText,
@@ -111,7 +114,7 @@ public class SynopsisModule implements SearcherModule {
 				sb.append("'" + word + "', ");
 			}
 			
-			function.addJustification(
+			programmeTimeline.addJustification(
 					sb.toString().substring(0, sb.toString().length() - 2) + 
 					" with score " + doc.score);
 			
@@ -121,7 +124,7 @@ public class SynopsisModule implements SearcherModule {
 		return timelines;
 	}
 
-	public class SynopsisFunction extends Constant
+	/*public class SynopsisFunction extends Constant
 								  implements JustifiedTimedFunction {
 		List<String> justifications;
 		
@@ -146,5 +149,5 @@ public class SynopsisModule implements SearcherModule {
 		public String toString() {
 			return "Synopsis function";
 		}
-	}
+	}*/
 }

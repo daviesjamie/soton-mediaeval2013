@@ -25,7 +25,6 @@ import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
-import org.openimaj.mediaeval.searchhyper2013.searcher.module.SynopsisModule.SynopsisFunction;
 
 public class TitleModule implements SearcherModule {
 	Version LUCENE_VERSION = Version.LUCENE_43;
@@ -93,12 +92,16 @@ public class TitleModule implements SearcherModule {
 					timelineFactory.makeTimeline(
 							luceneDocument.get(Field.Program.toString()));
 			
-			TitleFunction function = new TitleFunction(TITLE_WEIGHT *
+			/*TitleFunction function = new TitleFunction(TITLE_WEIGHT *
 															Math.pow(doc.score,
 													   TITLE_POWER));
-			programmeTimeline.addFunction(function);
+			programmeTimeline.addFunction(function);*/
 			
-			function.addJustification(
+			programmeTimeline.scaleMultiplier(TITLE_WEIGHT *
+												Math.pow(doc.score,
+													     TITLE_POWER));
+			
+			programmeTimeline.addJustification(
 					"Title match with score " + doc.score + 
 					": " + luceneDocument.get(Field.Title.toString()));
 			
@@ -108,7 +111,7 @@ public class TitleModule implements SearcherModule {
 		return timelines;
 	}
 
-	public class TitleFunction extends Constant
+	/*public class TitleFunction extends Constant
 			  					  implements JustifiedTimedFunction {
 		List<String> justifications;
 		
@@ -133,5 +136,5 @@ public class TitleModule implements SearcherModule {
 		public String toString() {
 			return "Title function";
 		}
-	}
+	}*/
 }

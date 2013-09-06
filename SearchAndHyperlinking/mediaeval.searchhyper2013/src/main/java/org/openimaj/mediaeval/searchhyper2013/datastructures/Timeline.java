@@ -8,29 +8,36 @@ import java.util.Set;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.random.EmpiricalDistribution;
 import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.DefaultXYDataset;
 import org.openimaj.data.identity.Identifiable;
 import org.openimaj.image.Image;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedTimedFunction;
-import org.openimaj.mediaeval.searchhyper2013.searcher.module.SynopsisModule.SynopsisFunction;
 import org.openimaj.mediaeval.searchhyper2013.util.Time;
 import org.openimaj.mediaeval.searchhyper2013.util.UnivariateFunctionDistribution;
 
 import de.jungblut.math.DoubleVector;
 import de.jungblut.math.dense.DenseDoubleVector;
 
-public class Timeline implements Identifiable, UnivariateFunction {
+public class Timeline implements Identifiable, JustifiedTimedFunction {
 	String id;
 	Set<JustifiedTimedFunction> functions;
+	double multiplier;
 	float[] shotBoundaries;
+	
+	List<String> justifications;
 	
 	public Timeline(String id, float[] shotBoundaries) {
 		this.id = id;
 		this.shotBoundaries = shotBoundaries;
 		
+		multiplier = 1;
+		
 		functions = new HashSet<JustifiedTimedFunction>();
+		
+		justifications = new ArrayList<String>();
 	}
 	
 	public float[] getShotBoundaries() {
@@ -45,11 +52,15 @@ public class Timeline implements Identifiable, UnivariateFunction {
 			interest += f.value(time);
 		}
 		
-		return interest;
+		return multiplier * interest;
 	}
 	
 	public boolean addFunction(JustifiedTimedFunction f) {
 		return functions.add(f);
+	}
+	
+	public void scaleMultiplier(double scale) {
+		multiplier *= scale;
 	}
 	
 	public void mergeIn(Timeline other) {
@@ -92,7 +103,7 @@ public class Timeline implements Identifiable, UnivariateFunction {
 		return true;
 	}
 
-	public JFreeChart plot() {
+	public void plot() {
 		final int noSamples = (int) (10 * getEndTime()) + 1;
 		
 		double[][] data = new double[2][noSamples];
@@ -105,7 +116,8 @@ public class Timeline implements Identifiable, UnivariateFunction {
 		DefaultXYDataset dataset = new DefaultXYDataset();
 		dataset.addSeries("Plot", data);
 		
-		return ChartFactory.createXYLineChart("Plot",
+		JFreeChart chart = 
+			   ChartFactory.createXYLineChart(getID(),
 											  "Time (seconds)",
 											  "Value",
 											  dataset,
@@ -113,6 +125,9 @@ public class Timeline implements Identifiable, UnivariateFunction {
 											  false,
 											  false,
 											  false);
+		ChartFrame chartFrame = new ChartFrame(getID(),
+				   							   chart);
+		chartFrame.setVisible(true);
 	}
 	
 	@Override
@@ -170,5 +185,21 @@ public class Timeline implements Identifiable, UnivariateFunction {
 
 	public Set<JustifiedTimedFunction> getFunctions() {
 		return functions;
+	}
+
+	@Override
+	public boolean addJustification(String justification) {
+		return justifications.add(justification);
+	}
+
+	@Override
+	public List<String> getJustifications() {
+		return justifications;
+	}
+
+	@Override
+	public float getTime() {
+		
+		return 0;
 	}
 }
