@@ -107,7 +107,7 @@ public class TimeStringFormatter implements Formatter {
 		}
 		
 		// Normalise.
-		double maxScore = 0;
+		/*double maxScore = 0;
 		
 		for (Double score : times.values()) {
 			maxScore = Math.max(maxScore,  score);
@@ -115,7 +115,7 @@ public class TimeStringFormatter implements Formatter {
 		
 		for (Float time : times.keySet()) {
 			times.put(time, times.get(time) / maxScore);
-		}
+		}*/
 		
 		return times;
 	}

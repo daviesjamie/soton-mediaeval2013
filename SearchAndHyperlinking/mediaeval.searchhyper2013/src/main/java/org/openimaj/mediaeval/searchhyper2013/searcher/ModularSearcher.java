@@ -133,12 +133,14 @@ public class ModularSearcher implements Searcher {
 		
 		Collections.sort(results);
 		
-		for (int i = 0; i < results.size(); i++) {
-			String resultFile = results.get(i).fileName;
-			
-			if (i < 3 || resultFile.equals(expectedFile)) {
-				Timeline timeline = timelines.getTimelineWithID(resultFile);
-				
+		List<String> programmesToPrint = new ArrayList<String>();
+		for (int i = 0; i < results.size() && i < 3; i++) {
+			programmesToPrint.add(results.get(i).fileName);
+		}
+		
+		for (Timeline timeline : timelines) {
+			if (programmesToPrint.contains(timeline.getID()) ||
+					expectedFile.equals(timeline.getID())) {
 				System.out.println(timeline);
 				
 				List<JustifiedTimedFunction> fs =
@@ -584,22 +586,27 @@ public class ModularSearcher implements Searcher {
 		TimelineFactory timelineFactory = 
 				new TimelineFactory(indexSearcher, new File(args[3]));
 		
-		//LSHDataExplorer lshGraph = new LSHDataExplorer(new File(args[4]), 20);
+		Directory spellDir = FSDirectory.open(new File(args[4]));
+		
+		//LSHDataExplorer lshGraph = new LSHDataExplorer(new File(args[5]), 20);
 		
 		ChannelFilterModule channelFilterModule = new ChannelFilterModule();
 		SynopsisModule synopsisModule = new SynopsisModule(indexSearcher,
+														   spellDir,
 														   timelineFactory);
 		TitleModule titleModule = new TitleModule(indexSearcher,
+												  spellDir,
 												  timelineFactory);
 		TranscriptModule transcriptModule =
 				new TranscriptModule(indexSearcher,
 									 Type.Subtitles,
 									 englishAnalyzer,
+									 spellDir,
 									 timelineFactory);
-		ConceptModule conceptModule = new ConceptModule(new File(args[5]),
-														new File(args[6]),
-														englishAnalyzer);
-		//LSHGraphModule lshGraphModule = new LSHGraphModule(new File(args[7]),
+		//ConceptModule conceptModule = new ConceptModule(new File(args[6]),
+		//												new File(args[7]),
+		//												englishAnalyzer);
+		//LSHGraphModule lshGraphModule = new LSHGraphModule(new File(args[8]),
 		//												   lshGraph,
 		//												   timelineFactory);
 		
@@ -653,6 +660,11 @@ public class ModularSearcher implements Searcher {
 				SearcherEvaluator.importExpected(queriesFile, resultsFile);
 		
 		for (Query q : expectedResults.keySet()) {
+
+			if (args.length > 8 && !q.queryID.equals(args[9])) {
+				continue;
+			}
+			
 			Result expected = expectedResults.get(q).get(0);
 			
 			System.out.println(q);

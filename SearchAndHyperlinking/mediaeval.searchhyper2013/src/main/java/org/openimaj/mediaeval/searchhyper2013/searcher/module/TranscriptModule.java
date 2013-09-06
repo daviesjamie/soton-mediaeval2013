@@ -21,7 +21,9 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.highlight.DefaultEncoder;
 import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.QueryTermScorer;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
@@ -40,20 +42,24 @@ public class TranscriptModule implements SearcherModule {
 	double TRANSCRIPT_WEIGHT = 0.15;
 	double TRANSCRIPT_POWER = 2;
 	double TRANSCRIPT_WIDTH = 60;
+	double FRAGMENT_DENSITY_FACTOR = 0.1;
 	
 	Version LUCENE_VERSION = Version.LUCENE_43;
 	
 	QueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Analyzer analyzer;
+	Directory spellDir;
 	TimelineFactory timelineFactory;
 	
 	public TranscriptModule(IndexSearcher indexSearcher,
 							Type transcriptType,
 							Analyzer analyzer,
+							Directory spellDir,
 							TimelineFactory timelineFactory) {
 		this.indexSearcher = indexSearcher;
 		this.analyzer = analyzer;
+		this.spellDir = spellDir;
 		this.timelineFactory = timelineFactory;
 		
 		TRANSCRIPT_TYPE = transcriptType;
@@ -76,8 +82,11 @@ public class TranscriptModule implements SearcherModule {
 	
 	public TimelineSet _search(Query q, TimelineSet currentSet)
 														throws Exception {
-		String query = LuceneUtils.levenstein(QueryParser.escape(
-							ChannelFilterModule.removeChannel(q.queryText)));
+		String query = LuceneUtils.fixSpelling(
+							QueryParser.escape(
+									ChannelFilterModule.removeChannel(
+											q.queryText)),
+							spellDir);
 		
 		System.out.println(query);
 		
@@ -103,9 +112,40 @@ public class TranscriptModule implements SearcherModule {
 			
 			//System.out.println("Transcript hit: " + luceneDocument.get(Field.Program.toString()));
 			
+			String id = luceneDocument.get(Field.Program.toString());
+			
 			Timeline programmeTimeline =
-				timelineFactory.makeTimeline(
-						luceneDocument.get(Field.Program.toString()));
+					timelines.getTimelineWithID(id);
+			
+			if (programmeTimeline == null) {
+				programmeTimeline =	timelineFactory.makeTimeline(id);
+			}
+			
+			if (programmeTimeline.containsInstanceOf(
+					TitleModule.TitleFunction.class)) {
+				Document synopsisDocument =
+						LuceneUtils.getSynopsisForProgramme(id, indexSearcher);
+				String[] titleWords =
+						synopsisDocument.get(Field.Title.toString()).split(" ");
+				
+				String[] queryParts = query.split(" ");
+				
+				StringBuilder sb = new StringBuilder();
+				
+				query:
+				for (String queryPart : queryParts) {
+					for (String titleWord : titleWords) {
+						if (queryPart.toLowerCase()
+									 .contains(titleWord.toLowerCase())) {
+							continue query;
+						}
+					}
+					
+					sb.append(queryPart + " ");
+				}
+				
+				luceneQuery = queryParser.parse(sb.toString().trim());
+			}
 			
 			String transcript = luceneDocument.get(Field.Text.toString());
 			
@@ -117,20 +157,62 @@ public class TranscriptModule implements SearcherModule {
 							indexSearcher.getIndexReader(),
 							doc.doc),
 						new DefaultEncoder(),
-						new QueryTermScorer(luceneQuery));
+						new QueryScorer(luceneQuery));
 			TokenStream tokenStream =
 					analyzer.tokenStream(Field.Text.toString(),
 										 new StringReader(transcript));
 			
-			String timeString = 
+			/*String timeString = 
 					timeHighlighter.getBestFragments(tokenStream,
 													 transcript,
-													 1000000, " ");
+													 1000000, " ");*/
+			String[] frags = timeHighlighter.getBestFragments(tokenStream,
+											 				  transcript,
+											 				  100);
+			
+			for (String frag : frags) {
+				Map<Float, Double> times = 
+						TimeStringFormatter.timesFromString(frag);
+				
+				float start = Float.MAX_VALUE;
+				float end = 0;
+				double score = 0;
+				
+				for (Float time : times.keySet()) {
+					if (time > programmeTimeline.getEndTime() + 30) {
+						continue;
+					}
+					
+					start = Math.min(start, time);
+					end = Math.max(end, time);
+					score += times.get(time);
+				}
+				
+				if (start == Float.MAX_VALUE) {
+					continue;
+				}
+				
+				score += FRAGMENT_DENSITY_FACTOR * (times.size() - 1);
+				
+				TranscriptFunction function = 
+						new TranscriptFunction(TRANSCRIPT_WEIGHT * doc.score *
+									 			 Math.pow(score,
+									 					  TRANSCRIPT_POWER),
+									 		   (end - start) / 2,
+									 		   ((end - start) + TRANSCRIPT_WIDTH)
+									 		   		/ 3d);
+				programmeTimeline.addFunction(function);
+				
+				function.addJustification(
+						"Transcript matched at " + Time.StoMS(start) + " to " + 
+						Time.StoMS(end) + " with score " + score + " and " + 
+						"match: " + frag);
+			}
 			
 			//System.out.println(timeString + "\n");
 			
 			tokenStream.close();
-			
+			/*
 			Map<Float, Double> times =
 					TimeStringFormatter.timesFromString(timeString);
 			
@@ -155,7 +237,7 @@ public class TranscriptModule implements SearcherModule {
 						TimeStringFormatter.getWordAndContextAtTime(timeString,
 																	time));
 			}
-			
+			*/
 			if (programmeTimeline.numFunctions() > 0) {
 				timelines.add(programmeTimeline);
 			}

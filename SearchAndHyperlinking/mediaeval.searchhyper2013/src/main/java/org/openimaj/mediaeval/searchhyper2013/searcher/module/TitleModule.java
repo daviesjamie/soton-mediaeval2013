@@ -15,6 +15,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
@@ -34,11 +35,14 @@ public class TitleModule implements SearcherModule {
 	
 	QueryParser queryParser;
 	IndexSearcher indexSearcher;
+	Directory spellDir;
 	TimelineFactory timelineFactory;
 	
 	public TitleModule(IndexSearcher indexSearcher,
+					   Directory spellDir,
 					   TimelineFactory timelineFactory) {
 		this.indexSearcher = indexSearcher;
+		this.spellDir = spellDir;
 		this.timelineFactory = timelineFactory;
 		
 		queryParser = new ComplexPhraseQueryParser(
@@ -62,8 +66,10 @@ public class TitleModule implements SearcherModule {
 							   TimelineSet currentSet)
 														throws Exception {
 		org.apache.lucene.search.Query luceneQuery = 
-				queryParser.parse(LuceneUtils.levenstein(
-									QueryParser.escape(q.queryText)));
+				queryParser.parse(
+						LuceneUtils.fixSpelling(
+									QueryParser.escape(q.queryText),
+									spellDir));
 		Filter synopsisFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),

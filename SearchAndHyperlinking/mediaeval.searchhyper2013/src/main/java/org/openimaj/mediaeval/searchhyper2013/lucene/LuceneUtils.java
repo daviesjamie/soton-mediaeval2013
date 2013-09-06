@@ -17,6 +17,7 @@ import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermContext;
@@ -40,8 +41,14 @@ import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.Spans;
+import org.apache.lucene.search.spell.LuceneDictionary;
+import org.apache.lucene.search.spell.SpellChecker;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.BytesRefIterator;
 import org.apache.lucene.util.Version;
+import org.openimaj.mediaeval.searchhyper2013.util.EnglishNumberToWords;
 
 public abstract class LuceneUtils {
 	
@@ -230,15 +237,74 @@ public abstract class LuceneUtils {
 		return searcher.doc(docs.scoreDocs[0].doc);
 	}
 
-	public static String levenstein(String query) {
-		String[] parts = query.trim().split("\\s+");
+	public static String fixSpelling(String q, Directory spellIndex) throws IOException {
+		SpellChecker spellChecker = new SpellChecker(spellIndex);
+
+		String[] parts = q.trim().split("\\s+");
+		
+		StringBuilder sb = new StringBuilder();
+		
+		words:
+		for (String word : parts) {
+			String checkWord = word.toLowerCase();
+			
+			if (!spellChecker.exist(checkWord)) {
+				String[] corrections = spellChecker.suggestSimilar(word, 5);
+				
+				for (String correction : corrections) {
+					if (correction.toLowerCase().equals(checkWord)) {
+						sb.append(checkWord + " ");
+						
+						continue words;
+					}
+				}
+				
+				if (corrections.length > 0) {
+					sb.append(checkWord.replaceAll("\\W", "") + "|");
+					sb.append("(");
+					for (String correction : corrections) {
+						sb.append(correction + "|");
+					}
+					sb.deleteCharAt(sb.length() - 1);
+					sb.append(") ");
+				}
+			} else {
+				sb.append(word + " ");
+			}
+		}
+		
+		spellChecker.close();
+		
+		//System.out.println(query + " => " + sb.toString().trim());
+		
+		String query = sb.toString().trim();
+		
+		Pattern pattern = Pattern.compile("(\\d+)");
+		Matcher matcher = pattern.matcher(query);
+		
+		while (matcher.find()) {
+			String match = matcher.group(1);
+			
+			query = query.replaceAll(match,
+							 		 "(" + match + 
+							 		 "|(" + EnglishNumberToWords.convert(
+							 					Long.parseLong(match)) +
+							 		 "))");
+		}
+		
+		return query;
+		/*String[] parts = query.trim().split("\\s+");
 		
 		StringBuilder sb = new StringBuilder();
 		
 		for (String part : parts) {
-			sb.append(part + "~2 ");
+			String fixed = part.replaceAll("\\W+", "");
+			
+			if (fixed.length() > 0) {
+				sb.append(fixed + "~2 ");
+			}
 		}
 		
-		return sb.toString().trim();
+		return sb.toString().trim();*/
 	}
 }
