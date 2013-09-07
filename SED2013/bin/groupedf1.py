@@ -24,15 +24,19 @@ results = training.aggregate([
 	# 		"details.TFIDF_PhotoTags_mat":3
 	# 	}
 	# },
+	{
+		"$match":{
+			"details.PhotoTime_TAKEN_mat": 2.10178,
+		}
+	},
 	# {
 	# 	"$match":{
-	# 		"details.INCREMENTAL":True,
-	# 		"details.SPECTRAL":True,
+	# 		"details.SPECTRAL":True
 	# 	}
 	# },
 	{
 		"$group":{
-			"_id":dict(matkeys().items() + {"eps":"$details.eps"}.items()),
+			"_id":dict(matkeys().items() + {"eps":"$details.eps","eig":"$details.eiggap"}.items()),
 			"f1avg":{"$avg":"$scores.f1"}
 		}
 	},
@@ -54,13 +58,13 @@ results = training.aggregate([
 	# 	}.items() + matkeysavg().items())
 	# }
 	{
-		"$limit":100
+		"$limit":1000
 
 	},
 	{
 		"$project":dict(
 			matkeys("_id.").items() +
-			{"f1avg":1,"eps":"$_id.eps","_id":0}.items()
+			{"f1avg":1,"eps":"$_id.eps","_id":0,"eig":"$_id.eig"}.items()
 		)
 	}
 ])['result']

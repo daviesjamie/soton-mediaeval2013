@@ -116,6 +116,86 @@ public class IncrementalWeightedMergeMode extends SimMatSetupMode {
 		}
 		
 	}
+	/**
+	 * Provide a matrix which is a weighting of other matrices
+	 * @author Sina Samangooei (ss@ecs.soton.ac.uk)
+	 *
+	 */
+	public class IWMSparseMatrixSource implements
+			SparseMatrixSource {
+		private final String combname;
+		private final double[] curperm;
+
+		IWMSparseMatrixSource(String combname,
+				double[] curperm) {
+			this.combname = combname;
+			this.curperm = curperm;
+		}
+
+		@Override
+		public String name() {
+			return combname;
+		}
+
+		@Override
+		public SimilarityMatrixWrapper mat() {
+			Iterator<SimilarityMatrixWrapper> sparseMatrixIterator = createSparseMatrixIterator();
+			SimilarityMatrixWrapper mat = null;
+			int i = 0;
+			int totalperm = 0;
+			try{
+				while(i < curperm.length){
+					// Only load a matrix if it will be weighted by a non zero!
+					if(curperm[i] != 0){
+						SimilarityMatrixWrapper newmat = sparseMatrixIterator.next();
+						mat = IncrementalWeightedMergeMode.this.wmcm.combine(mat, newmat,totalperm,curperm[i]);
+						totalperm += curperm[i];							
+					}
+					else{
+						IncrementalWeightedMergeMode.super.simMatIter.next(); // !! we have to skip the simmat too!
+					}
+					i++;
+				}
+				return mat;
+			} catch(Exception e){
+				throw new RuntimeException(e);
+			}
+		}
+
+		private Iterator<SimilarityMatrixWrapper> createSparseMatrixIterator() {
+			
+			IncrementalWeightedMergeMode.super.setup(); 
+			return new Iterator<SimilarityMatrixWrapper>() {
+				
+				@Override
+				public void remove() {
+					throw new UnsupportedOperationException();
+				}
+				
+				@Override
+				public SimilarityMatrixWrapper next() {
+					String nextSimMat = IncrementalWeightedMergeMode.super.simMatIter.next();
+					SimilarityMatrixWrapper newmat = null;
+					try {
+						Map<String, SimilarityMatrixWrapper> readSparseMatricies = IncrementalWeightedMergeMode.this.readSparseMatricies(simmatRoot, nextSimMat);
+						newmat = readSparseMatricies.get(nextSimMat);
+						if(newmat == null){
+							newmat = readSparseMatricies.get(new File(nextSimMat).getName());
+						}
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+					
+					return newmat;
+				}
+				
+				@Override
+				public boolean hasNext() {
+					return IncrementalWeightedMergeMode.super.simMatIter.hasNext();
+				}
+			};
+		}
+	}
 	class HashableIntArr{
 		private double[] arr;
 		private double[] proped;
@@ -192,76 +272,16 @@ public class IncrementalWeightedMergeMode extends SimMatSetupMode {
 		final double[] curperm = weightPermutations.next();
 		final String combname = prepareName(curperm);
 		
-		SparseMatrixSource sps = new SparseMatrixSource() {
-			@Override
-			public String name() {
-				return combname;
-			}
-			
-			@Override
-			public SimilarityMatrixWrapper mat() {
-				Iterator<SimilarityMatrixWrapper> sparseMatrixIterator = createSparseMatrixIterator();
-				SimilarityMatrixWrapper mat = null;
-				int i = 0;
-				int totalperm = 0;
-				try{
-					while(i < curperm.length){
-						// Only load a matrix if it will be weighted by a non zero!
-						if(curperm[i] != 0){
-							SimilarityMatrixWrapper newmat = sparseMatrixIterator.next();
-							mat = IncrementalWeightedMergeMode.this.wmcm.combine(mat, newmat,totalperm,curperm[i]);
-							totalperm += curperm[i];							
-						}
-						else{
-							IncrementalWeightedMergeMode.super.simMatIter.next(); // !! we have to skip the simmat too!
-						}
-						i++;
-					}
-					return mat;
-				} catch(Exception e){
-					throw new RuntimeException(e);
-				}
-			}
-
-			private Iterator<SimilarityMatrixWrapper> createSparseMatrixIterator() {
-				
-				IncrementalWeightedMergeMode.super.setup(); 
-				return new Iterator<SimilarityMatrixWrapper>() {
-					
-					@Override
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public SimilarityMatrixWrapper next() {
-						String nextSimMat = IncrementalWeightedMergeMode.super.simMatIter.next();
-						SimilarityMatrixWrapper newmat = null;
-						try {
-							Map<String, SimilarityMatrixWrapper> readSparseMatricies = IncrementalWeightedMergeMode.this.readSparseMatricies(simmatRoot, nextSimMat);
-							newmat = readSparseMatricies.get(nextSimMat);
-							if(newmat == null){
-								newmat = readSparseMatricies.get(new File(nextSimMat).getName());
-							}
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
-						
-						return newmat;
-					}
-					
-					@Override
-					public boolean hasNext() {
-						return IncrementalWeightedMergeMode.super.simMatIter.hasNext();
-					}
-				};
-			}
-		};
+		SparseMatrixSource sps = createSparseMatrixSource(curperm, combname);
 		NamedSolrSimilarityMatrixClustererExperiment ret = new NamedSolrSimilarityMatrixClustererExperiment();
 		ret.exp = new SolrSimilarityExperimentTool(sps, index);
 		ret.name = String.format("combine=%s/%s",wmcm.name(),combname);
 		
 		return ret;
+	}
+	protected SparseMatrixSource createSparseMatrixSource(final double[] curperm,final String combname) {
+		SparseMatrixSource sps = new IWMSparseMatrixSource(combname, curperm);
+		return sps;
 	}
 	private String prepareName(double[] curperm) {
 		IncrementalWeightedMergeMode.super.setup(); // prepare the simmat iterator

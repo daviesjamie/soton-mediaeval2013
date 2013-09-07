@@ -41,6 +41,17 @@ public enum SimMatModeOption implements CmdLineOptionsProvider{
 		}
 		
 	},
+	/**
+	 * 
+	 */
+	METRICIWM{
+
+		@Override
+		public SimMatSetupMode getOptions() {
+			return new MetricSpaceIWMMode();
+		}
+		
+	},
 	;
 
 	@Override
