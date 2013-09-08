@@ -29,10 +29,11 @@ import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
 public class TitleModule implements SearcherModule {
 	Version LUCENE_VERSION = Version.LUCENE_43;
 	
+	double MINIMUM_SCORE = 0.8;
 	double TITLE_WEIGHT = 3;
 	double TITLE_POWER = 0.5;
 	
-	QueryParser queryParser;
+	StandardQueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Directory spellDir;
 	TimelineFactory timelineFactory;
@@ -44,10 +45,8 @@ public class TitleModule implements SearcherModule {
 		this.spellDir = spellDir;
 		this.timelineFactory = timelineFactory;
 		
-		queryParser = new ComplexPhraseQueryParser(
-				LUCENE_VERSION,
-				Field.Title.toString(),
-				new EnglishAnalyzer(LUCENE_VERSION));
+		queryParser = new StandardQueryParser(
+							new EnglishAnalyzer(LUCENE_VERSION));
 	}
 	
 	@Override
@@ -66,9 +65,10 @@ public class TitleModule implements SearcherModule {
 														throws Exception {
 		org.apache.lucene.search.Query luceneQuery = 
 				queryParser.parse(
-						LuceneUtils.fixSpelling(
+						LuceneUtils.fixQuery(
 									QueryParser.escape(q.queryText),
-									spellDir));
+									spellDir),
+						Field.Title.toString());
 		Filter synopsisFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),
@@ -77,11 +77,15 @@ public class TitleModule implements SearcherModule {
 		ScoreDoc[] hits = LuceneUtils.normaliseTopDocs(
 							indexSearcher.search(luceneQuery,
 												 synopsisFilter,
-												 10));
+												 1000000));
 		
 		TimelineSet timelines = new TimelineSet(currentSet);
 		
 		for (ScoreDoc doc : hits) {
+			if (doc.score < MINIMUM_SCORE) {
+				continue;
+			}
+			
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
 			//System.out.println("Title hit: " + luceneDocument.get(Field.Program.toString()));
@@ -97,9 +101,9 @@ public class TitleModule implements SearcherModule {
 													   TITLE_POWER));
 			programmeTimeline.addFunction(function);*/
 			
-			programmeTimeline.scaleMultiplier(TITLE_WEIGHT *
-												Math.pow(doc.score,
-													     TITLE_POWER));
+			programmeTimeline.scaleMultiplier(1 + (TITLE_WEIGHT *
+													Math.pow(doc.score,
+															 TITLE_POWER)));
 			
 			programmeTimeline.addJustification(
 					"Title match with score " + doc.score + 

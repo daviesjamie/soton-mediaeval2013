@@ -54,6 +54,65 @@ public abstract class LuceneUtils {
 	
 	static final Version LUCENE_VERSION = Version.LUCENE_43;
 	
+	public static double extractBoost(String queryString, String token) throws Exception {
+		EnglishAnalyzer analyzer = new EnglishAnalyzer(LUCENE_VERSION);
+		
+		StandardQueryParser queryParser =
+				new StandardQueryParser(analyzer);
+		org.apache.lucene.search.Query query = 
+				queryParser.parse(token, "foo");
+		
+		Highlighter highlighter = new Highlighter(new Formatter() {
+
+			@Override
+			public String highlightTerm(String originalText,
+					TokenGroup tokenGroup) {
+				
+				if (tokenGroup.getTotalScore() > 0) {
+					return ">>>" + originalText + "<<<";
+				} else {
+					return originalText;
+				}
+				
+			}}, new DefaultEncoder(), new QueryTermScorer(query));
+		
+		TokenStream tokenStream =
+				analyzer.tokenStream("foo",
+									 new StringReader(queryString));
+		
+		String highlighted = highlighter.getBestFragments(tokenStream,
+														  queryString,
+														  1000,
+														  " ");
+		
+		for (String part : highlighted.split("\\s+")) {
+			int arrowIndex = part.indexOf(">>>");
+			
+			if (arrowIndex < 0) {
+				continue;
+			}
+			
+			int lParenIndex = part.indexOf('(');
+			
+			if (lParenIndex < 0) {
+				return 1;
+			} else if (lParenIndex < arrowIndex) {
+				int caretIndex = part.indexOf('^');
+				
+				if (caretIndex < 0) {
+					return 1;
+				} else {
+					return Double.parseDouble(part.substring(caretIndex + 1));
+				}
+			} else {
+				return 1;
+			}
+		}
+		
+		// This should NOT happen.
+		throw new Exception("OSHIT");
+	}
+	
 	public static List<String> getCommonTokens(String queryString, String searchString)
 			  throws IOException, QueryNodeException, InvalidTokenOffsetsException {
 		
@@ -237,7 +296,7 @@ public abstract class LuceneUtils {
 		return searcher.doc(docs.scoreDocs[0].doc);
 	}
 
-	public static String fixSpelling(String q, Directory spellIndex) throws IOException {
+	public static String fixQuery(String q, Directory spellIndex) throws IOException {
 		SpellChecker spellChecker = new SpellChecker(spellIndex);
 
 		String[] parts = q.trim().split("\\s+");
@@ -246,7 +305,7 @@ public abstract class LuceneUtils {
 		
 		words:
 		for (String word : parts) {
-			String checkWord = word.toLowerCase();
+			String checkWord = word.toLowerCase().replaceAll("\\W", "");
 			
 			if (!spellChecker.exist(checkWord)) {
 				String[] corrections = spellChecker.suggestSimilar(word, 5);
@@ -260,16 +319,16 @@ public abstract class LuceneUtils {
 				}
 				
 				if (corrections.length > 0) {
-					sb.append(checkWord.replaceAll("\\W", "") + "|");
+					sb.append(checkWord + "|");
 					sb.append("(");
 					for (String correction : corrections) {
 						sb.append(correction + "|");
 					}
 					sb.deleteCharAt(sb.length() - 1);
-					sb.append(") ");
+					sb.append(")^0.5 ");
 				}
 			} else {
-				sb.append(word + " ");
+				sb.append(checkWord + " ");
 			}
 		}
 		
@@ -279,7 +338,7 @@ public abstract class LuceneUtils {
 		
 		String query = sb.toString().trim();
 		
-		Pattern pattern = Pattern.compile("(\\d+)");
+		/*Pattern pattern = Pattern.compile("(\\d+)");
 		Matcher matcher = pattern.matcher(query);
 		
 		while (matcher.find()) {
@@ -290,7 +349,7 @@ public abstract class LuceneUtils {
 							 		 "|(" + EnglishNumberToWords.convert(
 							 					Long.parseLong(match)) +
 							 		 "))");
-		}
+		}*/
 		
 		return query;
 		/*String[] parts = query.trim().split("\\s+");

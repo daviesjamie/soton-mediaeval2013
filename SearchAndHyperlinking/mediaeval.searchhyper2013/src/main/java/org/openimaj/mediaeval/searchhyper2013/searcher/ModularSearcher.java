@@ -110,7 +110,7 @@ public class ModularSearcher implements Searcher {
 	@Override
 	public ResultList search(Query q) throws SearcherException {
 		try {
-			return _search(q, null);
+			return _search(q, null, false);
 		} catch (Exception e) {
 			throw new SearcherException(e);
 		}
@@ -183,7 +183,7 @@ public class ModularSearcher implements Searcher {
 				float start = i == 0 ? 0 : shotBoundaries[i - 1];
 				float end = shotBoundaries[i];
 				
-				integrals[i] = integrator.integrate(10000,
+				integrals[i] = integrator.integrate(1000000,
 													timeline,
 													start,
 													end);

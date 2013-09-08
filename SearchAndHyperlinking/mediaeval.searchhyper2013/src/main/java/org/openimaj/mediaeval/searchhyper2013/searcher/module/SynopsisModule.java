@@ -32,7 +32,7 @@ public class SynopsisModule implements SearcherModule {
 	double SYNOPSIS_WEIGHT = 10;
 	double SYNOPSIS_POWER = 3;
 	
-	QueryParser queryParser;
+	StandardQueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Directory spellDir;
 	TimelineFactory timelineFactory;
@@ -44,10 +44,8 @@ public class SynopsisModule implements SearcherModule {
 		this.spellDir = spellDir;
 		this.timelineFactory = timelineFactory;
 		
-		queryParser = new ComplexPhraseQueryParser(
-				LUCENE_VERSION,
-				Field.Text.toString(),
-				new EnglishAnalyzer(LUCENE_VERSION));
+		queryParser = new StandardQueryParser(
+							new EnglishAnalyzer(LUCENE_VERSION));
 	}
 	
 	@Override
@@ -64,14 +62,15 @@ public class SynopsisModule implements SearcherModule {
 	public TimelineSet _search(Query q,
 							   TimelineSet currentSet)
 														throws Exception {
-		String query = LuceneUtils.fixSpelling(
+		String query = LuceneUtils.fixQuery(
 							QueryParser.escape(
 									ChannelFilterModule.removeChannel(
 											q.queryText)),
 							spellDir);
 		
 		org.apache.lucene.search.Query luceneQuery = 
-				queryParser.parse(query);
+				queryParser.parse(query,
+								  Field.Text.toString());
 		Filter synopsisFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),
@@ -99,9 +98,9 @@ public class SynopsisModule implements SearcherModule {
 											Math.pow(doc.score,
 													 SYNOPSIS_POWER));
 			programmeTimeline.addFunction(function);*/
-			programmeTimeline.scaleMultiplier(SYNOPSIS_WEIGHT *
-												Math.pow(doc.score,
-														 SYNOPSIS_POWER));
+			programmeTimeline.scaleMultiplier(1 + (SYNOPSIS_WEIGHT *
+													Math.pow(doc.score,
+															 SYNOPSIS_POWER)));
 			
 			List<String> commonWords =
 				LuceneUtils.getCommonTokens(q.queryText,
