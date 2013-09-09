@@ -2,7 +2,9 @@ package org.openimaj.mediaeval.searchhyper2013.datastructures;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import org.openimaj.io.FileUtils;
 
@@ -40,7 +42,10 @@ public class Concepts extends HashMap<String, Integer> {
 														throws IOException {
 		Integer conceptID = get(concept);
 		
-		if (conceptID == null || conceptID == 702) {
+		final Integer[] deadConcepts = { 702, 977, 455 };
+		Arrays.sort(deadConcepts);
+		
+		if (conceptID == null || Arrays.binarySearch(deadConcepts, conceptID) > -1) {
 			return null;
 		}
 		

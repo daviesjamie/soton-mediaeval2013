@@ -77,7 +77,9 @@ public class SearcherEvaluator {
 						}
 					}
 					
-					queries.put(itemId, new Query(itemId, queryText, visualQueues));
+					Query q = new Query(itemId, queryText, visualQueues);
+					
+					queries.put(itemId, q);
 				}
 			}
 		}
@@ -150,7 +152,7 @@ public class SearcherEvaluator {
 			}
 			
 			//System.out.println("\nExpecting: \n" + expectedResults.get(query));
-			System.out.println(runResults);
+			//System.out.println(runResults);
 			
 			for (int i = 0; i < runResults.size(); i++) {
 				Result result = runResults.get(i);

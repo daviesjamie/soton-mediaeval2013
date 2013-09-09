@@ -40,6 +40,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.knn.DoubleNearestNeighboursExact.Factory;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
@@ -109,16 +110,16 @@ public class TranscriptModule implements SearcherModule {
 		String query = LuceneUtils.fixQuery(
 				QueryParser.escape(
 						ChannelFilterModule.removeChannel(
-								q.queryText)),
+								q.queryText + " " + q.visualCues)),
 				spellDir);
 
-		System.out.println(query);
+		//System.out.println(query);
 		
 		org.apache.lucene.search.Query luceneQuery = 
 			queryParser.parse(query,
 							  Field.Text.toString());
-		
-		System.out.println(luceneQuery);
+							
+		//System.out.println(luceneQuery);
 		
 		Filter transcriptFilter = new QueryWrapperFilter(
 								new TermQuery(
@@ -128,14 +129,14 @@ public class TranscriptModule implements SearcherModule {
 		ScoreDoc[] hits = LuceneUtils.normaliseTopDocs(
 						indexSearcher.search(luceneQuery,
 											 transcriptFilter,
-											 10));
+											 50));
 		
 		TimelineSet timelines = new TimelineSet(currentSet);
 		
 		for (ScoreDoc doc : hits) {
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
-			//System.out.println("Transcript hit: " + luceneDocument.get(Field.Program.toString()));
+			//System.out.println("!!! Transcript hit: " + luceneDocument.get(Field.Program.toString()));
 			
 			String id = luceneDocument.get(Field.Program.toString());
 			
@@ -148,7 +149,7 @@ public class TranscriptModule implements SearcherModule {
 			
 			// Remove title terms.
 			Document synopsisDocument =
-					LuceneUtils.getSynopsisForProgramme(id, indexSearcher);
+					LuceneUtils.getTypeForProgramme(id, Type.Synopsis, indexSearcher);
 			String[] titleWords =
 					synopsisDocument.get(Field.Title.toString()).split(" ");
 			
@@ -218,12 +219,16 @@ public class TranscriptModule implements SearcherModule {
 								   new DoubleNearestNeighboursExact.Factory());
 			int[][] clusters = dbscan.cluster(times).clusters();*/
 			
-			AgglomerativeClusterer<Float, DefaultCluster<Float>> clusterer = 
+			/*AgglomerativeClusterer<Float, DefaultCluster<Float>> clusterer = 
 					new AgglomerativeClusterer<Float, DefaultCluster<Float>>();
 			ClusterHierarchyNode<Float, DefaultCluster<Float>> root = 
-					clusterer.clusterHierarchically(transHits.keySet());
+					clusterer.clusterHierarchically(transHits.keySet());*/
 			
-			/*List<DoubleVector> data = new ArrayList<DoubleVector>();
+			if (transHits.keySet().isEmpty()) {
+				continue;
+			}
+			
+			List<DoubleVector> data = new ArrayList<DoubleVector>();
 			
 			for (Float time : transHits.keySet()) {
 				data.add(new DenseDoubleVector(1, time));
@@ -234,35 +239,35 @@ public class TranscriptModule implements SearcherModule {
 													new EuclidianDistance(),
 													false)
 										   .get(0)
-										   .get(0);*/
+										   .get(0);
 			
-			Queue<ClusterHierarchyNode<Float, DefaultCluster<Float>>> queue = 
-					new ConcurrentLinkedQueue<ClusterHierarchyNode<Float, DefaultCluster<Float>>>();
-			queue.add(root);
+			Queue<ClusterNode> queue = 
+					new ConcurrentLinkedQueue<ClusterNode>();
+			queue.add(rootCluster);
 			
-			final double MAXIMUM_CLUSTER_DISTANCE = 60;
+			final double MAXIMUM_CLUSTER_DISTANCE = 30;
 			
 			while (!queue.isEmpty()) {
-				ClusterHierarchyNode<Float, DefaultCluster<Float>> node = 
+				ClusterNode node = 
 						queue.remove();
 				
-				if (getDivergence(node) < MAXIMUM_CLUSTER_DISTANCE) {
+				if (node.getSplitDistance() < MAXIMUM_CLUSTER_DISTANCE) {
 					// Extract times from this node.
 					List<Float> times = new ArrayList<Float>();
 					
-					Queue<ClusterHierarchyNode<Float, DefaultCluster<Float>>> 
-						nodeQueue = new ConcurrentLinkedQueue<ClusterHierarchyNode<Float, DefaultCluster<Float>>>();
+					Queue<ClusterNode> 
+						nodeQueue = new ConcurrentLinkedQueue<ClusterNode>();
 					nodeQueue.add(node);
 					
 					while (!nodeQueue.isEmpty()) {
-						ClusterHierarchyNode<Float, DefaultCluster<Float>> 
+						ClusterNode 
 							current = nodeQueue.remove();
 						
-						if (getDivergence(current) > 0) {
-							nodeQueue.add(current.getChildren().get(0));
-							nodeQueue.add(current.getChildren().get(1));
+						if (current.getSplitDistance() > 0) {
+							nodeQueue.add(current.getLeft());
+							nodeQueue.add(current.getRight());
 						} else {
-							times.add((float) getMean(current));
+							times.add((float) current.getMean().get(0));
 						}
 					}
 					
@@ -274,15 +279,19 @@ public class TranscriptModule implements SearcherModule {
 					Set<String> uniqueHits = new HashSet<String>();
 
 					for (Float time : times) {
+						if (transHits.get(time) == null) continue;
+						
 						String word = transHits.get(time).getFirst();
 						double wordScore = transHits.get(time).getSecond();
 						
-						startTime = Math.min(startTime,  time);
+						startTime = Math.min(startTime, time);
 						endTime = Math.max(endTime, time);
 						score += wordScore;
 						
 						uniqueHits.add(word.toLowerCase());
 					}
+					
+					if (startTime == Float.MAX_VALUE) continue;
 					
 					score *= ((double) uniqueHits.size()) /
 							query.split(" ").length;
@@ -303,8 +312,8 @@ public class TranscriptModule implements SearcherModule {
 																		startTime,
 																		endTime));
 				} else {
-					queue.add(node.getChildren().get(0));
-					queue.add(node.getChildren().get(1));
+					queue.add(node.getLeft());
+					queue.add(node.getRight());
 				}
 			}
 			
@@ -387,7 +396,7 @@ public class TranscriptModule implements SearcherModule {
 		for (ScoreDoc doc : hits) {
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
-			//System.out.println("Transcript hit: " + luceneDocument.get(Field.Program.toString()));
+			//System.out.println("!!! Transcript hit: " + luceneDocument.get(Field.Program.toString()));
 			
 			String id = luceneDocument.get(Field.Program.toString());
 			
@@ -400,7 +409,7 @@ public class TranscriptModule implements SearcherModule {
 			
 			// Remove title terms.
 			Document synopsisDocument =
-					LuceneUtils.getSynopsisForProgramme(id, indexSearcher);
+					LuceneUtils.getTypeForProgramme(id, Type.Synopsis, indexSearcher);
 			String[] titleWords =
 					synopsisDocument.get(Field.Title.toString()).split(" ");
 			
