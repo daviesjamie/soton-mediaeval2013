@@ -28,16 +28,20 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.searchengines.LongVLADSearchEngine;
  */
 public class PqPcaVladIndexBuilder {
 	public static void main(String[] args) throws IOException {
-		final String latlngPath = "/Volumes/SSD/mediaeval13/placing/training_latlng";
+		final String latlngPath =
+				"/Volumes/SSD/mediaeval13/placing/training_latlng";
 		// final String vladPath =
 		// "/Volumes/SSD/mediaeval13/extractors/rgb-sift1x-vlad64n-pca128-pq16.bin";
 		// final String dataPath =
-		// "hdfs://seurat/data/mediaeval/placing/rgb-sift1x-vlad/";
+		// "hdfs://seurat/data/mediaeval/placing/rgb-sift1x-vlad.seq/";
 		// final String outputPath =
 		// "/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx";
-		final String vladPath = "/Volumes/SSD/mediaeval13/extractors/sift1x-vlad64n-pca128-pq16.bin";
-		final String dataPath = "hdfs://seurat/data/mediaeval/placing/sift1x-vlad/";
-		final String outputPath = "/Volumes/SSD/mediaeval13/placing/vlad-indexes/sift1x-vlad64n-pca128-pq16-adcnn.idx";
+		final String vladPath =
+				"/Volumes/SSD/mediaeval13/extractors/sift1x-vlad64n-pca128-pq16.bin";
+		final String dataPath =
+				"hdfs://seurat/data/mediaeval/placing/sift1x-vlad.seq/";
+		final String outputPath =
+				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/sift1x-vlad64n-pca128-pq16-adcnn.idx";
 
 		buildIndex(dataPath, latlngPath, vladPath, outputPath);
 	}
@@ -96,7 +100,7 @@ public class PqPcaVladIndexBuilder {
 
 	private static long[] loadTrainingIds(String string) throws IOException {
 		System.out.println("Reading IDs for geolocated images");
-		final TLongHashSet ids = new TLongHashSet(7600000);
+		final TLongHashSet ids = new TLongHashSet(8600000);
 
 		final BufferedReader br = new BufferedReader(new FileReader(string));
 		String line;

@@ -38,23 +38,23 @@ public class GeoAnalysisResult implements AnalysisResult {
 	}
 
 	private void compute() {
-		final double[] actual = new double[results.size()];
-		final double[] predicted = new double[results.size()];
+		final double[] actualError = new double[results.size()];
+		final double[] predictedError = new double[results.size()];
 
 		final DescriptiveStatistics stats = new DescriptiveStatistics();
 
-		for (int i = 0; i < actual.length; i++) {
+		for (int i = 0; i < actualError.length; i++) {
 			final DoubleDoublePair r = results.get(i);
 
 			for (int j = 0; j < distances.length; j++) {
-				if (r.second < distances[j])
+				if (r.first < distances[j])
 					accuracyPerDistance[j]++;
 			}
 
-			actual[i] = r.first;
-			predicted[i] = r.second;
+			actualError[i] = r.first;
+			predictedError[i] = r.second;
 
-			stats.addValue(Math.abs(actual[i] - predicted[i]));
+			stats.addValue(actualError[i]);
 		}
 
 		medianError = stats.getPercentile(50);
@@ -63,8 +63,8 @@ public class GeoAnalysisResult implements AnalysisResult {
 			accuracyPerDistance[j] /= results.size();
 		}
 
-		linearCorrelation = new PearsonsCorrelation().correlation(actual, predicted);
-		kendallTauCorrelation = computeKendallTau(actual, predicted);
+		linearCorrelation = new PearsonsCorrelation().correlation(actualError, predictedError);
+		kendallTauCorrelation = computeKendallTau(actualError, predictedError);
 	}
 
 	private static double computeKendallTau(double[] x, double[] y) {
@@ -125,5 +125,10 @@ public class GeoAnalysisResult implements AnalysisResult {
 		};
 
 		return ASCIITable.getInstance().getTable(header, table);
+	}
+
+	@Override
+	public String toString() {
+		return getDetailReport();
 	}
 }

@@ -31,10 +31,10 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.VLADSearcher;
  */
 public class VLADPlayground {
 	public static void main(String[] args) throws IOException {
-		final String vladIndex =
-				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx";
-		final String featureIndex =
-				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat";
+		final File vladIndex =
+				new File("/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx");
+		final File featureIndex =
+				new File("/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat");
 		final String luceneIndex =
 				"/Volumes/SSD/mediaeval13/placing/places.lucene";
 

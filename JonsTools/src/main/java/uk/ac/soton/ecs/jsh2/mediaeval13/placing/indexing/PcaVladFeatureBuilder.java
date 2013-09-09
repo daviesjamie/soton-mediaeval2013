@@ -30,10 +30,12 @@ import org.openimaj.util.pair.LongObjectPair;
  */
 public class PcaVladFeatureBuilder {
 	public static void main(String[] args) throws IOException {
-		final String dataPath = "hdfs://seurat/data/mediaeval/placing/rgb-sift1x-vlad/";
-		final String outputPath = "/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat";
+		final String dataPath =
+				"hdfs://seurat/data/mediaeval/placing/rgb-sift1x-vlad.seq/";
+		final String outputPath =
+				"/Volumes/SSD/mediaeval13/placing/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat";
 		// final String dataPath =
-		// "hdfs://seurat/data/mediaeval/placing/sift1x-vlad/";
+		// "hdfs://seurat/data/mediaeval/placing/sift1x-vlad.seq/";
 		// final String outputPath =
 		// "/Volumes/SSD/mediaeval13/placing/vlad-indexes/sift1x-vlad64n-pca128.dat";
 
@@ -65,7 +67,11 @@ public class PcaVladFeatureBuilder {
 		Collections.sort(data, new Comparator<LongObjectPair<float[]>>() {
 			@Override
 			public int compare(LongObjectPair<float[]> o1, LongObjectPair<float[]> o2) {
-				return Float.compare(o1.first, o2.first);
+				if (o1.first < o2.first)
+					return -1;
+				if (o1.first > o2.first)
+					return 1;
+				return 0;
 			}
 		});
 

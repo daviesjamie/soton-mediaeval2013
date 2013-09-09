@@ -12,6 +12,15 @@ import org.openimaj.image.MBFImage;
  * 
  */
 public interface VisualSearcher {
+	/**
+	 * (Optional) Search with an image
+	 * 
+	 * @param query
+	 * @param numResults
+	 * @return
+	 * @throws IOException
+	 * @throws UnsupportedOperationException
+	 */
 	public ScoreDoc[] search(MBFImage query, int numResults) throws IOException;
 
 	public ScoreDoc[] search(long flickrId, int numResults) throws IOException;
