@@ -30,13 +30,16 @@ public class ExperimentHarness {
 		}
 	}
 
-	private static File DEFAULT_LUCENE_INDEX = new File("../Placement/data/lucene-meta-index");
-	private static final File DEFAULT_LAT_LNG_FILE = new File("../Placement/data/training_latlng_complete");
+	private static File DEFAULT_LUCENE_INDEX = new File("../Placement/data/places.lucene");
+	private static final File DEFAULT_LAT_LNG_FILE = new File("../Placement/data/training_latlng");
 	private static final File DEFAULT_CACHE_LOCATION = new File("../Placement/data/caches");
 	private static final File DEFAULT_LSH_EDGES_FILE = new File("../Placement/data/sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
 	private static final File DEFAULT_VLAD_INDEX = new File("../Placement/data/vlad-indexes/rgb-sift1x-vlad64n-pca128-pq16-adcnn.idx");
 	private static final File DEFAULT_VLAD_FEATURES_FILE = new File("../Placement/data/vlad-indexes/rgb-sift1x-vlad64n-pca128.dat");
 	private static final File DEFAULT_LIRE_FEATURE_LOCATION = new File("../Placement/data/features");
+
+	private static final File BIG_SET_LUCENE_INDEX = new File("../Placement/data/bigdataset2.lucene");
+	private static final File BIG_SET_CACHE_LOCATION = new File("../Placement/data/bigcache");
 
 	public enum Experiments {
 		Random {
@@ -256,6 +259,15 @@ public class ExperimentHarness {
 						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
 						new ScoreWeightedVisualEstimator(luceneIndex, cedd, 100, 1.0f));
 			}
+		},
+		BigDataTagsOnly {
+			@Override
+			protected RunnableExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_LUCENE_INDEX);
+				
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new CachingTagBasedEstimator(luceneIndex, BIG_SET_CACHE_LOCATION));
+			}
 		}
 		;
 
@@ -263,7 +275,7 @@ public class ExperimentHarness {
 	}
 
 	public static void main(String[] args) throws Exception {
-		final Experiments exp = Experiments.ScoreWeightedLshAndCEDD100AndPrior;
+		final Experiments exp = Experiments.BigDataTagsOnly;
 
 		final RunnableExperiment expr = exp.create();
 		final ExperimentContext ctx = ExperimentRunner.runExperiment(expr);
