@@ -2,6 +2,8 @@ package uk.ac.soton.ecs.jsh2.mediaeval13.diversity;
 
 import java.io.File;
 
+import org.openimaj.feature.DoubleFVComparison;
+
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.DiversifiedScorer;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.NearDuplicatesFilter;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.RandomDiversifier;
@@ -9,6 +11,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatDBScanBa
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatMaxDistGreedyDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatMaxDistGreedyDiversifier.AggregationStrategy;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.TimeUserDiversifier;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.extractors.SIFTBOVW;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.predicates.DescriptionLength;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.predicates.FaceDetections;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.predicates.GeoDistance;
@@ -22,6 +25,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.scoring.RankScorer;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.scoring.Scorer;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.AvgCombiner;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.CombinedProvider;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.FeatureSim;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.MonthDelta;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.TimeOfDayDelta;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.TimeUser;
@@ -88,7 +92,6 @@ public enum DiversificationExperiments {
 					),
 					new DiversifiedScorer(
 							new LuceneReranker(),
-							// new TimeUserDiversifier(4, 0.1)
 							new SimMatDBScanBasedDiversifier(
 									new CombinedProvider(
 											new AvgCombiner(),
@@ -115,20 +118,39 @@ public enum DiversificationExperiments {
 					),
 					new DiversifiedScorer(
 							new LuceneReranker(),
-							// new TimeUserDiversifier(4, 0.1)
 							new SimMatMaxDistGreedyDiversifier(
 									new CombinedProvider(
 											new AvgCombiner(),
 											new TimeUser(4),
-											// new
-											// FeatureSim(ProvidedFeatures.TitleVector,
-											// DoubleFVComparison.COSINE_SIM),
-											// new TimeOfDayDelta(3)// ,
 											new MonthDelta(3)// ,
-									// new User()
-									// new GeoDelta(0.0001)
 									),
 									AggregationStrategy.Max
+							)
+					)
+			);
+		}
+	},
+	bovw {
+		@Override
+		public Scorer get() {
+			return new FilteredScorer(
+					new PreFilter(
+							new GeoDistance(10, true),
+							new NumViews(2),
+							new DescriptionLength(2000)
+					// new FaceDetections(),
+					// new HoGPedestrians(),
+					// new Text()
+					),
+					new DiversifiedScorer(
+							new LuceneReranker(),
+							new SimMatMaxDistGreedyDiversifier(
+									new CombinedProvider(
+											new AvgCombiner(),
+											new TimeUser(3.25),
+											new MonthDelta(5),
+											new FeatureSim(new SIFTBOVW(), DoubleFVComparison.COSINE_SIM)
+									), AggregationStrategy.Max
 							)
 					)
 			);
@@ -151,17 +173,80 @@ public enum DiversificationExperiments {
 			);
 		}
 	},
-	;
+	run1visonlyv1 {
+		@Override
+		public Scorer get() {
+			return new DiversifiedScorer(
+					// new NearDuplicatesFilter(null
+					new SimMatMaxDistGreedyDiversifier(
+							new FeatureSim(
+									new SIFTBOVW(), DoubleFVComparison.COSINE_SIM),
+							AggregationStrategy.Max
+					// )
+					)
+			);
+		}
+	},
+	run2textonlyv1 {
+		@Override
+		public Scorer get() {
+			return new FilteredScorer(
+					new PreFilter(
+							new GeoDistance(8, true),
+							new NumViews(2),
+							new DescriptionLength(2000)
+					),
+					new DiversifiedScorer(
+							new LuceneReranker(),
+							new SimMatMaxDistGreedyDiversifier(
+									new CombinedProvider(
+											new AvgCombiner(),
+											new TimeUser(3.25),
+											new MonthDelta(5)
+									),
+									AggregationStrategy.Max
+							)
+					)
+			);
+		}
+	},
+	run3textvisv1 {
+		@Override
+		public Scorer get() {
+			return new FilteredScorer(
+					new PreFilter(
+							new GeoDistance(8, true),
+							new NumViews(2),
+							new DescriptionLength(2000)
+					),
+					new DiversifiedScorer(
+							new LuceneReranker(),
+							new NearDuplicatesFilter(
+									new SimMatMaxDistGreedyDiversifier(
+											new CombinedProvider(
+													new AvgCombiner(),
+													new TimeUser(3.25),
+													new MonthDelta(5)
+											),
+											AggregationStrategy.Max
+									)
+							)
+					)
+			);
+		}
+	};
 
 	public abstract Scorer get();
 
 	public static void main(String[] args) throws Exception {
-		final DiversificationExperiments exp = DiversificationExperiments.metaOnlyDiversifierMD;
+		final DiversificationExperiments exp = DiversificationExperiments.run1visonlyv1;
 
-		final File baseDir = new File("/Users/jon/Data/mediaeval/diversity/");
 		final boolean devset = true;
+		final File baseDir = new File("/Users/jon/Data/mediaeval/diversity/");
+
 		final String runId = exp.name();
-		final File output = new File(baseDir, "experiments/" + runId);
+		final String folder = devset ? "experiments/" : "submission/";
+		final File output = new File(baseDir, folder + "me13div_SOTON-WAIS2013_" + runId + ".txt");
 		DiversificationHarness.performDiversification(baseDir, devset, exp.get(), output, runId);
 	}
 }
