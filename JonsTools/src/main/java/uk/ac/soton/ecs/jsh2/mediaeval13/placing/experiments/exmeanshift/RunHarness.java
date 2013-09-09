@@ -86,7 +86,14 @@ public class RunHarness {
 			// Text + Visual, Big data
 			@Override
 			protected MeanShiftPlacingExperiment create() throws Exception {
-				return null;
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_LUCENE_INDEX);
+				
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_FILE.toURI().toURL(), null,
+						new CachingTagBasedEstimator(luceneIndex, BIG_SET_CACHE_LOCATION));
+				
+				// TODO: Add prior
+				// TODO: Add visual features!
+				// TODO: Filter test set users from data set
 			}
 		},
 		Run5 {
