@@ -7,12 +7,15 @@ import org.apache.commons.math3.analysis.function.Constant;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
@@ -31,15 +34,18 @@ public class SynopsisModule implements SearcherModule {
 	
 	StandardQueryParser queryParser;
 	IndexSearcher indexSearcher;
+	Directory spellDir;
 	TimelineFactory timelineFactory;
 	
 	public SynopsisModule(IndexSearcher indexSearcher,
+						  Directory spellDir,
 						  TimelineFactory timelineFactory) {
 		this.indexSearcher = indexSearcher;
+		this.spellDir = spellDir;
 		this.timelineFactory = timelineFactory;
 		
 		queryParser = new StandardQueryParser(
-						new EnglishAnalyzer(LUCENE_VERSION));
+							new EnglishAnalyzer(LUCENE_VERSION));
 	}
 	
 	@Override
@@ -56,10 +62,15 @@ public class SynopsisModule implements SearcherModule {
 	public TimelineSet _search(Query q,
 							   TimelineSet currentSet)
 														throws Exception {
-		String query = ChannelFilterModule.removeChannel(q.queryText);
+		String query = LuceneUtils.fixQuery(
+							QueryParser.escape(
+									ChannelFilterModule.removeChannel(
+											q.queryText)),
+							spellDir);
 		
 		org.apache.lucene.search.Query luceneQuery = 
-				queryParser.parse(query, Field.Text.toString());
+				queryParser.parse(query,
+								  Field.Text.toString());
 		Filter synopsisFilter = new QueryWrapperFilter(
 									new TermQuery(
 										new Term(Field.Type.toString(),
@@ -82,11 +93,14 @@ public class SynopsisModule implements SearcherModule {
 			Timeline programmeTimeline =
 				timelineFactory.makeTimeline(
 						luceneDocument.get(Field.Program.toString()));
-			SynopsisFunction function = 
+			/*SynopsisFunction function = 
 					new SynopsisFunction(SYNOPSIS_WEIGHT *
 											Math.pow(doc.score,
 													 SYNOPSIS_POWER));
-			programmeTimeline.addFunction(function);
+			programmeTimeline.addFunction(function);*/
+			programmeTimeline.scaleMultiplier(1 + (SYNOPSIS_WEIGHT *
+													Math.pow(doc.score,
+															 SYNOPSIS_POWER)));
 			
 			List<String> commonWords =
 				LuceneUtils.getCommonTokens(q.queryText,
@@ -99,7 +113,7 @@ public class SynopsisModule implements SearcherModule {
 				sb.append("'" + word + "', ");
 			}
 			
-			function.addJustification(
+			programmeTimeline.addJustification(
 					sb.toString().substring(0, sb.toString().length() - 2) + 
 					" with score " + doc.score);
 			
@@ -109,7 +123,7 @@ public class SynopsisModule implements SearcherModule {
 		return timelines;
 	}
 
-	public class SynopsisFunction extends Constant
+	/*public class SynopsisFunction extends Constant
 								  implements JustifiedTimedFunction {
 		List<String> justifications;
 		
@@ -134,5 +148,5 @@ public class SynopsisModule implements SearcherModule {
 		public String toString() {
 			return "Synopsis function";
 		}
-	}
+	}*/
 }

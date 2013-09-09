@@ -93,7 +93,7 @@ public class SearcherEvaluator {
 			Result result = new Result();
 			
 			if (parts.length == 4) {
-				result.fileName = parts[1];
+				result.fileName = parts[1].substring(1);
 				result.startTime = Time.MStoS(Float.parseFloat(parts[2]));
 				result.endTime = Time.MStoS(Float.parseFloat(parts[3]));
 				result.jumpInPoint = result.startTime;
@@ -132,7 +132,7 @@ public class SearcherEvaluator {
 		List<Double> asp = new ArrayList<Double>();
 		
 		for (Query query : expectedResults.keySet()) {
-			System.out.println(query);
+			//System.out.println(query);
 			
 			String fileName = expectedResults.get(query).iterator().next().fileName;
 			double qRelStart = expectedResults.get(query).iterator().next().startTime;
@@ -149,8 +149,8 @@ public class SearcherEvaluator {
 				continue;
 			}
 			
-			System.out.println("\nExpecting: \n" + expectedResults.get(query));
-			System.out.println("\nResults: \n" + runResults + "\n----");
+			//System.out.println("\nExpecting: \n" + expectedResults.get(query));
+			System.out.println(runResults);
 			
 			for (int i = 0; i < runResults.size(); i++) {
 				Result result = runResults.get(i);

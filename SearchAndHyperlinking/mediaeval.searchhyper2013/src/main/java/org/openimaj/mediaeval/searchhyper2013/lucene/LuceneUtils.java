@@ -17,9 +17,11 @@ import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermContext;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.BooleanClause;
@@ -39,12 +41,77 @@ import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.Spans;
+import org.apache.lucene.search.spell.LuceneDictionary;
+import org.apache.lucene.search.spell.SpellChecker;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.BytesRefIterator;
 import org.apache.lucene.util.Version;
+import org.openimaj.mediaeval.searchhyper2013.util.EnglishNumberToWords;
 
 public abstract class LuceneUtils {
 	
 	static final Version LUCENE_VERSION = Version.LUCENE_43;
+	
+	public static double extractBoost(String queryString, String token) throws Exception {
+		EnglishAnalyzer analyzer = new EnglishAnalyzer(LUCENE_VERSION);
+		
+		StandardQueryParser queryParser =
+				new StandardQueryParser(analyzer);
+		org.apache.lucene.search.Query query = 
+				queryParser.parse(token, "foo");
+		
+		Highlighter highlighter = new Highlighter(new Formatter() {
+
+			@Override
+			public String highlightTerm(String originalText,
+					TokenGroup tokenGroup) {
+				
+				if (tokenGroup.getTotalScore() > 0) {
+					return ">>>" + originalText + "<<<";
+				} else {
+					return originalText;
+				}
+				
+			}}, new DefaultEncoder(), new QueryTermScorer(query));
+		
+		TokenStream tokenStream =
+				analyzer.tokenStream("foo",
+									 new StringReader(queryString));
+		
+		String highlighted = highlighter.getBestFragments(tokenStream,
+														  queryString,
+														  1000,
+														  " ");
+		
+		for (String part : highlighted.split("\\s+")) {
+			int arrowIndex = part.indexOf(">>>");
+			
+			if (arrowIndex < 0) {
+				continue;
+			}
+			
+			int lParenIndex = part.indexOf('(');
+			
+			if (lParenIndex < 0) {
+				return 1;
+			} else if (lParenIndex < arrowIndex) {
+				int caretIndex = part.indexOf('^');
+				
+				if (caretIndex < 0) {
+					return 1;
+				} else {
+					return Double.parseDouble(part.substring(caretIndex + 1));
+				}
+			} else {
+				return 1;
+			}
+		}
+		
+		// This should NOT happen.
+		throw new Exception("OSHIT");
+	}
 	
 	public static List<String> getCommonTokens(String queryString, String searchString)
 			  throws IOException, QueryNodeException, InvalidTokenOffsetsException {
@@ -54,7 +121,7 @@ public abstract class LuceneUtils {
 		StandardQueryParser queryParser =
 				new StandardQueryParser(analyzer);
 		org.apache.lucene.search.Query query = 
-				queryParser.parse(queryString, "foo");
+				queryParser.parse(QueryParser.escape(queryString), "foo");
 		
 		Highlighter highlighter = new Highlighter(new Formatter() {
 
@@ -227,5 +294,76 @@ public abstract class LuceneUtils {
 		TopDocs docs = searcher.search(progTypeQuery, 1);
 		
 		return searcher.doc(docs.scoreDocs[0].doc);
+	}
+
+	public static String fixQuery(String q, Directory spellIndex) throws IOException {
+		SpellChecker spellChecker = new SpellChecker(spellIndex);
+
+		String[] parts = q.trim().split("\\s+");
+		
+		StringBuilder sb = new StringBuilder();
+		
+		words:
+		for (String word : parts) {
+			String checkWord = word.toLowerCase().replaceAll("\\W", "");
+			
+			if (!spellChecker.exist(checkWord)) {
+				String[] corrections = spellChecker.suggestSimilar(word, 5);
+				
+				for (String correction : corrections) {
+					if (correction.toLowerCase().equals(checkWord)) {
+						sb.append(checkWord + " ");
+						
+						continue words;
+					}
+				}
+				
+				if (corrections.length > 0) {
+					sb.append(checkWord + "|");
+					sb.append("(");
+					for (String correction : corrections) {
+						sb.append(correction + "|");
+					}
+					sb.deleteCharAt(sb.length() - 1);
+					sb.append(")^0.5 ");
+				}
+			} else {
+				sb.append(checkWord + " ");
+			}
+		}
+		
+		spellChecker.close();
+		
+		//System.out.println(query + " => " + sb.toString().trim());
+		
+		String query = sb.toString().trim();
+		
+		/*Pattern pattern = Pattern.compile("(\\d+)");
+		Matcher matcher = pattern.matcher(query);
+		
+		while (matcher.find()) {
+			String match = matcher.group(1);
+			
+			query = query.replaceAll(match,
+							 		 "(" + match + 
+							 		 "|(" + EnglishNumberToWords.convert(
+							 					Long.parseLong(match)) +
+							 		 "))");
+		}*/
+		
+		return query;
+		/*String[] parts = query.trim().split("\\s+");
+		
+		StringBuilder sb = new StringBuilder();
+		
+		for (String part : parts) {
+			String fixed = part.replaceAll("\\W+", "");
+			
+			if (fixed.length() > 0) {
+				sb.append(fixed + "~2 ");
+			}
+		}
+		
+		return sb.toString().trim();*/
 	}
 }
