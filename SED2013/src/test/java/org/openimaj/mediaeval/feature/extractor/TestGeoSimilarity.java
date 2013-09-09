@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.openimaj.data.RandomData;
+import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparator;
 import org.openimaj.time.Timer;
 
@@ -22,6 +23,8 @@ public class TestGeoSimilarity {
 		new double[]{39.8,116.6}, // Beijing 6
 		new double[]{35.5,140.0}, // Tokyo 7
 		new double[]{-36,174}, // Auckland 8
+		new double[]{40.8,-74.11}, // Near NY 9
+		new double[]{41.8,-75.11}, // Near NY Further 10
 	};
 	/**
 	 *
@@ -29,9 +32,54 @@ public class TestGeoSimilarity {
 	@Test
 	public void testHaversine(){
 		HaversineSimilarity sim = new HaversineSimilarity();
+		System.out.println("New york to itself:" + sim.compare(places[0], places[0]));
+		System.out.println("New york to near new york:" + sim.compare(places[0], places[9]));
+		System.out.println("New york to london:" + sim.compare(places[0], places[2]));
+		double[] d2 = new double[]{45,0};
+		double[] d1 = new double[]{-45,0};
+		System.out.println("0,45 to 0,-45:" + sim.compare(d1, d2));
 		assertTrue(sim.compare(places[0], places[1]) > sim.compare(places[0], places[2]));
 		assertTrue(sim.compare(places[2], places[3]) > sim.compare(places[3], places[4]));
 		assertTrue(sim.compare(places[8], places[7]) > sim.compare(places[8], places[0]));
+	}
+	
+	
+	/**
+	 *
+	 */
+	@Test
+	public void testLogHaversine(){
+		LogNormalisedHaversineSimilarity sim = new LogNormalisedHaversineSimilarity();
+		System.out.println("New york to itself:" + sim.compare(places[0], places[0]));
+		System.out.println("New york to near new york:" + sim.compare(places[0], places[9]));
+		System.out.println("New york to near new york further:" + sim.compare(places[0], places[10]));
+		System.out.println("New york to london:" + sim.compare(places[0], places[2]));
+		System.out.println("New york to halifax:" + sim.compare(places[0], places[1]));
+//		assertTrue(sim.compare(places[0], places[1]) > sim.compare(places[0], places[2]));
+//		assertTrue(sim.compare(places[2], places[3]) > sim.compare(places[3], places[4]));
+//		assertTrue(sim.compare(places[8], places[7]) > sim.compare(places[8], places[0]));
+		
+		sim = new LogNormalisedHaversineSimilarity(new double[]{0,0}, new double[]{0,10});
+		System.out.println("New york to itself:" + sim.compare(places[0], places[0]));
+		System.out.println("New york to near new york:" + sim.compare(places[0], places[9]));
+		System.out.println("New york to near new york further:" + sim.compare(places[0], places[10]));
+		System.out.println("New york to halifax:" + sim.compare(places[0], places[1]));
+		System.out.println("New york to london:" + sim.compare(places[0], places[2]));
+//		assertTrue(sim.compare(places[0], places[1]) > sim.compare(places[0], places[2]));
+//		assertTrue(sim.compare(places[2], places[3]) > sim.compare(places[3], places[4]));
+//		assertTrue(sim.compare(places[8], places[7]) > sim.compare(places[8], places[0]));
+		
+		sim = new LogNormalisedHaversineSimilarity(100);
+		System.out.println("New york to itself:" + sim.compare(places[0], places[0]));
+		System.out.println("New york to near new york:" + sim.compare(places[0], places[9]));
+		System.out.println("New york to near new york further:" + sim.compare(places[0], places[10]));
+		System.out.println("New york to halifax:" + sim.compare(places[0], places[1]));
+		System.out.println("New york to london:" + sim.compare(places[0], places[2]));
+//		assertTrue(sim.compare(places[0], places[1]) > sim.compare(places[0], places[2]));
+//		assertTrue(sim.compare(places[2], places[3]) > sim.compare(places[3], places[4]));
+//		assertTrue(sim.compare(places[8], places[7]) > sim.compare(places[8], places[0]));
+		
+		sim = new LogNormalisedHaversineSimilarity(100);
 	}
 
 	@Test

@@ -65,7 +65,6 @@ public class FlickrPhotoTimeVisualiser {
 			clusterColours[index] = clusterColourMap.get(photos.getPhotoCluster(photo));
 		}
 		BarVisualisation vis = new BarVisualisation(2000,600);
-		vis.setInvidiualBarColours(clusterColours);
 		vis.setData(data);
 
 		vis.showWindow("Flickr Clusters");

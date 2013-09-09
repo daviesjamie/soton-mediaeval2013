@@ -7,18 +7,20 @@ import java.util.regex.Pattern;
 import org.apache.lucene.search.ScoreDoc;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Field;
 import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
 
 public class ChannelFilterModule implements SearcherModule {
 
-	Pattern bbcPattern =
+	static Pattern bbcPattern =
 			Pattern.compile("bbc\\s*(one|1|two|2|three|3|four|4)?",
 							Pattern.CASE_INSENSITIVE);
 	
 	@Override
-	public TimelineSet search(Query q, TimelineSet currentSet)
+	public TimelineSet search(Query q,
+							  TimelineSet currentSet)
 			throws SearcherException {
 		
 		Matcher bbcMatcher = bbcPattern.matcher(q.queryText);
@@ -58,4 +60,9 @@ public class ChannelFilterModule implements SearcherModule {
 		return timelines;
 	}
 
+	public static String removeChannel(String string) {
+		Matcher bbcMatcher = bbcPattern.matcher(string);
+		
+		return bbcMatcher.replaceAll("");
+	}
 }

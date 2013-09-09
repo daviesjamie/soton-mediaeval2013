@@ -6,79 +6,64 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class ResultSet implements Set<Result> {
+	final float FUDGE;
+	
 	Set<Result> results;
 	
-	public ResultSet() {
+	public ResultSet(float mergeWindow) {
 		results = new HashSet<Result>();
+		
+		FUDGE = mergeWindow;
 	}
-
+	
 	@Override
-	public boolean add(Result arg0) {
-		if (size() == 0) {
-			results.add(arg0);
-			
-			return true;
-		}
-		
-		HashSet<Result> newResults = new HashSet<Result>();
-		
-		boolean merged = false;
+	public boolean add(Result newResult) {
+		Set<Result> overlappers = new HashSet<Result>();
 		
 		for (Result result : results) {
-			if (!result.fileName.equals(arg0.fileName) || merged) {
-				newResults.add(result);
-				
+			if (!result.fileName.equals(newResult.fileName)) {
 				continue;
 			}
 			
-			if (result.startTime <= arg0.startTime) {
-				Result resultCopy = new Result(result);
-				
-				if (arg0.endTime <= result.endTime + 0.001) {
-					resultCopy.confidenceScore = 
-						resultCopy.confidenceScore + arg0.confidenceScore;
-					
-					merged = true;
-				} else if (arg0.startTime <= result.endTime + 0.001) {
-					resultCopy.endTime = arg0.endTime;
-					resultCopy.confidenceScore = 
-						resultCopy.confidenceScore + arg0.confidenceScore;
-					
-					merged = true;
-				}
-				
-				newResults.add(resultCopy);
-			} else {
-				Result resultCopy = new Result(arg0);
-				
-				if (result.endTime <= arg0.endTime + 0.001) {
-					resultCopy.confidenceScore = 
-						resultCopy.confidenceScore + result.confidenceScore;
-					
-					merged = true;
-				} else if (result.startTime <= arg0.endTime + 0.001) {
-					resultCopy.endTime = result.endTime;
-					resultCopy.confidenceScore = 
-						resultCopy.confidenceScore + result.confidenceScore;
-					
-					merged = true;
-				} else {
-					newResults.add(result);
-					
-					continue;
-				}
-				
-				newResults.add(resultCopy);
+			if (result.startTime < newResult.startTime - FUDGE &&
+				result.endTime   > newResult.startTime - FUDGE) {
+				overlappers.add(result);
+			} else if (result.startTime < newResult.endTime + FUDGE &&
+					   result.endTime   > newResult.endTime + FUDGE) {
+				overlappers.add(result);
+			} else if (result.startTime > newResult.startTime - FUDGE &&
+					   result.endTime   < newResult.endTime + FUDGE) {
+				overlappers.add(result);
 			}
 		}
 		
-		if (!merged) {
-			newResults.add(arg0);
+		if (overlappers.isEmpty()) {
+			return results.add(newResult);
 		}
 		
-		results = newResults;
+		Result mergedResult = new Result();
+		mergedResult.startTime = Float.MAX_VALUE;
+		mergedResult.jumpInPoint = 0;
+		mergedResult.endTime = 0;
+		mergedResult.confidenceScore = 0;
+		mergedResult.fileName = newResult.fileName;
 		
-		return true;
+		overlappers.add(newResult);
+		
+		for (Result overlapper : overlappers) {
+			mergedResult.startTime =
+					Math.min(mergedResult.startTime, overlapper.startTime);
+			mergedResult.jumpInPoint += overlapper.jumpInPoint;
+			mergedResult.endTime =
+					Math.max(mergedResult.endTime, overlapper.endTime);
+			mergedResult.confidenceScore += overlapper.confidenceScore;
+		}
+		
+		mergedResult.jumpInPoint /= overlappers.size();
+		
+		results.removeAll(overlappers);
+		
+		return results.add(mergedResult);
 	}
 
 	@Override

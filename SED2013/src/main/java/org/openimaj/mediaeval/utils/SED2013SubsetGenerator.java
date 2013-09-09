@@ -1,17 +1,13 @@
 package org.openimaj.mediaeval.utils;
 
-import jal.objects.Sorting;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -19,7 +15,6 @@ import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -29,12 +24,9 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.log4j.Logger;
 import org.openimaj.mediaeval.data.util.PhotoUtils;
 import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
-import org.openimaj.mediaeval.vis.FlickrPhotoTimeVisualiser;
 import org.openimaj.util.queue.BoundedPriorityQueue;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import clojure.main;
 
 import com.Ostermiller.util.CSVPrinter;
 import com.aetrion.flickr.photos.Photo;

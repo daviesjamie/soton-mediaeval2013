@@ -38,4 +38,14 @@ public class TimelineSet extends HashSet<Timeline> {
 		
 		return sb.toString();
 	}
+
+	public Timeline getTimelineWithID(String id) {
+		for (Timeline t : this) {
+			if (t.getID().equals(id)) {
+				return t;
+			}
+		}
+		
+		return null;
+	}
 }

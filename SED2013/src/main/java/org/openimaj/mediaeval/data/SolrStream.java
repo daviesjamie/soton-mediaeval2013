@@ -56,6 +56,7 @@ public class SolrStream extends AbstractStream<SolrDocument>{
 				this.resIter = ret.getResults().iterator();
 				return next();
 			} catch (SolrServerException e) {
+				throw new RuntimeException(e);
 			}
 		}
 		SolrDocument toRet = this.resIter.next();

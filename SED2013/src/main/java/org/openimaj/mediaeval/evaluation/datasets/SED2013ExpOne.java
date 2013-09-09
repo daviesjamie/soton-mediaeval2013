@@ -1,6 +1,5 @@
 package org.openimaj.mediaeval.evaluation.datasets;
 
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
@@ -19,27 +19,28 @@ import javax.xml.stream.XMLStreamException;
 import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
+import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
-import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
 import org.openimaj.mediaeval.data.CursorDateFilter;
 import org.openimaj.mediaeval.data.CursorWrapperPhoto;
 import org.openimaj.mediaeval.data.XMLCursorStream;
 import org.openimaj.mediaeval.data.XMLFlickrPhotoDataset;
-import org.openimaj.mediaeval.evaluation.cluster.ClusterEvaluator;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEClusterAnalyser;
-import org.openimaj.mediaeval.evaluation.cluster.processor.PrecachedSimilarityDoubleDBSCANWrapper;
-import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleDBSCANWrapper;
+import org.openimaj.mediaeval.evaluation.cluster.processor.PrecachedSimilarityDoubleExtractor;
+import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleExtractor;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarityAggregator;
 import org.openimaj.mediaeval.feature.extractor.PhotoTime;
-import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
+import org.openimaj.ml.clustering.dbscan.DistanceDBSCAN;
+import org.openimaj.ml.clustering.dbscan.DoubleNNDBSCAN;
+import org.openimaj.util.function.Function;
 import org.openimaj.util.stream.Stream;
 
 import twitter4j.internal.logging.Logger;
+import ch.akuhn.matrix.SparseMatrix;
 
 import com.Ostermiller.util.CSVParser;
 import com.aetrion.flickr.photos.Photo;
@@ -52,6 +53,27 @@ import com.aetrion.flickr.photos.Photo;
  */
 public class SED2013ExpOne {
 	final static Logger logger = Logger.getLogger(SED2013ExpOne.class);
+
+
+	/**
+	 * @param csv the csv file
+	 * @return mapping from photo to cluster
+	 * @throws IOException
+	 * @throws NumberFormatException
+	 */
+	public static Map<String,Integer> photoClusters(File csv) throws NumberFormatException, IOException{
+		Map<String, Integer> ret = new HashMap<String, Integer>();
+		CSVParser parser = new CSVParser(new FileInputStream(csv), '\t');
+		String[] line;
+		logger.debug("Loading cluster CSV");
+		while((line = parser.getLine()) != null){
+			if(line[0].equals("cluster")) continue;
+			Integer clusterID = Integer.parseInt(line[0]);
+			String photoID = line[1];
+			ret.put(photoID, clusterID);
+		}
+		return ret;
+	}
 	/**
 	 * @author Sina Samangooei (ss@ecs.soton.ac.uk)
 	 *
@@ -157,23 +179,19 @@ public class SED2013ExpOne {
 	 * @param ds
 	 * @return the analysis
 	 */
-	public MEAnalysis evalPhotoTime(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds) {
+	public FullMEAnalysis evalPhotoTime(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds) {
 		return eval(ds,new PhotoTime());
 	}
 
 	/**
 	 * @param ds the dataset to be clustered
 	 * @param fve the feature extractor
-	 * @return the {@link MEAnalysis}
+	 * @return the {@link FullMEAnalysis}
 	 */
-	public MEAnalysis eval(
+	public FullMEAnalysis eval(
 			MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds,
 			FeatureExtractor<DoubleFV, Photo> fve) {
-		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
-			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 900000000000l, 2, new DoubleNearestNeighboursExact.Factory()
-			);
-		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
+		DoubleNNDBSCAN dbsConf = new DoubleNNDBSCAN(900000000000l, 2, new DoubleNearestNeighboursExact.Factory());
 
 		return eval(ds, fve, dbsConf);
 	}
@@ -181,41 +199,45 @@ public class SED2013ExpOne {
 	/**
 	 * @param ds the dataset to be clustered
 	 * @param fve the feature extractor
-	 * @param dbsConf the {@link DBSCANConfiguration}
-	 * @return a {@link MEAnalysis} of this experiment
+	 * @param dbs 
+	 * @return a {@link FullMEAnalysis} of this experiment
 	 */
-	public MEAnalysis eval(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleDBSCAN dbsConf)
+	public FullMEAnalysis eval(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleNNDBSCAN dbs)
 	{
-		ClusterEvaluator<Photo, MEAnalysis> eval =
-			new ClusterEvaluator<Photo, MEAnalysis>(
-				new SpatialDoubleDBSCANWrapper<Photo>(ds,fve,dbsConf),
-				new MEClusterAnalyser(),
-				ds
+		Function<List<Photo>, double[][]> func = new SpatialDoubleExtractor<Photo>(fve);
+		ClusterEvaluator<double[][], FullMEAnalysis> eval =
+			new ClusterEvaluator<double[][], FullMEAnalysis>(
+				dbs,
+				ds,
+				func,
+				new FullMEClusterAnalyser() 
 			);
 		int[][] evaluate = eval.evaluate();
 		logger.debug("Expected Classes: " + ds.size());
 		logger.debug("Detected Classes: " + evaluate.length);
-		MEAnalysis res = eval.analyse(evaluate);
+		FullMEAnalysis res = eval.analyse(evaluate);
 		return res;
 	}
 	/**
 	 * @param ds the dataset to be clustered
 	 * @param fve the feature extractor
-	 * @param dbsConf the {@link DBSCANConfiguration}
-	 * @return a {@link MEAnalysis} of this experiment
+	 * @param dbs
+	 * @return a {@link FullMEAnalysis} of this experiment
 	 */
-	public MEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DoubleDBSCAN dbsConf)
+	public FullMEAnalysis evalSim(MapBackedDataset<Integer, ListDataset<Photo>, Photo> ds, FeatureExtractor<DoubleFV, Photo> fve, DistanceDBSCAN dbs)
 	{
-		ClusterEvaluator<Photo, MEAnalysis> eval =
-			new ClusterEvaluator<Photo, MEAnalysis>(
-				new PrecachedSimilarityDoubleDBSCANWrapper<Photo>(ds,fve,dbsConf),
-				new MEClusterAnalyser(),
-				ds
+		Function<List<Photo>,SparseMatrix> func = new PrecachedSimilarityDoubleExtractor<Photo>(fve,dbs.getEps());
+		ClusterEvaluator<SparseMatrix, FullMEAnalysis> eval =
+			new ClusterEvaluator<SparseMatrix, FullMEAnalysis>(
+				dbs,
+				ds,
+				func,
+				new FullMEClusterAnalyser() 
 			);
 		int[][] evaluate = eval.evaluate();
 		logger.debug("Expected Classes: " + ds.size());
 		logger.debug("Detected Classes: " + evaluate.length);
-		MEAnalysis res = eval.analyse(evaluate);
+		FullMEAnalysis res = eval.analyse(evaluate);
 		return res;
 	}
 
@@ -239,16 +261,13 @@ public class SED2013ExpOne {
 		logger.info(String.format("Loaded dataset: %d photos",dataset.numInstances()));
 		FeatureExtractor<SparseMatrix, Photo> dsSim = new DatasetSimilarity<Photo>(dataset, PPK2012ExtractCompare.similarity(dataset));;
 		FeatureExtractor<DoubleFV, Photo> meanSim = new DatasetSimilarityAggregator.Mean<Photo>(dsSim);
-		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
-			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 0.6, 2, new DoubleNearestNeighboursExact.Factory()
-			);
 //		logger.info("Starting Evaluation");
 //		MEAnalysis res = new SED2013ExpOne().eval(dataset, meanSim, new DoubleDBSCAN(conf));
 //		System.out.println(res.getSummaryReport());
 //		logger.info("Finished!");
 		logger.info("Starting Similarity Evaluation");
-		MEAnalysis res = new SED2013ExpOne().evalSim(dataset, meanSim, new DoubleDBSCAN(conf));
+		DistanceDBSCAN dbscan = new DistanceDBSCAN(0.6, 2);
+		FullMEAnalysis res = new SED2013ExpOne().evalSim(dataset, meanSim, dbscan);
 		System.out.println(res.getSummaryReport());
 		logger.info("Finished!");
 	}

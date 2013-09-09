@@ -2,9 +2,11 @@ package org.openimaj.mediaeval.evaluation.solr;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,7 +23,6 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.openimaj.feature.FeatureVector;
 import org.openimaj.io.IOUtils;
-import org.openimaj.math.matrix.MatrixUtils;
 import org.openimaj.mediaeval.data.SolrDocumentToIndexedPhoto;
 import org.openimaj.mediaeval.data.SolrStream;
 import org.openimaj.mediaeval.evaluation.datasets.PPK2012ExtractCompare;
@@ -33,9 +34,15 @@ import org.openimaj.util.function.Operation;
 import org.openimaj.util.pair.DoubleObjectPair;
 
 import ch.akuhn.matrix.SparseMatrix;
+import ch.akuhn.matrix.SparseVector;
+import ch.akuhn.matrix.Vector;
 
 import com.aetrion.flickr.photos.Photo;
 
+/**
+ * @author Jonathan Hare (jsh2@ecs.soton.ac.uk), Sina Samangooei (ss@ecs.soton.ac.uk), David Duplaw (dpd@ecs.soton.ac.uk)
+ *
+ */
 public class SED2013SolrSimilarityMatrix {
 	private static final class DoublePhotoPairComparator implements Comparator<DoubleObjectPair<IndexedPhoto>> {
 		@Override
@@ -43,108 +50,243 @@ public class SED2013SolrSimilarityMatrix {
 			return ((Long)o1.second.first).compareTo(o2.second.first);
 		}
 	}
-
-	private static Logger logger = Logger.getLogger(SED2013SolrSimilarityMatrix.class);
-
-	public static void main(String[] args) throws IOException, XMLStreamException {
-		final SED2013Index index = SED2013Index.instance("http://localhost:8983/solr/sed2013_train");
-//		final SED2013Index index = SED2013Index.instance();
-		try{
-			constructSimilarityMatrix(args, index);
-		}finally{
-			SED2013Index.shutdown();
-		}
+	private SED2013Index index;
+	private int collectionN;
+	private List<ExtractorComparator<Photo, ? extends FeatureVector>> fe;
+	private SolrStream solrStream;
+	
+	public SED2013SolrSimilarityMatrix(String tfidfLocation, String featureCacheLocation) throws IOException {
+		this(tfidfLocation, featureCacheLocation, null);
 	}
-	final static double eps = 0.4;
-	final static int solrQueryN = 200;
-	private static void constructSimilarityMatrix(String[] args, final SED2013Index index)
-			throws IOException, XMLStreamException, FileNotFoundException {
-		// Some choice experiments
-		String bigFile = args[0];
-		String expRoot = args[1];
-		String tfidf = String.format("%s/training.sed2013.photo_tfidf",expRoot);
-		String featurecache = String.format("%s/train.all.featurecache",expRoot);
-		String matRoot = String.format("%s/training.sed2013.solr.matrixlib.allparts.sparsematrix",expRoot);
-		final File matOut = new File(matRoot);
-		if(!matOut.exists()) matOut.mkdirs();
+	
+	/**
+	 * @param tfidfLocation
+	 * @param featureCacheLocation
+	 * @throws IOException
+	 */
+	public SED2013SolrSimilarityMatrix(String tfidfLocation, String featureCacheLocation, String indexURL) throws IOException {
+		if(indexURL == null)
+			this.index = SED2013Index.instance();
+		else
+			this.index = SED2013Index.instance(indexURL);
 		SolrQuery q = new SolrQuery("*:*");
 		q.setSortField("index", ORDER.asc);
-		logger.info(String.format("Loading dataset: %s ", bigFile));
-
-		final List<ExtractorComparator<Photo, ? extends FeatureVector>> fe = PPK2012ExtractCompare.similarity(tfidf, featurecache);
-
-
-		SolrStream solrStream = new SolrStream(q, index.getSolrIndex());
-		final int collectionN = solrStream.getNumResults();
+		this.solrStream = new SolrStream(q, index.getSolrIndex());
+		this.collectionN = solrStream.getNumResults();
+//		this.fe = PPK2012ExtractCompare.similarity(tfidfLocation, featureCacheLocation);
+		this.fe = PPK2012ExtractCompare.similarityLogGeo(tfidfLocation, featureCacheLocation);
+	}
+	
+	/**
+	 * @return create a sparse matrix for each comparator
+	 */
+	public Map<String, SparseMatrix> createSimilarityMatricies(){
+		final Map<String, SparseMatrix> allSimMat = new HashMap<String, SparseMatrix>();
 		solrStream
 		.map(new SolrDocumentToIndexedPhoto())
 		.forEach(new Operation<IndexedPhoto>() {
-			int numberOfImages = collectionN;
+
 			@Override
 			public void perform(IndexedPhoto p) {
 				QueryResponse res;
-				File rowOut = new File(matOut,String.format("%d",p.first));
-				if(rowOut.exists()){
-					return;
-				}
-				rowOut.mkdir();
 				try {
-					res = index.query(p.second, solrQueryN);
-					SolrDocumentList results = res.getResults();
-
-
+					SolrDocumentList results = performSolrQuery(p);
 					final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
+					
 					Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
-					for (Entry<String, SparseMatrix> namerow : rowmat.entrySet()) {
-						String comparator = namerow.getKey();
-						File compOut = new File(rowOut,String.format("%s.mat",comparator));
-						SparseMatrix comprow = namerow.getValue();
-						IOUtils.writeToFile(comprow, compOut);
-						if(p.first%100 == 0){
-							logger.debug(String.format("Working on Photo %s, index %d, Comparator: %s, sparcity: %2.5f",p.second.getId(),p.first,comparator,MatrixUtils.sparcity(comprow)));
-						}
-					}
-				} catch (SolrServerException e) {
+					updateSimilarities(allSimMat, p, rowmat);
+				} catch (Exception e) {
 					logger.error("Error querying for photo: " + p.second.getId(),e);
-				} catch (IOException e) {
-					logger.error("Error writing photot to file: " + p.second.getId(),e);
 				}
 
-			}
-
-			private Map<String,SparseMatrix> buildComparatorSparseRow(IndexedPhoto p, SolrDocumentList results, CombinedFVComparator<Photo> comp) {
-
-				Map<String,TreeSet<DoubleObjectPair<IndexedPhoto>>> treemap = new HashMap<String,TreeSet<DoubleObjectPair<IndexedPhoto>>>();
-
-				for (SolrDocument photoIndex : results) {
-					IndexedPhoto ip = IndexedPhoto.fromDoc(photoIndex);
-					Map<String, Double> compare = comp.compareAggregation(p.second, ip.second);
-//					if(compare > eps){
-//						tree.add(DoubleObjectPair.pair(compare, ip));
-//					}
-					for (Entry<String, Double> comparatorScore : compare.entrySet()) {
-						TreeSet<DoubleObjectPair<IndexedPhoto>> tree = treemap.get(comparatorScore.getKey());
-						if(tree == null) {
-							treemap.put(comparatorScore.getKey(), tree = new TreeSet<DoubleObjectPair<IndexedPhoto>>(new DoublePhotoPairComparator()));
-						}
-
-						if(comparatorScore.getValue() > eps){
-							tree.add(DoubleObjectPair.pair(comparatorScore.getValue(), ip));
-						}
-
-					}
-				}
-				Map<String, SparseMatrix> rowmats = new HashMap<String,SparseMatrix>();
-				for (Entry<String, TreeSet<DoubleObjectPair<IndexedPhoto>>> nametree: treemap.entrySet()) {
-					TreeSet<DoubleObjectPair<IndexedPhoto>> tree = nametree.getValue();
-					SparseMatrix rowmat = new SparseMatrix(1, numberOfImages);
-					for (DoubleObjectPair<IndexedPhoto> pair : tree) {
-						rowmat.put(0, (int) pair.second.first, pair.first);
-					}
-					rowmats.put(nametree.getKey(), rowmat);
-				}
-				return rowmats;
 			}
 		});
+		return allSimMat;
 	}
+	
+	private SolrDocumentList performSolrQuery(IndexedPhoto p) throws Exception {
+		SolrDocumentList results; 
+		if(this.searchcache == null){			
+			QueryResponse res;
+			res = index.query(p.second, solrQueryN,!deactivateSort);
+			results = res.getResults();
+		}
+		else{
+			final String searchCacheRoot = String.format("%s/solrsort=%s/solrtotal=%d",this.searchcache,!deactivateSort,solrQueryN);
+			File scr = new File(searchCacheRoot);
+			scr.mkdirs();
+			File cacheFile = new File(scr,p.first + ".search");
+			if(!cacheFile.exists()){
+				QueryResponse res;
+				res = index.query(p.second, solrQueryN,!deactivateSort);
+				results = res.getResults();
+				IOUtils.writeToFile(results, cacheFile);
+			}
+			else{
+				results = IOUtils.readFromFile(cacheFile);
+			}
+		}
+		return results;
+	}
+	
+	private static Logger logger = Logger.getLogger(SED2013SolrSimilarityMatrix.class);
+
+	
+	double eps = 0.4; // used to be 0.4
+	int solrQueryN = 200; // used to be 200
+	public boolean deactivateSort = false;
+	public String searchcache = null;
+	/**
+	 * @param expRoot the root to save the mats
+	 * @param mats the mats to save
+	 * @throws IOException
+	 * @throws XMLStreamException
+	 * @throws FileNotFoundException
+	 */
+	public void write(String expRoot, Map<String,SparseMatrix> mats) throws IOException, XMLStreamException, FileNotFoundException {
+		final String matRoot = String.format("%s",expRoot);
+		File rootFile = new File(matRoot);
+		rootFile.mkdirs();
+		for (Entry<String, SparseMatrix> ent : mats.entrySet()) {
+			File outMat = new File(matRoot,ent.getKey() + ".mat");
+			IOUtils.writeToFile(ent.getValue(), outMat);
+		}
+	}
+	
+	/**
+	 * @param expRoot the root to save the mats
+	 * @throws IOException
+	 * @throws XMLStreamException
+	 * @throws FileNotFoundException
+	 */
+	public void write(String expRoot) throws IOException, XMLStreamException, FileNotFoundException {
+		this.write(expRoot,this.createSimilarityMatricies());
+	}
+	
+	private Map<String,SparseMatrix> buildComparatorSparseRow(IndexedPhoto p, List<SolrDocument> results, CombinedFVComparator<Photo> comp) {
+
+		Map<String,TreeSet<DoubleObjectPair<IndexedPhoto>>> treemap = new HashMap<String,TreeSet<DoubleObjectPair<IndexedPhoto>>>();
+
+		for (SolrDocument photoIndex : results) {
+			IndexedPhoto ip = IndexedPhoto.fromDoc(photoIndex);
+			
+			Map<String, Double> compare = comp.compareAggregation(p.second, ip.second);
+//			
+			for (Entry<String, Double> comparatorScore : compare.entrySet()) {
+				String comparatorKey = comparatorScore.getKey();
+				String comparatorKeyThresh = "thresholded_" + comparatorKey ;
+				TreeSet<DoubleObjectPair<IndexedPhoto>> tree = treemap.get(comparatorKey);
+				TreeSet<DoubleObjectPair<IndexedPhoto>> treeThresh = treemap.get(comparatorKeyThresh);
+				if(tree == null) {
+					treemap.put(comparatorKey, tree = new TreeSet<DoubleObjectPair<IndexedPhoto>>(new DoublePhotoPairComparator()));
+					treemap.put(comparatorKeyThresh, treeThresh = new TreeSet<DoubleObjectPair<IndexedPhoto>>(new DoublePhotoPairComparator()));
+					
+				}
+				tree.add(DoubleObjectPair.pair(comparatorScore.getValue(), ip));
+				if(comparatorScore.getValue() > eps){
+					treeThresh.add(DoubleObjectPair.pair(comparatorScore.getValue(), ip));
+				}
+
+			}
+		}
+		Map<String, SparseMatrix> rowmats = new HashMap<String,SparseMatrix>();
+		for (Entry<String, TreeSet<DoubleObjectPair<IndexedPhoto>>> nametree: treemap.entrySet()) {
+			TreeSet<DoubleObjectPair<IndexedPhoto>> tree = nametree.getValue();
+			SparseMatrix rowmat = new SparseMatrix(1, this.collectionN);
+			for (DoubleObjectPair<IndexedPhoto> pair : tree) {
+				
+				rowmat.put(0, (int) pair.second.first, pair.first);
+			}
+			rowmats.put(nametree.getKey(), rowmat);
+		}
+		return rowmats;
+	}
+
+	/**
+	 * @param expRoot
+	 * @param incBuild
+	 */
+	public void createAndWrite(String expRoot, final int incBuild) {
+		final String matRoot = String.format("%s/solrsort=%s/solrtotal=%d/solreps=%2.2f/inc=%d",expRoot,!deactivateSort,solrQueryN,eps,incBuild);
+		final File rootFile = new File(matRoot);
+		rootFile.mkdirs();
+		final Map<String, SparseMatrix> allSimMat = new HashMap<String, SparseMatrix>();
+		
+		final int[] totalWritten = new int []{0};
+		final int[] currentSeen = new int[]{0};
+		solrStream
+		.map(new SolrDocumentToIndexedPhoto())
+		.forEach(new Operation<IndexedPhoto>() {
+			@Override
+			public void perform(IndexedPhoto p) {
+				File outPath = new File(rootFile,"part_" + totalWritten[0]);
+				if(!outPath.exists()){
+					try {
+						SolrDocumentList results = performSolrQuery(p);
+						final Mean<Photo> comp = new CombinedFVComparator.Mean<Photo>(fe) ;
+						Map<String, SparseMatrix> rowmat = buildComparatorSparseRow(p, results, comp);
+						if(p.first % 1000==0){
+							logger.info("Reading in row: " + p.first);
+						}
+						updateSimilarities(allSimMat, p, rowmat);
+					} catch (Exception e) {
+						logger.error("Error querying for photo: " + p.second.getId(),e);
+					}
+				}
+				else{
+					if(currentSeen[0] == 0) logger.info(String.format("Part %d already exists, skipping!",totalWritten[0]));
+				}
+				currentSeen[0]++;
+				
+				if(currentSeen[0] > incBuild){
+					flushSimMat(allSimMat, totalWritten[0], currentSeen[0], outPath);
+					totalWritten[0]++;
+					currentSeen[0] = 0;
+				}
+			}
+			
+		});
+		if(currentSeen[0] > 0){
+			File outPath = new File(rootFile,"part_" + totalWritten[0]);
+			flushSimMat(allSimMat, totalWritten[0], currentSeen[0], outPath);
+			totalWritten[0]++;
+			currentSeen[0] = 0;
+		}
+	}
+	
+	private void flushSimMat(final Map<String, SparseMatrix> allSimMat, final int totalWritten, final int currentSeen, File outPath) {
+		if(!outPath.exists()){
+			logger.info("Reached inc! Writing: " + outPath);
+			try {
+				write(outPath.getAbsolutePath(), allSimMat);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			HashSet<String> compKeySet = new HashSet<String>(allSimMat.keySet());
+			for (String compKey : compKeySet) {
+				allSimMat.put(compKey, new SparseMatrix(collectionN,collectionN));
+			}
+		}
+	}
+	
+	private void updateSimilarities(final Map<String, SparseMatrix> seenSimMat,IndexedPhoto p, Map<String, SparseMatrix> newSimMat) {
+		for (Entry<String, SparseMatrix> namerow : newSimMat.entrySet()) {
+			String comparator = namerow.getKey();
+			SparseMatrix comprow = namerow.getValue();
+			if(!seenSimMat.containsKey(comparator)){
+				seenSimMat.put(comparator, new SparseMatrix(collectionN,collectionN));
+				
+			}
+			SparseMatrix toAlter = seenSimMat.get(comparator);
+			Vector newrow = comprow.row(0);
+			
+			for (ch.akuhn.matrix.Vector.Entry rowent : newrow.entries()) {
+				if(Double.isNaN(rowent.value)) continue; // we leave out NaN
+				toAlter.put((int) p.first, rowent.index, rowent.value);
+				toAlter.put(rowent.index,(int) p.first, rowent.value);
+			}
+		}
+	}
+	
+	
 }
