@@ -44,7 +44,8 @@ public class SED2013TFIDFTrainer {
 	}
 
 	public static void main(String[] args) throws XMLStreamException, IOException {
-		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
+		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_test.xml";
+//		String bigFile = "/Users/ss/Experiments/sed2013/sed2013_dataset_train.xml";
 		String expHome = "/Users/ss/Experiments/sed2013";
 //		String bigFile = "/home/ss/Experiments/mediaeval/SED2013/sed2013_dataset_train.xml";
 		logger .info(String.format("Loading dataset: %s ", bigFile));
@@ -55,8 +56,8 @@ public class SED2013TFIDFTrainer {
 		;
 		List<TFIDF<Photo>> tfidfList ;
 //		String expHome = "/home/ss/Experiments/mediaeval/SED2013";
-		String tfidfSource = String.format("%s/%s",expHome,"training.sed2013.photo_tfidf");
-//		String tfidfSource = String.format("%s/%s",expHome,"test.photo_tfidf");
+//		String tfidfSource = String.format("%s/%s",expHome,"training.sed2013.photo_tfidf");
+		String tfidfSource = String.format("%s/%s",expHome,"test.photo_tfidf");
 		tfidfList = new ArrayList<TFIDF<Photo>>();
 		tfidfList.add(new TFIDF<Photo>(new PhotoTags(true)));
 		tfidfList.add(new TFIDF<Photo>(new PhotoDescription()));

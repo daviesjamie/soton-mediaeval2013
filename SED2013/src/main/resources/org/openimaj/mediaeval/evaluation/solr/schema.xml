@@ -7,6 +7,8 @@
 			required="true" multiValued="false" />
 		<field name="index" type="long" indexed="true" stored="true"
 			required="true" multiValued="false" />
+		<field name="cluster" type="long" indexed="true" stored="true"
+			required="false" multiValued="false" />
 		<field name="url" type="string" indexed="true" stored="true"
 			required="true" multiValued="false" />
 		<field name="title" type="text_block" indexed="true" stored="true"

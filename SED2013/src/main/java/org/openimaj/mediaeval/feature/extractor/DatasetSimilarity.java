@@ -1,7 +1,5 @@
 package org.openimaj.mediaeval.feature.extractor;
 
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrix;
-import gov.sandia.cognition.math.matrix.mtj.SparseMatrixFactoryMTJ;
 
 import java.util.Iterator;
 import java.util.List;
@@ -13,6 +11,8 @@ import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.feature.FeatureVector;
 import org.openimaj.util.comparator.DistanceComparator;
 import org.openimaj.util.pair.IndependentPair;
+
+import ch.akuhn.matrix.SparseMatrix;
 
 /**
  * Give a set of {@link FeatureExtractor}, extract a feature from every item in
@@ -114,14 +114,14 @@ public class DatasetSimilarity<T> implements FeatureExtractor<SparseMatrix, T>{
 		return simMatrix(object);
 	}
 	private SparseMatrix simMatrix(T object) {
-		SparseMatrix ret = SparseMatrixFactoryMTJ.INSTANCE.createMatrix(this.datasetSize, this.exComp.size());
+		SparseMatrix ret = new SparseMatrix(this.datasetSize, this.exComp.size());
 		int i = 0;
 		for (T dsItem: this.ds) {
 			for (int j = 0; j < this.exComp.size(); j++) {
 				try{
 					double similarity = this.exComp.get(j).doComparison(object,dsItem);
 					if(similarity != 0 && !Double.isNaN(similarity)){
-						ret.setElement(i, j, similarity * this.compMod[j]);
+						ret.put(i, j, similarity * this.compMod[j]);
 					}
 
 				}
