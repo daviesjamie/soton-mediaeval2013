@@ -9,15 +9,19 @@ import org.junit.Test;
 import org.openimaj.data.dataset.ListBackedDataset;
 import org.openimaj.data.dataset.ListDataset;
 import org.openimaj.data.dataset.MapBackedDataset;
+import org.openimaj.experiment.evaluation.cluster.ClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.RangedDBSCANClusterEvaluator;
+import org.openimaj.experiment.evaluation.cluster.analyser.DecisionAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FScoreAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.FullMEClusterAnalyser;
+import org.openimaj.experiment.evaluation.cluster.analyser.NMIAnalysis;
+import org.openimaj.experiment.evaluation.cluster.analyser.PurityAnalysis;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.FeatureExtractor;
-import org.openimaj.knn.DoubleNearestNeighbours;
 import org.openimaj.knn.DoubleNearestNeighboursExact;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEAnalysis;
-import org.openimaj.mediaeval.evaluation.cluster.analyser.MEClusterAnalyser;
-import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleDBSCANWrapper;
-import org.openimaj.ml.clustering.dbscan.DBSCANConfiguration;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
+import org.openimaj.mediaeval.evaluation.cluster.processor.SpatialDoubleExtractor;
+import org.openimaj.ml.clustering.dbscan.DoubleNNDBSCAN;
 
 /**
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
@@ -108,25 +112,22 @@ public class TestClusterEvaluator{
 	 */
 	@Test
 	public void test(){
-		DBSCANConfiguration<DoubleNearestNeighbours, double[]> conf =
-			new DBSCANConfiguration<DoubleNearestNeighbours, double[]>(
-				1, 0.1, 2, new DoubleNearestNeighboursExact.Factory()
-			);
-		DoubleDBSCAN dbsConf = new DoubleDBSCAN(conf);
+		DoubleNNDBSCAN dbsConf = new DoubleNNDBSCAN(0.1, 2, new DoubleNearestNeighboursExact.Factory());
 
-		ClusterEvaluator<TestShape, MEAnalysis> eval =
-			new ClusterEvaluator<TestClusterEvaluator.TestShape, MEAnalysis>(
-				new SpatialDoubleDBSCANWrapper<TestShape>(correct,new TestShapeFV(),dbsConf),
-				new MEClusterAnalyser(),
-				correct
+		ClusterEvaluator<double[][], FullMEAnalysis> eval =
+			new ClusterEvaluator<double[][], FullMEAnalysis>(
+				dbsConf,
+				correct,
+				new SpatialDoubleExtractor<TestShape>(new TestShapeFV()),
+				new FullMEClusterAnalyser()
 			);
-		MEAnalysis res = eval.analyse(eval.evaluate());
-		assertTrue(Math.abs(res.purity - 0.71) < 0.01);
-		assertTrue(Math.abs(res.nmi - 0.36) < 0.01);
-		assertTrue(res.precision == 0.5);
-		assertTrue(res.recall - 0.455 < 0.01);
-		assertTrue(Math.abs(res.fscore(1) - 0.48) < 0.01);
-		assertTrue(Math.abs(res.fscore(5) - 0.456) < 0.01);
+		FullMEAnalysis res = eval.analyse(eval.evaluate());
+		assertTrue(Math.abs(((PurityAnalysis)res.purity).purity - 0.71) < 0.01);
+		assertTrue(Math.abs(((NMIAnalysis)res.nmi).nmi - 0.36) < 0.01);
+		assertTrue(((DecisionAnalysis)res.decision).precision() == 0.5);
+		assertTrue(((DecisionAnalysis)res.decision).recall() - 0.455 < 0.01);
+		assertTrue(((FScoreAnalysis)res.fscore).fscore(1) - 0.48 < 0.01);
+		assertTrue(((FScoreAnalysis)res.fscore).fscore(5) - 0.456 < 0.01);
 		System.out.println(res.getSummaryReport());
 
 	}

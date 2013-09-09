@@ -19,6 +19,7 @@ import org.openimaj.mediaeval.evaluation.datasets.SED2013SimilarityMatrix.Identi
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity.ExtractorComparator;
 import org.openimaj.mediaeval.feature.extractor.HaversineSimilarity;
+import org.openimaj.mediaeval.feature.extractor.LogNormalisedHaversineSimilarity;
 import org.openimaj.mediaeval.feature.extractor.PhotoDescription;
 import org.openimaj.mediaeval.feature.extractor.PhotoGeo;
 import org.openimaj.mediaeval.feature.extractor.PhotoTags;
@@ -43,7 +44,8 @@ public class PPK2012ExtractCompare {
 		@Override
 		public double compare(SparseDoubleFV o1, SparseDoubleFV o2) {
 			double cosSim = SparseDoubleFVComparison.COSINE_SIM.compare(o1, o2);
-			return (cosSim + 1) / 2;
+			if(cosSim <= 0) return 0;
+			return cosSim ;
 		}
 
 		@Override
@@ -169,9 +171,9 @@ public class PPK2012ExtractCompare {
 	 * @return a similarity vector constructing {@link FeatureExtractor}
 	 * @throws IOException
 	 */
-	public static List<ExtractorComparator<Photo, ?>> similarity(String tfidfSource) throws IOException {
-		List<ExtractorComparator<Photo, ?>> comps =
-			new ArrayList<DatasetSimilarity.ExtractorComparator<Photo,?>>();
+	public static List<ExtractorComparator<Photo, ? extends FeatureVector>> similarity(String tfidfSource) throws IOException {
+		List<ExtractorComparator<Photo, ? extends FeatureVector>> comps =
+			new ArrayList<DatasetSimilarity.ExtractorComparator<Photo,? extends FeatureVector>>();
 		comps.add(
 			new ExtractorComparator<Photo, DoubleFV>(
 				memcache(new PhotoTime(Type.POSTED)),
@@ -234,6 +236,55 @@ public class PPK2012ExtractCompare {
 				memfilecache(new PhotoGeo(),filecache + "/geo"),
 				new HaversineSimilarity()
 			)
+		);
+		List<TFIDF<Photo>> tfidfList = IOUtils.readFromFile(new File(tfidfSource));
+		for (TFIDF<Photo> tfidf : tfidfList) {
+			comps.add(new ExtractorComparator<Photo, SparseDoubleFV>(
+				memfilecache(tfidf,filecache + "/tfidf." + tfidf.getExtractor().getClass().getSimpleName()),
+				new NormCosineSim()
+			));
+		}
+
+		return comps;
+	}
+	
+	/**
+	 * A {@link FeatureExtractor} which produces a similarity vector between a {@link Photo}
+	 * and all other photos in a {@link Dataset}. The similarity is populated with the features
+	 * from Petkos, Papadopoulos and Kompatsiaris 2012 ICMR paper, measuring similarity of
+	 * time uploaded, time taken, geographic location and textual similarity of tags, title and
+	 * description. If any features are missing entirley, the similarity is set to {@link Double#NaN}
+	 * and should be actively ignored (i.e. not treated as 0). Instead of haversine distance, a log normalise haversine distance is used
+	 * @param tfidfSource the location of a serialised TFIDF source produced using {@link SED2013TFIDFTrainer}
+	 * @param filecache where to cache features
+	 *
+	 * @return a similarity vector constructing {@link FeatureExtractor}
+	 * @throws IOException
+	 */
+	public static List<ExtractorComparator<Photo, ? extends FeatureVector>> similarityLogGeo(String tfidfSource, String filecache) throws IOException {
+		List<ExtractorComparator<Photo, ? extends FeatureVector>> comps =
+			new ArrayList<DatasetSimilarity.ExtractorComparator<Photo,? extends FeatureVector>>();
+		comps.add(
+			new ExtractorComparator<Photo, DoubleFV>(
+				memfilecache(new PhotoTime(Type.POSTED),filecache + "/time.posted"),
+				new TimeSimilarity()
+			)
+		);
+		comps.add(
+			new ExtractorComparator<Photo, DoubleFV>(
+				memfilecache(new PhotoTime(Type.TAKEN),filecache + "/time.taken"),
+				new TimeSimilarity()
+			)
+		);
+		comps.add(
+			new ExtractorComparator<Photo, DoubleFV>(
+				memfilecache(new PhotoGeo(),filecache + "/geo"),
+				new LogNormalisedHaversineSimilarity(10000)
+			){
+				public String toString() {
+					return "LogHaversinePhotoGeo";
+				};
+			}
 		);
 		List<TFIDF<Photo>> tfidfList = IOUtils.readFromFile(new File(tfidfSource));
 		for (TFIDF<Photo> tfidf : tfidfList) {

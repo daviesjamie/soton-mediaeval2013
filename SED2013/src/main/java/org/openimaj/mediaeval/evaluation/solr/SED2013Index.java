@@ -13,12 +13,15 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.log4j.Logger;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
@@ -32,6 +35,7 @@ import org.openimaj.data.identity.Identifiable;
 import org.openimaj.feature.FeatureVector;
 import org.openimaj.mediaeval.data.util.PhotoUtils;
 import org.openimaj.mediaeval.evaluation.datasets.PPK2012ExtractCompare;
+import org.openimaj.mediaeval.evaluation.solr.SED2013Index.IndexedPhoto;
 import org.openimaj.mediaeval.feature.extractor.CombinedFVComparator;
 import org.openimaj.mediaeval.feature.extractor.CombinedFVComparator.Mean;
 import org.openimaj.mediaeval.feature.extractor.DatasetSimilarity.ExtractorComparator;
@@ -172,13 +176,21 @@ public class SED2013Index {
 		solrContainer.register("cheese", solrCore, false);
 		return new EmbeddedSolrServer(solrContainer, "cheese");
 	}
-
+	
 	/**
 	 * @param p
 	 * @return
 	 * @throws SolrServerException
 	 */
-	public QueryResponse query(Photo p, int limit) throws SolrServerException{
+	public QueryResponse query(String textquery, int limit) throws SolrServerException{
+		return query(textquery, limit, afArray, null,null);
+	}
+	/**
+	 * @param p
+	 * @return
+	 * @throws SolrServerException
+	 */
+	public QueryResponse query(Photo p, int limit, boolean activateSort) throws SolrServerException{
 		// This will create a document with a meaningless index, ignore it
 		SolrInputDocument solrDoc = SED2013SolrIndexCreator.createSolrDoc(p);
 		String textquery = "";
@@ -193,14 +205,14 @@ public class SED2013Index {
 			String name = solrInputField.getName();
 			if(rawQueryFields.contains(name)){
 				for (Object object : solrInputField) {
-					textquery += String.format("%s:\"%s\"^%2.5f",name,object,fieldBoost.get(name)) + " ";
+					textquery += String.format("%s:\"%s\"^%2.5f",name,ClientUtils.escapeQueryChars(object.toString()),fieldBoost.get(name)) + " ";
 				}
 			}
 			else if(timeFields.contains(name)){
 				String time = (String) solrInputField.getValue();
 				String timewindow = "30DAY";
 				timequery.add(String.format("%s:[ %s-%s TO %s+%s ]^%2.5f",name,time,timewindow,time,timewindow,fieldBoost.get(name)));
-				timesort.add(String.format("sub(1,div(log(ms(%s,%s)),%2.5f)) desc",time,name,Math.log(365*24*60*60*1000l)));
+				timesort.add(String.format("sub(1,div(log(abs(ms(%s,%s))),%2.5f)) desc",time,name,Math.log(365*24*60*60*1000l)));
 			}
 			else if(locFields.contains(name)){
 				String v = (String) solrInputField.getValue();
@@ -213,15 +225,17 @@ public class SED2013Index {
 		}
 		textquery = textquery.substring(0, textquery.length()-1);
 		String sort = null;
-		if(geoquery!=null){
-			textquery = join(" ", textquery, join(" ",timequery), geoquery);
-			sort = join(", ",join(", ",timesort), geosort,"score desc");
+		if(activateSort){			
+			if(geoquery!=null){
+				textquery = join(" ", textquery, join(" ",timequery), geoquery);
+				sort = join(", ",join(", ",timesort), geosort,"score desc");
+			}
+			else{
+				textquery = join(" ", textquery, join(" ",timequery));
+				sort = join(", ",join(", ",timesort), "score desc");
+			}
 		}
-		else{
-			textquery = join(" ", textquery, join(" ",timequery));
-			sort = join(", ",join(", ",timesort), "score desc");
-		}
-		return query(textquery, limit, afArray, filter,null);
+		return query(textquery, limit, afArray, filter,sort);
 	}
 
 	/**
@@ -250,7 +264,7 @@ public class SED2013Index {
 //		logger.debug("qf: " + join(" ",rqfArray));
 //		logger.debug("sort: " + sort);
 //		logger.debug("SOLR Query URL:"  + q);
-		try{			
+		try{
 			return getSolrIndex().query(q);
 		} catch(SolrServerException e){
 			throw e;
@@ -275,7 +289,7 @@ public class SED2013Index {
 		}
 
 		public static IndexedPhoto fromDoc(SolrDocument doc){
-			long photoIndex = (long)(Long) doc.get("index");
+			long photoIndex = (Long) doc.get("index");
 			Photo p = PhotoUtils.createPhoto(doc);
 			return new IndexedPhoto(photoIndex, p);
 		}
@@ -283,6 +297,12 @@ public class SED2013Index {
 		@Override
 		public String getID() {
 			return this.second.getId();
+		}
+
+		public static IndexedPhoto fromDoc(Document in) {
+			long photoIndex = Long.parseLong(in.get("index"));
+			Photo p = PhotoUtils.createPhoto(in);
+			return new IndexedPhoto(photoIndex, p);
 		}
 	}
 
@@ -309,7 +329,7 @@ public class SED2013Index {
 //			Photo first = photoStream.next();
 			Photo first = index.photoById("3358133370");
 			Timer t = Timer.timer();
-			QueryResponse res = index.query(first, 100);
+			QueryResponse res = index.query(first, 100,true);
 			int withGeoCode = 0;
 			int withoutGeoCode = 0;
 			List<ExtractorComparator<Photo, ? extends FeatureVector>> fe = PPK2012ExtractCompare.similarity(tfidf, featurecache);

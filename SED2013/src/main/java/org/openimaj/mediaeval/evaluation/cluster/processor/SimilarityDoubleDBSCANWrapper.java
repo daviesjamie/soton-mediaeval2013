@@ -9,36 +9,31 @@ import org.openimaj.feature.DoubleFV;
 import org.openimaj.feature.DoubleFVComparison;
 import org.openimaj.feature.FeatureExtractor;
 import org.openimaj.math.matrix.MatrixUtils;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCAN;
-import org.openimaj.ml.clustering.dbscan.DoubleDBSCANClusters;
+import org.openimaj.util.function.Function;
 
 import ch.akuhn.matrix.SparseMatrix;
 
 /**
- * Wraps the functionality of a {@link DoubleDBSCAN} called with a sparse similarity matrix
+ * 
  * @author Sina Samangooei (ss@ecs.soton.ac.uk)
  *
  * @param <T>
  */
-public class SimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper {
+public class SimilarityDoubleDBSCANWrapper<T> implements Function<List<T>,SparseMatrix> {
 	Logger logger = Logger.getLogger(SimilarityDoubleDBSCANWrapper.class);
 	private FeatureExtractor<DoubleFV, T> extractor;
-	private DoubleDBSCAN dbscan;
-	private List<T> data;
+	private double eps;
 	/**
 	 * @param extractor
-	 * @param dbscan
+	 * @param eps 
 	 *
 	 */
-	public SimilarityDoubleDBSCANWrapper(
-			final List<T> data,FeatureExtractor<DoubleFV, T> extractor, DoubleDBSCAN dbscan
-	) {
-		this.data = data;
+	public SimilarityDoubleDBSCANWrapper(FeatureExtractor<DoubleFV, T> extractor, double eps) {
 		this.extractor = extractor;
-		this.dbscan = dbscan;
+		this.eps = eps;
 	}
 	@Override
-	public int[][] cluster() {
+	public SparseMatrix apply(List<T> data) {
 		logger.info(String.format("Constructing sparse matrix with %d features",data.size()));
 		SparseMatrix mat = new SparseMatrix(data.size(), data.size());
 		int i = 0;
@@ -48,7 +43,7 @@ public class SimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper {
 				double[] tiFeat = this.extractor.extractFeature(ti).values;
 				double[] tjFeat = this.extractor.extractFeature(tj).values;
 				double d = DoubleFVComparison.SUM_SQUARE.compare(tiFeat, tjFeat);
-				if(d <= this.dbscan.getConfig().getEps()) {
+				if(d <= this.eps) {
 					if(d==0 && i!=j)
 						d=Double.MIN_VALUE;
 					mat.put(i, j, d);
@@ -60,8 +55,7 @@ public class SimilarityDoubleDBSCANWrapper<T> implements ClustererWrapper {
 			i++;
 		}
 		logger.info(String.format("Similarity matrix sparcity: %2.5f",MatrixUtils.sparcity(mat)));
-		DoubleDBSCANClusters res = dbscan.cluster(mat,true);
-		return res.getClusterMembers();
+		return mat;
 	}
 
 }

@@ -52,7 +52,7 @@ public class DiversificationHarness {
 		// System.err.println("Diversifying " + rl.monument);
 		//
 		// final List<ObjectDoublePair<ResultItem>> results =
-		// diversifier.diversify(rl);
+		// diversifier.score(rl);
 		//
 		// formatResults(results, rl, runId, pw);
 		//
@@ -100,7 +100,7 @@ public class DiversificationHarness {
 	private static void formatResults(List<ObjectDoublePair<ResultItem>> results, ResultList rl, String runId,
 			PrintWriter pw)
 	{
-		final String qid = String.format("%03d", rl.number);
+		final String qid = String.format("%d", rl.number);
 		final String iter = "0";
 
 		for (int rnk = 0; rnk < Math.min(results.size(), 50); rnk++) {

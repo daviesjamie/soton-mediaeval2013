@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.lucene.index.IndexableField;
 import org.apache.solr.common.SolrDocument;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -527,6 +528,40 @@ public final class PhotoUtils {
 		if(photo.containsKey("location")){
 			GeoData geoData = new GeoData();
 			String[] latlong = photo.getFieldValue("location").toString().split(",");
+			geoData.setLatitude(Float.parseFloat(latlong[0]));
+			geoData.setLongitude(Float.parseFloat(latlong[1]));
+			p.setGeoData(geoData);
+		}
+
+		return p;
+	}
+	public static Photo createPhoto(org.apache.lucene.document.Document photo)  {
+		Photo p = new Photo();
+		p.setId(photo.get("id"));
+		p.setTitle(photo.get("title"));
+		p.setDescription(photo.get("description"));
+		@SuppressWarnings("rawtypes")
+		ArrayList tags = new ArrayList();
+		if(photo.getValues("tag").length != 0){
+			for (Object entry : photo.getValues("tag")) {
+				Tag t = new Tag();
+				t.setValue(entry.toString());
+				tags.add(t);
+			}
+		}
+		p.setTags(tags);
+		IndexableField tp = photo.getField("timeposted");
+		if(photo.getField("timeposted")!=null){
+			Long v = (Long) photo.getField("timeposted").numericValue();
+			p.setDatePosted(new Date(v));
+		}
+		if(photo.getField("timetaken")!=null){
+			Long v = (Long) photo.getField("timetaken").numericValue();
+			p.setDateTaken(new Date(v));
+		}
+		if(photo.get("location")!=null){
+			GeoData geoData = new GeoData();
+			String[] latlong = photo.get("location").split(",");
 			geoData.setLatitude(Float.parseFloat(latlong[0]));
 			geoData.setLongitude(Float.parseFloat(latlong[1]));
 			p.setGeoData(geoData);
