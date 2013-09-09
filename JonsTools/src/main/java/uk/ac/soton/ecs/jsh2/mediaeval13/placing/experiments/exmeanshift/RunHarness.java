@@ -30,7 +30,8 @@ public class RunHarness {
 	private static final File DEFAULT_LIRE_FEATURE_LOCATION = new File(BASE, "features");
 
 	private static final File BIG_SET_LUCENE_INDEX = new File(BASE, "bigdataset2.lucene");
-	private static final File BIG_SET_CACHE_LOCATION = new File(BASE, "data/bigcache");
+	private static final File BIG_SET_CACHE_LOCATION = new File(BASE, "bigcache");
+	private static final File BIG_SET_LAT_LNG_FILE = new File(BASE, "big_latlng");
 
 	private static final File TEST_SET_FILE = new File(BASE, "testset.csv");
 	private static final File RESULT_OUTPUT_DIR = new File(BASE, "runs");
@@ -89,9 +90,9 @@ public class RunHarness {
 				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_LUCENE_INDEX);
 				
 				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_FILE.toURI().toURL(), null,
+						new PriorEstimator(BIG_SET_LAT_LNG_FILE),
 						new CachingTagBasedEstimator(luceneIndex, BIG_SET_CACHE_LOCATION));
 				
-				// TODO: Add prior
 				// TODO: Add visual features!
 				// TODO: Filter test set users from data set
 			}
