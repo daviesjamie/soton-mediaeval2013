@@ -176,7 +176,7 @@ public class ExperimentHarness {
 				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
 				lsh.setExpand(false);
 
-				final File ceddData = new File(DEFAULT_LIRE_FEATURE_LOCATION.getAbsolutePath() + "/cedd.bin");
+				final File ceddData = new File(DEFAULT_LIRE_FEATURE_LOCATION, "cedd.bin");
 				final InMemCEDDPQSearcher cedd = new InMemCEDDPQSearcher(ceddData, luceneIndex);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
@@ -201,7 +201,7 @@ public class ExperimentHarness {
 				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
 				lsh.setExpand(false);
 
-				final File ceddData = new File(DEFAULT_LIRE_FEATURE_LOCATION.getAbsolutePath() + "/cedd.bin");
+				final File ceddData = new File(DEFAULT_LIRE_FEATURE_LOCATION, "cedd.bin");
 				final InMemCEDDPQSearcher cedd = new InMemCEDDPQSearcher(ceddData, luceneIndex);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
@@ -253,7 +253,7 @@ public class ExperimentHarness {
 				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
 				lsh.setExpand(false);
 
-				final File ceddData = new File(DEFAULT_LIRE_FEATURE_LOCATION.getAbsolutePath() + "/cedd.bin");
+				final File ceddData = new File(DEFAULT_LIRE_FEATURE_LOCATION, "cedd.bin");
 				final InMemCEDDPQSearcher cedd = new InMemCEDDPQSearcher(ceddData, luceneIndex);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
