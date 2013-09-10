@@ -24,11 +24,11 @@ results = training.aggregate([
 	# 		"details.TFIDF_PhotoTags_mat":3
 	# 	}
 	# },
-	{
-		"$match":{
-			"details.PhotoTime_TAKEN_mat": 2.10178,
-		}
-	},
+	# {
+	# 	"$match":{
+	# 		"details.PhotoTime_TAKEN_mat": 2.10178,
+	# 	}
+	# },
 	# {
 	# 	"$match":{
 	# 		"details.SPECTRAL":True

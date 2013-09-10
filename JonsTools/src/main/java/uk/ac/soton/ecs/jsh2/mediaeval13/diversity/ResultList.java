@@ -50,7 +50,9 @@ public class ResultList extends AbstractList<ResultItem> {
 			results.add(new ResultItem((Element) photosList.item(i), this));
 		}
 
-		final Document topicsDoc = dBuilder.parse(new File(base, base.getName() + "_topics.xml"));
+		final Document topicsDoc = dBuilder.parse(new File(base,
+				(base.toString().contains("/testset/") ? "testset" : "")
+						+ base.getName() + "_topics.xml"));
 		final NodeList topicList = topicsDoc.getElementsByTagName("topic");
 		for (int i = 0; i < topicList.getLength(); i++) {
 			String numberStr = null;
@@ -79,7 +81,8 @@ public class ResultList extends AbstractList<ResultItem> {
 				this.latitude = Double.parseDouble(latitudeStr);
 				this.longitude = Double.parseDouble(longitudeStr);
 				this.number = Integer.parseInt(numberStr);
-				wikiItem = new WikipediaItem(this, wikiStr);
+				if (wikiStr.length() > 0)
+					wikiItem = new WikipediaItem(this, wikiStr);
 				break;
 			}
 		}
@@ -168,15 +171,16 @@ public class ResultList extends AbstractList<ResultItem> {
 		final List<File> queries = new ArrayList<File>();
 		final String dir = devset ? "devset" : "testset";
 
-		for (final String q : loadQueries(new File(base, dir + "/keywordsGPS/" + dir + "keywordsGPS/" + dir
+		for (final String q : loadQueries(new File(base, dir + "/keywordsGPS/" + (devset ? dir + "keywordsGPS/" : "")
+				+ dir
 				+ "keywordsGPS_topics.xml")))
 		{
-			queries.add(new File(base, dir + "/keywordsGPS/" + dir + "keywordsGPS/xml/" + q + ".xml"));
+			queries.add(new File(base, dir + "/keywordsGPS/" + (devset ? dir + "keywordsGPS/xml/" : "xml/") + q + ".xml"));
 		}
-		for (final String q : loadQueries(new File(base, dir + "/keywords/" + dir + "keywords/" + dir
+		for (final String q : loadQueries(new File(base, dir + "/keywords/" + (devset ? dir + "keywords/" : "") + dir
 				+ "keywords_topics.xml")))
 		{
-			queries.add(new File(base, dir + "/keywords/" + dir + "keywords/xml/" + q + ".xml"));
+			queries.add(new File(base, dir + "/keywords/" + (devset ? dir + "keywords/xml/" : "xml/") + q + ".xml"));
 		}
 
 		return new Iterable<ResultList>() {
