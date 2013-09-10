@@ -141,7 +141,6 @@ public class ExtensibleMeanShiftEngine implements GeoPositioningEngine {
 
 		for (int i = 0; i < data.length; i++) {
 			data[i] = new double[] { pts.get(i).longitude, pts.get(i).latitude };
-			System.out.println(data[i][0] + ", " + data[i][1]);
 		}
 
 		return data;
