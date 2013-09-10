@@ -127,7 +127,7 @@ public class LuceneIndexBuilder {
 
 							final String userId = parts[2];
 							final String url = parts[3];
-							final String tags = parts[4];
+							final String tags = parts[4].replaceAll("\"", "");
 							final long taken = Long.parseLong(parts[5]);
 							final long uploaded = Long.parseLong(parts[6]);
 							final int views = Integer.parseInt(parts[7]);

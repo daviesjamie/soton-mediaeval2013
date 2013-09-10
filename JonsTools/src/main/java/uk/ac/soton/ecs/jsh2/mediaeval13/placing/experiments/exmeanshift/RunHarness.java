@@ -19,7 +19,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.LSHSiftGraphSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
 
 public class RunHarness {
-	private static final File BASE = new File("/Users/jamie/Code/openimaj-code/soton-mediaeval2013/Placement/data");
+	private static final File BASE = new File(".");
 
 	private static final File DEFAULT_LUCENE_INDEX = new File(BASE, "placesutf8.lucene");
 	private static final File DEFAULT_LAT_LNG_FILE = new File(BASE, "training_latlng");

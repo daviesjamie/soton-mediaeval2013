@@ -130,7 +130,7 @@ public class BigLuceneIndexBuilder {
                             continue;
 
                         final String url = parts[5];
-                        final String tags = StringUtils.strip( parts[17], "\"[]" ).replaceAll( ", ", " " );
+                        final String tags = StringUtils.strip( parts[17], "\"[]" ).replaceAll( ", ", " " ).replaceAll("\"", "");
                         final float lat = Float.parseFloat( parts[15] );
                         final float lon = Float.parseFloat( parts[16] );
                         Date taken = df.parse( parts[11] );
