@@ -5,16 +5,18 @@ import gnu.trove.list.array.TLongArrayList;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.LineIterator;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -62,9 +64,9 @@ public class LuceneIndexBuilder {
 	private final static String CSV_REGEX = ",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))";
 
 	public static void main(String[] args) throws IOException {
-		final String latlngPath = "/Volumes/SSD/mediaeval13/placing/training_latlng";
-		final String csvPath = "/Volumes/SSD/mediaeval13/placing/all.csv";
-		final String indexPath = "/Volumes/SSD/mediaeval13/placing/places.lucene.v2";
+		final String latlngPath = "../Placement/data/training_latlng";
+		final String csvPath = "../Placement/data/all.csv";
+		final String indexPath = "../Placement/data/placesutf8.lucene";
 
 		buildIndex(latlngPath, csvPath, indexPath);
 	}
@@ -73,9 +75,9 @@ public class LuceneIndexBuilder {
 			throws FileNotFoundException,
 			IOException
 	{
-		final TLongArrayList ids = new TLongArrayList(7600000);
-		final TFloatArrayList lats = new TFloatArrayList(7600000);
-		final TFloatArrayList lons = new TFloatArrayList(7600000);
+		final TLongArrayList ids = new TLongArrayList(9000000);
+		final TFloatArrayList lats = new TFloatArrayList(9000000);
+		final TFloatArrayList lons = new TFloatArrayList(9000000);
 
 		BufferedReader br = new BufferedReader(new FileReader(latlngPath));
 		String line;
@@ -93,7 +95,7 @@ public class LuceneIndexBuilder {
 		final SpatialPrefixTree grid = new GeohashPrefixTree(ctx, 11);
 		final RecursivePrefixTreeStrategy strategy = new RecursivePrefixTreeStrategy(grid, FIELD_LOCATION);
 
-		final StandardAnalyzer a = new StandardAnalyzer(Version.LUCENE_43);
+		final WhitespaceAnalyzer a = new WhitespaceAnalyzer(Version.LUCENE_43);
 		final IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_43, a);
 		iwc.setRAMBufferSizeMB(512);
 		Directory directory;
@@ -101,7 +103,7 @@ public class LuceneIndexBuilder {
 		final IndexWriter indexWriter = new IndexWriter(directory, iwc);
 
 		final AtomicInteger counter = new AtomicInteger();
-		br = new BufferedReader(new FileReader(csvPath));
+		br = new BufferedReader(new InputStreamReader(new FileInputStream(csvPath), "UTF-8"));
 		final LineIterator iter = new LineIterator(br);
 
 		final ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(4, new DaemonThreadFactory());

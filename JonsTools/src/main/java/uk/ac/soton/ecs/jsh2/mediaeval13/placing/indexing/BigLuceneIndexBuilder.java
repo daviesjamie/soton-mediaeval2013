@@ -4,11 +4,12 @@ import gnu.trove.list.array.TLongArrayList;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -93,7 +94,7 @@ public class BigLuceneIndexBuilder {
         final SpatialPrefixTree grid = new GeohashPrefixTree( ctx, 11 );
         final RecursivePrefixTreeStrategy strategy = new RecursivePrefixTreeStrategy( grid, FIELD_LOCATION );
 
-        final StandardAnalyzer a = new StandardAnalyzer( Version.LUCENE_43 );
+        final WhitespaceAnalyzer a = new WhitespaceAnalyzer( Version.LUCENE_43 );
         final IndexWriterConfig iwc = new IndexWriterConfig( Version.LUCENE_43, a );
         iwc.setRAMBufferSizeMB( 512 );
         Directory directory;
@@ -101,7 +102,7 @@ public class BigLuceneIndexBuilder {
         final IndexWriter indexWriter = new IndexWriter( directory, iwc );
 
         final AtomicInteger counter = new AtomicInteger();
-        br = new BufferedReader( new FileReader( csvPath ) );
+        br = new BufferedReader( new InputStreamReader( new FileInputStream(csvPath), "UTF-8" ) );
         final LineIterator iter = new LineIterator( br );
 
         final DateFormat df = new SimpleDateFormat( "EEE MMM dd HH:mm:ss z yyyy", Locale.ENGLISH );
