@@ -173,7 +173,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>uk.ac.soton.ecs.jsh2.mediaeval13.placing.indexing.BigLuceneIndexBuilder</mainClass>
+                <mainClass>uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.RunHarness</mainClass>
             </manifest>
           </archive>
         </configuration>
