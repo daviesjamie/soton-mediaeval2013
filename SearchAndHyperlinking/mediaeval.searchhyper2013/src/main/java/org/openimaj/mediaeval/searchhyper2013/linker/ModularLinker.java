@@ -77,6 +77,18 @@ public class ModularLinker implements Linker {
 			throw new LinkerException(e);
 		}
 		
+		for (Result result : results) {
+			if (result.endTime - result.startTime > 120) {
+				float avg = (result.startTime + result.endTime) / 2;
+				
+				result.startTime = avg - 59;
+				result.endTime = avg + 59;
+			} else if (result.endTime - result.startTime < 10) {
+				result.startTime -= 5;
+				result.endTime += 5;
+			}
+		}
+		
 		Collections.sort(results);
 		
 		/*List<String> programmesToPrint = new ArrayList<String>();
@@ -235,7 +247,7 @@ public class ModularLinker implements Linker {
 		
 		Directory spellDir = FSDirectory.open(new File(args[3]));
 		
-		//LSHDataExplorer lshGraph = new LSHDataExplorer(new File(args[4]), 20);
+		LSHDataExplorer lshGraph = new LSHDataExplorer(new File(args[4]), 20);
 		
 		ChannelFilterModule channelFilterModule = new ChannelFilterModule();
 		SynopsisModule synopsisModule = new SynopsisModule(indexSearcher,
@@ -253,18 +265,18 @@ public class ModularLinker implements Linker {
 		ConceptModule conceptModule = new ConceptModule(new File(args[5]),
 														new File(args[6]),
 														englishAnalyzer);
-		//LSHGraphModule lshGraphModule = new LSHGraphModule(new File(args[7]),
-		//												   lshGraph,
-		//												   timelineFactory);
+		LSHGraphModule lshGraphModule = new LSHGraphModule(new File(args[7]),
+														   lshGraph,
+														   timelineFactory);
 		
 		ModularLinker searcher =
-				new ModularLinker("me13sh_soton-wais2013_LA_Sh_S_MV_ModularConcepts");
+				new ModularLinker("me13sh_soton-wais2013_LA_Sh_S_MV_ModularConceptsLSH");
 		searcher.addModule(new SearcherModuleWrapperModule(synopsisModule, indexSearcher));
 		searcher.addModule(new SearcherModuleWrapperModule(transcriptModule, indexSearcher));
 		searcher.addModule(new SearcherModuleWrapperModule(titleModule, indexSearcher));
 		searcher.addModule(new SearcherModuleWrapperModule(channelFilterModule, indexSearcher));
-		//searcher.addModule(conceptModule);
-		//searcher.addModule(lshGraphModule);
+		searcher.addModule(conceptModule);
+		searcher.addModule(lshGraphModule);
 		
 		// Filter for synopsis- and title-only hits.
 		searcher.addModule(new LinkerModule() {

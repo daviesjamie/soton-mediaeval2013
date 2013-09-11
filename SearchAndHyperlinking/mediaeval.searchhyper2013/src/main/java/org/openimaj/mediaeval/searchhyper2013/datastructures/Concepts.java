@@ -42,7 +42,7 @@ public class Concepts extends HashMap<String, Integer> {
 														throws IOException {
 		Integer conceptID = get(concept);
 		
-		final Integer[] deadConcepts = { 702, 977, 455 };
+		final Integer[] deadConcepts = { 702, 977, 455, 934, 222, 548 };
 		Arrays.sort(deadConcepts);
 		
 		if (conceptID == null || Arrays.binarySearch(deadConcepts, conceptID) > -1) {

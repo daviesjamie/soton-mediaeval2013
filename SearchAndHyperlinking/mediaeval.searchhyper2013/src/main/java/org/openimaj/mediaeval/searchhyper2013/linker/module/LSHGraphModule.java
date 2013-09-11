@@ -60,9 +60,14 @@ public class LSHGraphModule implements LinkerModule {
 		
 		TimelineSet timelines = new TimelineSet(currentSet);
 		
+		Map<Integer, String> programmeFrames = shotsDirCache.get(q.fileName);
+		
+		if (programmeFrames == null) {
+			return timelines;
+		}
+		
 		SortedMap<Integer, String> frames =
-				new TreeMap<Integer, String>(
-						shotsDirCache.get(q.anchorID));
+				new TreeMap<Integer, String>(programmeFrames);
 		
 		int lowerFrame = (int) q.startTime * FPS;
 		int upperFrame = (int) q.endTime * FPS;
