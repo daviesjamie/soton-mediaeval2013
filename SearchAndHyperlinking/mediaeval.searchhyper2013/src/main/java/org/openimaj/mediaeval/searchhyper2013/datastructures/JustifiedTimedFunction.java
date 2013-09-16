@@ -1,4 +1,4 @@
-package org.openimaj.mediaeval.searchhyper2013.searcher.module;
+package org.openimaj.mediaeval.searchhyper2013.datastructures;
 
 import java.util.Comparator;
 import java.util.List;

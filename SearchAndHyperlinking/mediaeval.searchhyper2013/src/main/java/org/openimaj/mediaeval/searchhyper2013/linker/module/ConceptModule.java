@@ -1,9 +1,10 @@
-package org.openimaj.mediaeval.searchhyper2013.searcher.module;
+package org.openimaj.mediaeval.searchhyper2013.linker.module;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -22,6 +23,7 @@ import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryTermScorer;
 import org.apache.lucene.search.highlight.TextFragment;
 import org.apache.lucene.search.highlight.TokenGroup;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.Anchor;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Concept;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Concepts;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Frame;
@@ -31,12 +33,14 @@ import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineSet;
+import org.openimaj.mediaeval.searchhyper2013.linker.LinkerException;
 import org.openimaj.mediaeval.searchhyper2013.lucene.EnglishSynonymAnalyzer;
 import org.openimaj.mediaeval.searchhyper2013.lucene.LuceneUtils;
 import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
 import org.openimaj.mediaeval.searchhyper2013.util.Time;
 
-public class ConceptModule implements SearcherModule {
+
+public class ConceptModule implements LinkerModule {
 	
 	double CONCEPT_WEIGHT = 0.05;
 	double CONCEPT_POWER = 0.5;
@@ -59,30 +63,46 @@ public class ConceptModule implements SearcherModule {
 	}
 	
 	@Override
-	public TimelineSet search(Query q,
+	public TimelineSet search(Anchor q,
 							  TimelineSet currentSet) 
-													throws SearcherException {
+													throws LinkerException {
 		try {
 			return _search(q, currentSet);
 		} catch (Exception e) {
-			throw new SearcherException(e);
+			throw new LinkerException(e);
 		}
 	}
 	
-	public TimelineSet _search(Query q, TimelineSet currentSet)
+	public TimelineSet _search(Anchor q, TimelineSet currentSet)
 															throws Exception {
-		List<String> queryConcepts =
-				LuceneUtils.getCommonTokens(q.queryText + " " + q.visualCues,
-											this.concepts.conceptsString());
-		
+
 		List<Concept> conceptObjs = new ArrayList<Concept>();
 		
-		for (String conceptString : queryConcepts) {
+		for (String conceptString : concepts.keySet()) {
 			Concept concept = concepts.loadConcept(conceptString, conceptsDir);
 			
 			if (concept != null) {
 				conceptObjs.add(concept);
 			}
+		}
+		
+		Iterator<Concept> iter = conceptObjs.iterator();
+		
+		concepts:
+		while (iter.hasNext()) {
+			Concept current = iter.next();
+			
+			Map<Frame, Float> frames = current.findProgrammeFrames(q.fileName);
+			
+			for (Frame frame : frames.keySet()) {
+				float time = frame.frame / 25f;
+				
+				if (q.startTime <= time && time <= q.endTime) {
+					continue concepts;
+				}
+			}
+			
+			iter.remove();
 		}
 		
 		TimelineSet timelines = currentSet;

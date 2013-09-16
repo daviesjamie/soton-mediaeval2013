@@ -30,7 +30,7 @@ public class TitleModule implements SearcherModule {
 	Version LUCENE_VERSION = Version.LUCENE_43;
 	
 	double MINIMUM_SCORE = 0.8;
-	double TITLE_WEIGHT = 3;
+	double TITLE_WEIGHT = 30;
 	double TITLE_POWER = 0.5;
 	
 	StandardQueryParser queryParser;
@@ -54,12 +54,38 @@ public class TitleModule implements SearcherModule {
 							  TimelineSet currentSet)
 													throws SearcherException {
 		try {
-			return _search(q, currentSet);
+			return _search2(q, currentSet);
 		} catch (Exception e) {
 			throw new SearcherException(e);
 		}
 	}
 
+	public TimelineSet _search2(Query q,
+							   TimelineSet currentSet) throws Exception {
+		TimelineSet timelines = new TimelineSet(currentSet);
+		
+		for (Timeline timeline : timelines) {
+			Document synopsis =
+					LuceneUtils.getTypeForProgramme(timeline.getID(),
+													Type.Synopsis,
+														indexSearcher);
+			List<String> common = LuceneUtils.getCommonTokens(LuceneUtils.fixQuery(
+					QueryParser.escape(q.queryText),
+					spellDir),
+				synopsis.get(Field.Title.toString()));
+			if (!common.isEmpty()) {
+				timeline.scaleMultiplier(1 + (TITLE_WEIGHT *
+						Math.pow(1,
+								 TITLE_POWER)));
+
+				timeline.addJustification(
+				"Title match : " + synopsis.get(Field.Title.toString()));
+			}
+		}
+		
+		return timelines;
+	}
+	
 	public TimelineSet _search(Query q,
 							   TimelineSet currentSet)
 														throws Exception {

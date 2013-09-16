@@ -10,6 +10,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.RandomDiversif
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatDBScanBasedDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatMaxDistGreedyDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatMaxDistGreedyDiversifier.AggregationStrategy;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatSpectralDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.TimeUserDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.extractors.ProvidedFeatures;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.extractors.SIFTBOVW;
@@ -217,6 +218,56 @@ public enum DiversificationExperiments {
 			);
 		}
 	},
+	run2textonlyv1_weighting {
+		@Override
+		public Scorer get() {
+			return new FilteredScorer(
+					new PreFilter(
+							new GeoDistance(8, true),
+							new NumViews(2),
+							new DescriptionLength(2000)
+					),
+					new DiversifiedScorer(
+							new LuceneReranker(),
+							new SimMatMaxDistGreedyDiversifier(
+									new CombinedProvider(
+											new AvgCombiner(new double[] { 1, 1 }),
+											new TimeUser(3.25),
+											new MonthDelta(12)
+									),
+									AggregationStrategy.Max
+							)
+					)
+			);
+		}
+	},
+	spectral_run2textonly {
+		@Override
+		public Scorer get() {
+			return new FilteredScorer(
+					new PreFilter(
+							new GeoDistance(8, true),
+							new NumViews(2),
+							new DescriptionLength(2000)
+					),
+					new DiversifiedScorer(
+							new LuceneReranker(),
+							new SimMatSpectralDiversifier(
+									new CombinedProvider(
+											new AvgCombiner(new double[] { 1.3, 1 }),
+											// new AvgCombiner(),
+											new TimeUser(3.25),
+											new MonthDelta(5)
+									// ,new GeoDelta(1)
+									),
+									1, 0.2,
+									DoubleFVComparison.EUCLIDEAN,
+									0.8, 1.0
+							)
+					)
+			);
+		}
+	},
 	run3textvisv1 {
 		@Override
 		public Scorer get() {
@@ -250,7 +301,7 @@ public enum DiversificationExperiments {
 	public abstract Scorer get();
 
 	public static void main(String[] args) throws Exception {
-		final DiversificationExperiments exp = DiversificationExperiments.run1visonlyv1;
+		final DiversificationExperiments exp = DiversificationExperiments.run2textonlyv1_weighting;
 
 		final boolean devset = false;
 		final File baseDir = new File("/Users/jon/Data/mediaeval/diversity/");
