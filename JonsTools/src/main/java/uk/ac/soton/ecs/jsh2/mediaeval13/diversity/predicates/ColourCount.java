@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.openimaj.feature.DoubleFV;
 import org.openimaj.image.MBFImage;
 import org.openimaj.image.pixel.statistics.HistogramModel;
-import org.openimaj.image.processing.edges.CannyEdgeDetector;
 import org.openimaj.io.IOUtils;
 import org.openimaj.util.array.ArrayUtils;
 import org.openimaj.util.function.Predicate;
@@ -49,6 +48,7 @@ public class ColourCount implements Predicate<ResultItem> {
 
 	private void write(DoubleFV hist, File f) {
 		try {
+			f.getParentFile().mkdirs();
 			IOUtils.writeASCII(f, hist);
 		} catch (final IOException e) {
 			throw new RuntimeException(e);
@@ -66,11 +66,9 @@ public class ColourCount implements Predicate<ResultItem> {
 	private DoubleFV computeHist(ResultItem object) {
 		final MBFImage img = object.getMBFImage();
 
-		img.processInplace(new CannyEdgeDetector());
-
 		final HistogramModel hm = new HistogramModel(6, 6, 6);
 		hm.estimateModel(img);
 
-		return hm.histogram;
+		return hm.histogram.normaliseFV();
 	}
 }
