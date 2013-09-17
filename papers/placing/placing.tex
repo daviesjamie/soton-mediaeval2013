@@ -1,4 +1,6 @@
 \documentclass{../acm_proc_article-me11_tweaked}
+\def \rothead [#1]{\rotatebox[origin=l]{60}{#1}}
+\renewcommand{\arraystretch}{1.5}
 
 \begin{document}
 
@@ -17,9 +19,11 @@
 \alignauthor
 Jamie Davies\\
        \email{jagd1g11@ecs.soton.ac.uk}
+\and
 \alignauthor
 Jonathon S. Hare\\
        \email{jsh2@ecs.soton.ac.uk}
+\and
 \alignauthor
 Sina Samangooei\\
        \email{ss@ecs.soton.ac.uk}
@@ -27,9 +31,11 @@ Sina Samangooei\\
 \alignauthor
 John Preston\\
 	\email{jlp1g11@ecs.soton.ac.uk}
+\and
 \alignauthor
 Neha Jain\\
 	\email{nj1g12@ecs.soton.ac.uk}
+\and
 \alignauthor
 David P. Dupplaw
 	\email{dpd@ecs.soton.ac.uk}
@@ -45,11 +51,32 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
     The geotagging of a photos location provides data that could be useful in a wide spectrum of applications. With the advance of digital cameras, and with many users exchanging their digital cameras for their GPS-enabled mobile phones, photographs annotated with geographical locations are becoming ever more present on photo-sharing websites such as Flickr. However there is still a wide majority of online content that is not geotagged, meaning that algorithms for efficient and accurate geographical estimation of an image are needed. We present a general model for using both textual metadata and visual features of photos to automatically place them on a world map. This forms the University of Southampton's entry for the MediaEval 2013 Placing task.
 \end{abstract}
 
+\keywords{Geotagging, Probability Density, Image Annotation}
+
 \section{Introduction and Motivation}
 
 \section{Overall Methodology}
 
 \section{Experiments}
+\begin{table}
+    \centering
+    \begin{tabular}[H]{l|*{5}{c|}}
+        & \multicolumn{1}{c}{\rothead[Prior]} & \multicolumn{1}{c}{\rothead[Tags]} & \multicolumn{1}{c}{\rothead[CEDD]} & \multicolumn{1}{c}{\rothead[SIFT-LSH]} & \multicolumn{1}{c}{\rothead[Geonames]} \\
+        \hline
+        Run 1 & \checkmark & \checkmark & \checkmark & \checkmark & \\
+        \hline
+        Run 2 & \checkmark & & \checkmark & \checkmark & \\
+        \hline
+        Run 3 & \checkmark & \checkmark & & & \\
+        \hline
+        Run 4 & \checkmark & \checkmark & & \checkmark & \\
+        \hline
+        Run 5 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+        \hline
+    \end{tabular}
+    \caption{The feature configuration for the run submissions.}
+\end{table}
+
 \subsection{Run 1: Text+Visual, provided data}
 \subsection{Run 2: Visual only, provided data}
 \subsection{Run 3: Text only, provided data}
