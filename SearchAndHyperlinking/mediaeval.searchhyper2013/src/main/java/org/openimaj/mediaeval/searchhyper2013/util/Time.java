@@ -24,7 +24,7 @@ public abstract class Time {
 		
 		float minutes = (float) Math.floor(seconds / 60);
 		
-		minutesSeconds += (seconds - (minutes * 60)) / 100;
+		minutesSeconds += Math.round((seconds - (minutes * 60))) / 100;
 		minutesSeconds += minutes;
 		
 		return minutesSeconds;

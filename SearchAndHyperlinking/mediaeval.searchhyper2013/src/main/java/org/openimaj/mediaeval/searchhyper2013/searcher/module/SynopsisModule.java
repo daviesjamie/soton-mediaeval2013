@@ -29,7 +29,7 @@ import org.openimaj.mediaeval.searchhyper2013.searcher.SearcherException;
 public class SynopsisModule implements SearcherModule {
 	Version LUCENE_VERSION = Version.LUCENE_43;
 	
-	double SYNOPSIS_WEIGHT = 10;
+	double SYNOPSIS_WEIGHT = 20;
 	double SYNOPSIS_POWER = 3;
 	
 	StandardQueryParser queryParser;
@@ -86,7 +86,7 @@ public class SynopsisModule implements SearcherModule {
 		for (ScoreDoc doc : hits) {
 			Document luceneDocument = indexSearcher.doc(doc.doc);
 			
-			//System.out.println("Synopsis hit: " + luceneDocument.get(Field.Program.toString()));
+			//System.out.println("!!! Synopsis hit: " + luceneDocument.get(Field.Program.toString()));
 			
 			//System.out.println(luceneDocument.get(Field.Text.toString()));
 			

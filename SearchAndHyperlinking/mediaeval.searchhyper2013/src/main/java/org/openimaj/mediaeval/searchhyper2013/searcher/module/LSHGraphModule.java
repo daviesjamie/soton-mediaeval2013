@@ -12,6 +12,7 @@ import org.apache.commons.math3.analysis.function.Gaussian;
 import org.apache.commons.math3.analysis.integration.TrapezoidIntegrator;
 import org.apache.commons.math3.analysis.integration.UnivariateIntegrator;
 import org.openimaj.io.IOUtils;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.TimelineFactory;
@@ -83,9 +84,12 @@ public class LSHGraphModule implements SearcherModule {
 				if (integrals[i] > MIN_INTEGRAL) {
 					int upperFrame = (int) boundaries[i] * FPS;
 					
+					SortedMap<Integer, String> lteq = 
+						new TreeMap<Integer, String>(frames.headMap(upperFrame));
+					lteq.put(upperFrame, frames.get(upperFrame));
+					
 					String frame = "/shotdetection/" + 
-								   frames.get(frames.headMap(upperFrame)
-										   			.lastKey());
+								   frames.get(lteq.lastKey());
 					
 					List<ObjectDoublePair<String>> results;
 					

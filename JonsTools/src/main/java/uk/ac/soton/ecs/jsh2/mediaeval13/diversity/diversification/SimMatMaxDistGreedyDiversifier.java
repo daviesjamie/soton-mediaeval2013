@@ -72,6 +72,8 @@ public class SimMatMaxDistGreedyDiversifier implements Diversifier {
 		resultIds.add(workingIds.remove(0));
 
 		final List<ObjectDoublePair<ResultItem>> results = new ArrayList<ObjectDoublePair<ResultItem>>();
+		results.add(ObjectDoublePair.pair(input.get(0).first, 1.0));
+
 		int i = 1;
 		while (resultIds.size() < 50 && workingIds.size() > 0) {
 			final int rx = findBest(resultIds, workingIds, sm);

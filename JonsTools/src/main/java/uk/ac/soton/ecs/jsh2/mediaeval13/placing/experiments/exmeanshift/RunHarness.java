@@ -20,6 +20,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.LSHSiftGraphSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
 
 public class RunHarness {
+	//private static final File BASE = new File(".");
 	// private static final File BASE = new
 	// File("/Users/jamie/Code/openimaj-code/soton-mediaeval2013/Placement/data");
 	private static final File BASE = new File("/Volumes/SSD/mediaeval13/placing/");
@@ -38,7 +39,6 @@ public class RunHarness {
 	private static final File BIG_SET_LSH_EDGES_FILE = new File(BASE, "sift1x-dups/big-sift1x-lsh-edges-min1-max20.txt");
 
 	private static final File TEST_SET_FILE = new File(BASE, "testset.csv");
-	private static final File RESULT_OUTPUT_DIR = new File(BASE, "runs");
 
 	public enum Runs {
 		Run1 {
@@ -107,10 +107,6 @@ public class RunHarness {
 				// new ScoreWeightedVisualEstimator(luceneIndex, vlad, 100,
 				// 1.0f)
 				);
-
-				// TODO: Add prior
-				// TODO: Add visual features!
-				// TODO: Filter test set users from data set
 			}
 		},
 		Run5 {
@@ -135,14 +131,34 @@ public class RunHarness {
 	}
 
 	public static void main(String[] args) throws Exception {
-		final Runs rrun = Runs.Run4;
-		final MeanShiftPlacingExperiment run = rrun.create();
+		Runs rrun = null;
+		switch(Integer.parseInt(args[0])) {
+			case 1:
+				rrun = Runs.Run1;
+				break;
+			case 2:
+				rrun = Runs.Run2;
+				break;
+			case 3:
+				rrun = Runs.Run3;
+				break;
+			case 4:
+				rrun = Runs.Run4;
+				break;
+			case 5:
+				rrun = Runs.Run5;
+				break;
+			default:
+				System.err.println(args[0] + " is an invalid run number! Try the integers 1-5");
+				System.exit(1);
+		}
 
+		final File resultOutputDir = new File(args[1]);
+		final MeanShiftPlacingExperiment run = rrun.create();
 		run.perform();
 		final TLongObjectHashMap<GeoLocationEstimate> results = run.getRawResult();
 
-		final File outputFile = new File(RESULT_OUTPUT_DIR, rrun.toString());
-		outputFile.getParentFile().mkdirs();
+		final File outputFile = new File(resultOutputDir, rrun.toString());
 		final BufferedWriter out = new BufferedWriter(new FileWriter(outputFile));
 
 		results.forEachKey(new TLongProcedure() {
@@ -167,6 +183,7 @@ public class RunHarness {
 				return true;
 			}
 		});
+		out.flush();
 		out.close();
 		System.out.println("Done!");
 		System.out.println("Output written to " + outputFile);

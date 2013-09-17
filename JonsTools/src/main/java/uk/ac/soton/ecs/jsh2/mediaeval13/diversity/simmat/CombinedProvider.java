@@ -6,6 +6,8 @@ import java.util.List;
 import org.openimaj.util.pair.ObjectDoublePair;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.ResultItem;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.MonthDelta;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.TimeUser;
 import ch.akuhn.matrix.SparseMatrix;
 
 public class CombinedProvider implements SimMatProvider {

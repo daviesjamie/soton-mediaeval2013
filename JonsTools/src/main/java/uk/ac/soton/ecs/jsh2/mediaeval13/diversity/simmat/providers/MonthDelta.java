@@ -29,8 +29,10 @@ public class MonthDelta implements SimMatProvider {
 
 				final int mi = ri.date_taken.getMonth();
 				final int mj = rj.date_taken.getMonth();
-				final int delta = mi > mj ? mi - mj : mj - mi;
-
+				int delta = mi > mj ? mi - mj : mj - mi;
+//				if(delta>6){
+//					delta = 12 - delta;
+//				}
 				if (delta < base) {
 					final double sim = delta == 0 ? 1 : 1 - Math.log(delta) / Math.log(base);
 					if (sim > 0) {

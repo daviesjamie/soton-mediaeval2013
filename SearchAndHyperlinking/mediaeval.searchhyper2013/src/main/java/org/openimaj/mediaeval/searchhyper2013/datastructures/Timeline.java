@@ -14,7 +14,6 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.DefaultXYDataset;
 import org.openimaj.data.identity.Identifiable;
 import org.openimaj.image.Image;
-import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.util.Time;
 import org.openimaj.mediaeval.searchhyper2013.util.UnivariateFunctionDistribution;
 

@@ -139,8 +139,14 @@ public class TimeStringFormatter implements Formatter {
 		int startIndex = timeString.indexOf(Float.toString(start));
 		int endIndex = timeString.indexOf(Float.toString(end));
 		
-		if (startIndex != -1 && endIndex != -1) {
+		if (startIndex > -1 && endIndex > -1) {
 			final int WIDTH = 40;
+			
+			if (startIndex > endIndex) {
+				int tmp = startIndex;
+				startIndex = endIndex;
+				endIndex = tmp;
+			}
 			
 			return "..." +
 				   timeString.substring(

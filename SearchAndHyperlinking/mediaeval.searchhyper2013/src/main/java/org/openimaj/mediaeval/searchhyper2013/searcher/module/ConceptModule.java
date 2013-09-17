@@ -25,6 +25,7 @@ import org.apache.lucene.search.highlight.TokenGroup;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Concept;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Concepts;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Frame;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Timeline;

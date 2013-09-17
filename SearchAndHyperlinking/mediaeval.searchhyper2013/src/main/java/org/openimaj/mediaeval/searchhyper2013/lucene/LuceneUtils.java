@@ -279,8 +279,9 @@ public abstract class LuceneUtils {
 		return scoreDocs;
 	}
 
-	public static Document getSynopsisForProgramme(String programme,
-												   IndexSearcher searcher)
+	public static Document getTypeForProgramme(String programme,
+											   Type type,
+											   IndexSearcher searcher)
 														  throws IOException {
 		
 		BooleanQuery progTypeQuery = new BooleanQuery();
@@ -288,7 +289,7 @@ public abstract class LuceneUtils {
 				new TermQuery(new Term(Field.Program.toString(), programme)),
 				BooleanClause.Occur.MUST);
 		progTypeQuery.add(
-				new TermQuery(new Term(Field.Type.toString(), Type.Synopsis.toString())),
+				new TermQuery(new Term(Field.Type.toString(), type.toString())),
 				BooleanClause.Occur.MUST);
 		
 		TopDocs docs = searcher.search(progTypeQuery, 1);
@@ -297,6 +298,10 @@ public abstract class LuceneUtils {
 	}
 
 	public static String fixQuery(String q, Directory spellIndex) throws IOException {
+		if (q.contains("^")) {
+			return q;
+		}
+		
 		SpellChecker spellChecker = new SpellChecker(spellIndex);
 
 		String[] parts = q.trim().split("\\s+");
@@ -308,7 +313,13 @@ public abstract class LuceneUtils {
 			String checkWord = word.toLowerCase().replaceAll("\\W", "");
 			
 			if (!spellChecker.exist(checkWord)) {
-				String[] corrections = spellChecker.suggestSimilar(word, 5);
+				String[] corrections;
+				
+				try {
+					corrections = spellChecker.suggestSimilar(word, 5);
+				} catch (NegativeArraySizeException e) {
+					continue;
+				}
 				
 				for (String correction : corrections) {
 					if (correction.toLowerCase().equals(checkWord)) {
@@ -366,4 +377,5 @@ public abstract class LuceneUtils {
 		
 		return sb.toString().trim();*/
 	}
+
 }

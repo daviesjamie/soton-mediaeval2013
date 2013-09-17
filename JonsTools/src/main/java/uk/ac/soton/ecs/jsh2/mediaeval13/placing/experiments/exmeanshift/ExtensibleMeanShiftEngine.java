@@ -143,8 +143,9 @@ public class ExtensibleMeanShiftEngine implements GeoPositioningEngine {
 	private double[][] toArray(List<GeoLocation> pts) {
 		final double[][] data = new double[pts.size()][];
 
-		for (int i = 0; i < data.length; i++)
+		for (int i = 0; i < data.length; i++) {
 			data[i] = new double[] { pts.get(i).longitude, pts.get(i).latitude };
+		}
 
 		return data;
 	}
