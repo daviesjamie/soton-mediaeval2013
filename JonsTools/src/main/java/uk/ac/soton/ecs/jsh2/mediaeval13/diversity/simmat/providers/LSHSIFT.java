@@ -21,7 +21,7 @@ public class LSHSIFT implements SimMatProvider {
 		try {
 			final List<ResultItem> flatResults = ObjectDoublePair.getFirst(results);
 			final SimpleWeightedGraph<Long, DefaultWeightedEdge> graph = BuildSIFTGraph.buildGraph(
-					flatResults, 3, 20);
+					flatResults, 2, 20);
 
 			final TIntLongHashMap mapping = new TIntLongHashMap();
 			for (int i = 0; i < flatResults.size(); i++)

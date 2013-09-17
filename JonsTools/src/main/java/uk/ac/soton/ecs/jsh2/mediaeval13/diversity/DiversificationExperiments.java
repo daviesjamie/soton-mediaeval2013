@@ -9,10 +9,12 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.NearDuplicates
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.RandomDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatDBScanBasedDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatMaxDistGreedyDiversifier;
-import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatSpectralDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatMaxDistGreedyDiversifier.AggregationStrategy;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.SimMatSpectralDiversifier;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.diversification.TimeUserDiversifier;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.extractors.ProvidedFeatures;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.extractors.SIFTBOVW;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.predicates.Blur;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.predicates.DescriptionLength;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.predicates.FaceDetections;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.predicates.GeoDistance;
@@ -27,7 +29,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.scoring.Scorer;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.AvgCombiner;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.CombinedProvider;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.FeatureSim;
-import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.GeoDelta;
+import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.LSHSIFT;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.MonthDelta;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.TimeOfDayDelta;
 import uk.ac.soton.ecs.jsh2.mediaeval13.diversity.simmat.providers.TimeUser;
@@ -178,18 +180,22 @@ public enum DiversificationExperiments {
 	run1visonlyv1 {
 		@Override
 		public Scorer get() {
-			return new DiversifiedScorer(
-					// new NearDuplicatesFilter(null
-					new SimMatMaxDistGreedyDiversifier(
-							new FeatureSim(
-									new SIFTBOVW(), DoubleFVComparison.COSINE_SIM),
-							AggregationStrategy.Max
-					// )
+			return new FilteredScorer(
+					new PreFilter(
+							new FaceDetections(),
+							new Blur(),
+							new Text()
+					),
+					new DiversifiedScorer(
+							new SimMatMaxDistGreedyDiversifier(
+									new FeatureSim(ProvidedFeatures.VisCN, DoubleFVComparison.CORRELATION),
+									AggregationStrategy.Max
+							)
 					)
 			);
 		}
 	},
-	run2textonlyv1 {
+	run2textonlyv2 {
 		@Override
 		public Scorer get() {
 			return new FilteredScorer(
@@ -204,7 +210,7 @@ public enum DiversificationExperiments {
 									new CombinedProvider(
 											new AvgCombiner(),
 											new TimeUser(3.25),
-											new MonthDelta(5)
+											new MonthDelta(12)
 									),
 									AggregationStrategy.Max
 							)
@@ -225,7 +231,7 @@ public enum DiversificationExperiments {
 							new LuceneReranker(),
 							new SimMatMaxDistGreedyDiversifier(
 									new CombinedProvider(
-											new AvgCombiner(new double[]{1,1}),
+											new AvgCombiner(new double[] { 1, 1 }),
 											new TimeUser(3.25),
 											new MonthDelta(12)
 									),
@@ -248,15 +254,15 @@ public enum DiversificationExperiments {
 							new LuceneReranker(),
 							new SimMatSpectralDiversifier(
 									new CombinedProvider(
-											new AvgCombiner(new double[]{1.3,1}),
-//											new AvgCombiner(),
+											new AvgCombiner(new double[] { 1.3, 1 }),
+											// new AvgCombiner(),
 											new TimeUser(3.25),
 											new MonthDelta(5)
-//											,new GeoDelta(1)
+									// ,new GeoDelta(1)
 									),
-									1,0.2,
+									1, 0.2,
 									DoubleFVComparison.EUCLIDEAN,
-									0.8,1.0
+									0.8, 1.0
 							)
 					)
 			);
@@ -269,20 +275,24 @@ public enum DiversificationExperiments {
 					new PreFilter(
 							new GeoDistance(8, true),
 							new NumViews(2),
-							new DescriptionLength(2000)
+							new DescriptionLength(2000),
+							// new FaceDetections(),
+							new Blur(),
+							new Text()
 					),
 					new DiversifiedScorer(
 							new LuceneReranker(),
-							new NearDuplicatesFilter(
-									new SimMatMaxDistGreedyDiversifier(
-											new CombinedProvider(
-													new AvgCombiner(),
-													new TimeUser(3.25),
-													new MonthDelta(5)
-											),
-											AggregationStrategy.Max
-									)
+							// new NearDuplicatesFilter(
+							new SimMatMaxDistGreedyDiversifier(
+									new CombinedProvider(
+											new AvgCombiner(),
+											new TimeUser(3.25),
+											new MonthDelta(12),
+											new LSHSIFT()
+									),
+									AggregationStrategy.Max
 							)
+					// )
 					)
 			);
 		}
@@ -293,9 +303,8 @@ public enum DiversificationExperiments {
 	public static void main(String[] args) throws Exception {
 		final DiversificationExperiments exp = DiversificationExperiments.run2textonlyv1_weighting;
 
-		final boolean devset = true;
-//		final File baseDir = new File("/Users/jon/Data/mediaeval/diversity/");
-		final File baseDir = new File("/Users/ss/Experiments/mediaeval/diversity/");
+		final boolean devset = false;
+		final File baseDir = new File("/Users/jon/Data/mediaeval/diversity/");
 
 		final String runId = exp.name();
 		final String folder = devset ? "experiments/" : "submission/";

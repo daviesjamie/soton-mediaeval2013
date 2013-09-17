@@ -53,6 +53,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.jfree.chart.ChartFrame;
 import org.openimaj.image.DisplayUtilities;
+import org.openimaj.mediaeval.searchhyper2013.datastructures.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Query;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.Result;
 import org.openimaj.mediaeval.searchhyper2013.datastructures.ResultList;
@@ -67,7 +68,6 @@ import org.openimaj.mediaeval.searchhyper2013.lucene.TimeStringFormatter;
 import org.openimaj.mediaeval.searchhyper2013.lucene.Type;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.ChannelFilterModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.ConceptModule;
-import org.openimaj.mediaeval.searchhyper2013.searcher.module.JustifiedTimedFunction;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.LSHGraphModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.SearcherModule;
 import org.openimaj.mediaeval.searchhyper2013.searcher.module.SynopsisModule;
@@ -110,7 +110,7 @@ public class ModularSearcher implements Searcher {
 	@Override
 	public ResultList search(Query q) throws SearcherException {
 		try {
-			return _search(q, null, false);
+			return _search(q, "FOOOFOOOOFOOOO", false);
 		} catch (Exception e) {
 			throw new SearcherException(e);
 		}
@@ -133,7 +133,7 @@ public class ModularSearcher implements Searcher {
 		
 		Collections.sort(results);
 		
-		List<String> programmesToPrint = new ArrayList<String>();
+		/*List<String> programmesToPrint = new ArrayList<String>();
 		for (int i = 0; i < results.size() && i < 3; i++) {
 			programmesToPrint.add(results.get(i).fileName);
 		}
@@ -163,7 +163,7 @@ public class ModularSearcher implements Searcher {
 				
 				if (plot) timeline.plot();
 			}
-		}
+		}*/
 		
 		return results;
 	}
@@ -580,36 +580,36 @@ public class ModularSearcher implements Searcher {
 		
 		Directory spellDir = FSDirectory.open(new File(args[4]));
 		
-		//LSHDataExplorer lshGraph = new LSHDataExplorer(new File(args[5]), 20);
+		LSHDataExplorer lshGraph = new LSHDataExplorer(new File(args[5]), 20);
 		
 		ChannelFilterModule channelFilterModule = new ChannelFilterModule();
 		SynopsisModule synopsisModule = new SynopsisModule(indexSearcher,
 														   spellDir,
 														   timelineFactory);
-		TitleModule titleModule = new TitleModule(indexSearcher,
-												  spellDir,
-												  timelineFactory);
 		TranscriptModule transcriptModule =
 				new TranscriptModule(indexSearcher,
-									 Type.Subtitles,
+									 Type.LIUM,
 									 englishAnalyzer,
 									 spellDir,
 									 timelineFactory);
-		//ConceptModule conceptModule = new ConceptModule(new File(args[6]),
-		//												new File(args[7]),
-		//												englishAnalyzer);
-		//LSHGraphModule lshGraphModule = new LSHGraphModule(new File(args[8]),
-		//												   lshGraph,
-		//												   timelineFactory);
+		TitleModule titleModule = new TitleModule(indexSearcher,
+				  spellDir,
+				  timelineFactory);
+		ConceptModule conceptModule = new ConceptModule(new File(args[6]),
+														new File(args[7]),
+														englishAnalyzer);
+		LSHGraphModule lshGraphModule = new LSHGraphModule(new File(args[8]),
+														   lshGraph,
+														   timelineFactory);
 		
-		ModularSearcher searcher = new ModularSearcher("me13sh_soton-wais2013_S_Sh_S_M",
+		ModularSearcher searcher = new ModularSearcher("me13sh_soton-wais2013_S_Sh_U_MV_ModularConceptsLSH",
 													   resultWindow);
 		searcher.addModule(synopsisModule);
-		searcher.addModule(titleModule);
 		searcher.addModule(transcriptModule);
+		searcher.addModule(titleModule);
 		searcher.addModule(channelFilterModule);
-		//searcher.addModule(conceptModule);
-		//searcher.addModule(lshGraphModule);
+		searcher.addModule(conceptModule);
+		searcher.addModule(lshGraphModule);
 		
 		// Filter for synopsis- and title-only hits.
 		searcher.addModule(new SearcherModule() {
@@ -669,22 +669,21 @@ public class ModularSearcher implements Searcher {
 			
 			Result expected = expectedResults.get(q).get(0);
 			
-			System.out.println(q);
-			System.out.println("Expecting: " + expected);
-			System.out.println(searcher._search(q, expected.fileName, plot));
-			System.out.println("----");
+			//System.out.println(q);
+			//System.out.println("Expecting: " + expected);
+			System.out.println(searcher._search(q, expected.fileName, false));
+			//System.out.println("----");
 		}
 		
-		/*SearcherEvaluator evaluator = new SearcherEvaluator(searcher);
-		
-		Map<Query, List<Result>> expectedResults = 
-				SearcherEvaluator.importExpected(queriesFile, resultsFile);
-		
-		Vector results =
-				evaluator.evaluateAgainstExpectedResults(expectedResults,
-														 60 * 5);*/
-		
-		//System.out.println(results);
+		/*if (args.length <= 9) {
+			SearcherEvaluator evaluator = new SearcherEvaluator(searcher);
+			
+			Vector results =
+					evaluator.evaluateAgainstExpectedResults(expectedResults,
+															 60 * 5);
+			
+			System.out.println(results);
+		}*/
 	}
 	
 	public static List<Query> importQueries(File queryFile) throws ParserConfigurationException, SAXException, IOException {

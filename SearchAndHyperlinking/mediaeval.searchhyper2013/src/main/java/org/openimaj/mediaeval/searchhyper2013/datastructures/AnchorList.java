@@ -17,7 +17,7 @@ public class AnchorList extends ArrayList<Anchor> {
 
 	private static final long serialVersionUID = 4107983294029808701L;
 	
-	public static AnchorList readFromFile(File anchorsFile) throws ParserConfigurationException, SAXException, IOException {
+	public static AnchorList readFromFile(File anchorsFile, boolean withContext) throws ParserConfigurationException, SAXException, IOException {
 		AnchorList anchorList = new AnchorList();
 		
 		DocumentBuilder builder = 
@@ -82,15 +82,12 @@ public class AnchorList extends ArrayList<Anchor> {
 					}
 				}
 				
-				Anchor anchor;
+				Anchor anchor = new Anchor();
 				
-				if (contextStartTime != null) {
-					anchor = new ContextedAnchor();
-					
-					((ContextedAnchor) anchor).contextStartTime = contextStartTime;
-					((ContextedAnchor) anchor).contextEndTime = contextEndTime;
-				} else {
-					anchor = new Anchor();
+				if (contextStartTime != null && withContext) {
+					anchor.contextStartTime = contextStartTime;
+					anchor.contextEndTime = contextEndTime;
+					anchor.hasContext = true;
 				}
 				
 				anchor.anchorID = anchorID;

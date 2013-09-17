@@ -8,6 +8,9 @@ public class Anchor {
 	public float startTime;
 	public float endTime;
 	public String fileName;
+	public float contextStartTime;
+	public float contextEndTime;
+	public boolean hasContext;
 	
 	@Override
 	public String toString() {
@@ -15,6 +18,8 @@ public class Anchor {
 			   anchorName + " | " +
 			   Time.StoMS(startTime) + " - " +
 			   Time.StoMS(endTime) + " | " +
+			   Time.StoMS(contextStartTime) + " - " +
+			   Time.StoMS(contextEndTime) + " | " +
 			   fileName;
 	}
 }
