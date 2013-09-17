@@ -10,6 +10,7 @@ import org.openimaj.experiment.RunnableExperiment;
 import org.openimaj.experiment.agent.ExperimentAgent;
 import org.openimaj.experiment.annotations.IndependentVariable;
 
+import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.BoostingCachingTagBasedEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.CachingTagBasedEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.PriorEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.RandomEstimator;
@@ -30,9 +31,11 @@ public class ExperimentHarness {
 		}
 	}
 
-	private static final File BASE = new File("/Users/jamie/Code/openimaj-code/soton-mediaeval2013/Placement/data");
+	// private static final File BASE = new
+	// File("/Users/jamie/Code/openimaj-code/soton-mediaeval2013/Placement/data");
+	private static final File BASE = new File("/Volumes/SSD/mediaeval13/placing/");
 
-	private static final File DEFAULT_LUCENE_INDEX = new File(BASE, "places.lucene");
+	private static final File DEFAULT_LUCENE_INDEX = new File(BASE, "placesutf8.lucene");
 	private static final File DEFAULT_LAT_LNG_FILE = new File(BASE, "training_latlng");
 	private static final File DEFAULT_CACHE_LOCATION = new File(BASE, "caches");
 	private static final File DEFAULT_LSH_EDGES_FILE = new File(BASE, "sift1x-dups/sift1x-lsh-edges-min1-max20.txt");
@@ -77,6 +80,16 @@ public class ExperimentHarness {
 						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION));
 			}
 		},
+		BoostingTagsAndPrior {
+			@Override
+			protected RunnableExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new BoostingCachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION));
+			}
+		},
 		UploadedOnly {
 			@Override
 			protected RunnableExperiment create() throws Exception {
@@ -104,7 +117,8 @@ public class ExperimentHarness {
 				final boolean lshExpandValue = false;
 
 				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
-				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, lshMinEdgeCountValue, luceneIndex);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, lshMinEdgeCountValue,
+						luceneIndex);
 				lsh.setExpand(lshExpandValue);
 
 				return new MeanShiftPlacingExperiment(0.01, 1000,
@@ -266,18 +280,17 @@ public class ExperimentHarness {
 			@Override
 			protected RunnableExperiment create() throws Exception {
 				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_LUCENE_INDEX);
-				
+
 				return new MeanShiftPlacingExperiment(0.01, 1000,
 						new CachingTagBasedEstimator(luceneIndex, BIG_SET_CACHE_LOCATION));
 			}
-		}
-		;
+		};
 
 		protected abstract RunnableExperiment create() throws Exception;
 	}
 
 	public static void main(String[] args) throws Exception {
-		final Experiments exp = Experiments.BigDataTagsOnly;
+		final Experiments exp = Experiments.BoostingTagsAndPrior;
 
 		final RunnableExperiment expr = exp.create();
 		final ExperimentContext ctx = ExperimentRunner.runExperiment(expr);

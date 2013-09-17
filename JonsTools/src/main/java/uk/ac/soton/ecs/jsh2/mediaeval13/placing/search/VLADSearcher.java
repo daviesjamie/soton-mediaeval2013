@@ -41,7 +41,7 @@ public class VLADSearcher implements VisualSearcher {
 		this.meta = meta;
 	}
 
-	private TLongArrayList readFeatureIds(File features) throws IOException {
+	protected TLongArrayList readFeatureIds(File features) throws IOException {
 		final TLongArrayList allIds = new TLongArrayList(7800000);
 		final DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(features)));
 		try {
@@ -81,8 +81,9 @@ public class VLADSearcher implements VisualSearcher {
 		}
 	}
 
-	private synchronized float[] readVector(long flickrId) throws IOException {
-		final long idx = ids.binarySearch(flickrId);
+	protected synchronized float[] readVector(long flickrId) throws IOException {
+		// final long idx = ids.binarySearch(flickrId);
+		final long idx = ids.indexOf(flickrId);
 		if (idx < 0) {
 			throw new IllegalArgumentException("FlickrId not found in features list");
 		}
@@ -99,7 +100,7 @@ public class VLADSearcher implements VisualSearcher {
 		return vec;
 	}
 
-	private ScoreDoc[] linkResults(List<LongFloatPair> search) throws IOException {
+	protected ScoreDoc[] linkResults(List<LongFloatPair> search) throws IOException {
 		final ScoreDoc[] docs = new ScoreDoc[search.size()];
 
 		for (int i = 0; i < docs.length; i++) {

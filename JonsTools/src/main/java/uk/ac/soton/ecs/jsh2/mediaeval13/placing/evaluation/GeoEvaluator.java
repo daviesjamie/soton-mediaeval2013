@@ -63,6 +63,8 @@ public class GeoEvaluator implements Evaluator<TLongObjectHashMap<GeoLocationEst
 				final GeoLocationEstimate location = engine.estimateLocation(q);
 				synchronized (results) {
 					results.put(q.flickrId, location);
+					// if (results.size() % 1000 == 0)
+					System.err.println(results.size());
 				}
 			}
 		});

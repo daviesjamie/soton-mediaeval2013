@@ -44,6 +44,10 @@ public class Utils {
 			while ((line = br.readLine()) != null) {
 				try {
 					final String[] parts = line.split(" ");
+
+					if (parts.length != 3)
+						continue;
+
 					final long id = Long.parseLong(parts[0]);
 					final double lat = Double.parseDouble(parts[1]);
 					final double lng = Double.parseDouble(parts[2]);

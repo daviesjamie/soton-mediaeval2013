@@ -43,20 +43,26 @@ public class LSHSiftGraphSearcher implements VisualSearcher {
 		final BufferedReader reader = new BufferedReader(new FileReader(file));
 		String line;
 		while ((line = reader.readLine()) != null) {
-			final String[] parts = line.split("\\s");
+			try {
+				final String[] parts = line.split("\\s");
 
-			final long from = Long.parseLong(parts[0]);
-			final long to = Long.parseLong(parts[1]);
-			final double weight = Double.parseDouble(parts[2]);
+				if (parts.length != 3 && parts[0].length() <= 1 && parts[1].length() <= 1 && parts[2].length() <= 1)
+					continue;
 
-			if (weight < minEdgeWeight)
-				continue;
+				final long from = Long.parseLong(parts[0]);
+				final long to = Long.parseLong(parts[1]);
+				final double weight = Double.parseDouble(parts[2]);
 
-			graph.addVertex(to);
-			graph.addVertex(from);
-			final DefaultWeightedEdge edge = graph.addEdge(from, to);
-			if (edge != null)
-				graph.setEdgeWeight(edge, weight);
+				if (weight < minEdgeWeight)
+					continue;
+
+				graph.addVertex(to);
+				graph.addVertex(from);
+				final DefaultWeightedEdge edge = graph.addEdge(from, to);
+				if (edge != null)
+					graph.setEdgeWeight(edge, weight);
+			} catch (final Exception e) {
+			}
 		}
 		reader.close();
 		return graph;

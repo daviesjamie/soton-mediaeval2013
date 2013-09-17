@@ -54,6 +54,10 @@ public class ExtensibleMeanShiftEngine implements GeoPositioningEngine {
 		if (allSame(pts))
 			return new GeoLocationEstimate(pts.get(0).latitude, pts.get(0).longitude, 0);
 
+		// for (final GeoLocation gl : pts) {
+		// System.out.println(gl.longitude + "," + gl.latitude);
+		// }
+
 		final GeoLocationEstimate estimate = computeLocationMeanShift(pts);
 
 		return estimate;
