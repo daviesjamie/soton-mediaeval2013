@@ -60,22 +60,80 @@ within the context of the current query. This paradigm permitted a modular
 approach to the system architecture, where individual modules can be applied 
 to add, remove, or modify a set of timelines.
 
+The modules developed operated by placing Gaussians on a timeline or by 
+adjusting the factor by which a timeline was scaled (so indicating an overall 
+increase in the relevance of one timeline compared to another). Where a 
+Gaussian was to be defined or a scale factor increased, the value was 
+calculated as 
+\[a = S_m \alpha^{P_m}\]
+where \(S_m\) was the scale factor for a module \(m\), \(\alpha\) was the 
+module's base value for the operation, and \(P_m\) was the power factor for 
+said module. This was done to provide the opportunity to control how much one 
+module contributed to determining some section of a timeline as interesting, 
+as well as the distribution of amplitudes of the Gaussians created by said 
+module. See Table \ref{tbl:constants} for the values used for these variables 
+when the runs were produced.
+
 \subsection{Transcript module}
-The transcript module searched for keywords (taken from the query string) 
+The transcript module was the most important component of the system, doing 
+most of the heavy lifting when it came to determining the relevant sections 
+of a programme. The module searched for keywords (taken from the query string) 
 across all transcripts of a certain kind (LIMSI, LIUM, or subtitles). Matches 
 were extracted from each transcript in turn, and a binary tree of these `hits' 
 was then built using agglomerative clustering. The tree was walked, and when 
 a cluster's separation (calculated as the distance between the average values 
 of the cluster's left and right children) fell below a specified threshold, 
-the cluster was used to build a Gaussian whose amplitude was
-\[a = \frac{| W |}{| Q |} \sum_{w \in W} \operatorname{boost}(w) \operatorname{idf}(w)\]
+the cluster was used to build a Gaussian whose amplitude was calculated from 
+\[\alpha = \frac{| W |}{| Q |} \sum_{w \in W} \operatorname{boost}(w) \operatorname{idf}(w)\]
 where \(W\) was the set of keywords in the transcript, \(Q\) was the set of 
 all possible keywords from the query, \(idf : W \to \mathbb{R}\) was a 
 function mapping each keyword on to its inverse document frequency, and 
 \(boost : W \to \mathbb{R}\) was a function mapping each keyword on to its 
-boost in the query, if any. Thus the amplitude of the Gaussian captures the 
+boost in the query, if any. Additionally, the true amplitude was scaled by the 
+normalised score returned by the search engine when searching for transcript 
+documents matching the query. Thus the amplitude of the Gaussian captures the 
 relevancy of all keywords in the cluster with respect to the document, as well 
-as how completely the cluster covers the set of all possible query terms.
+as how completely the cluster covers the set of all possible query terms. The 
+Gaussians were centered on the midpoint of the range covered by the cluster, 
+and the parameter \(c\) of the Gaussian was chosen as one third of the 
+temporal size of the cluster plus 60 seconds.
+
+Originally a separate Gaussian was created for each keyword that matched in 
+the transcript, but it was found that by examining clusters of keywords and 
+taking into account how well each cluster covered the query, the quality of 
+the results was improved.
+
+\subsection{Other modules}
+The synopsis and title modules increased the scale factor of any timelines 
+whose synopses or titles matched the query by an amount derived from the 
+search engine's score for the query in those fields and for the programmes 
+corresponding to those timelines.
+
+A channel filter module was implemented which performed some naïve NLP on the 
+query: if it was found that a channel was mentioned in the query then any 
+timelines corresponding to programmes on other channels were removed from the 
+timeline set.
+
+A concepts module looked in the query text and visual cues for known concept 
+detections that could be added to timelines. The amplitude for the concept 
+module's Gaussians was determined from the normalised confidence for each 
+concept detection, and the width was a constant 5 seconds.
+
+Additionally, another module worked purely visually, finding shots that were 
+visually similar to existing shots with high confidence. For each programme, 
+the most stable keyframe of each shot was extracted and SIFT features were 
+calculated. These features were clustered using locality-sensitive hashing 
+(henceforth LSH) and a graph was built whose vertices were keyframes such that 
+any two keyframes were connected if the number of functions they collide under 
+exceeded a given threshold. The module operated by finding sections of 
+timelines corresponding to shots whose integrals exceeded a threshold (i.e. 
+shots already deemed relevant by the preceeding modules), and added Gaussians 
+centred on the shots whose keyframes were directly connected to this keyframe 
+on the LSH graph. The base amplitude of the Gaussians was determined as the 
+fraction of functions under which the two keyframes collided to the largest 
+number of collisions, and the true amplitudes were additionally scaled by the 
+integral of the shot from which the graph traversal originated. A constant 
+width of 60 seconds was used.
 
 \subsection{Tools and techniques}
 
