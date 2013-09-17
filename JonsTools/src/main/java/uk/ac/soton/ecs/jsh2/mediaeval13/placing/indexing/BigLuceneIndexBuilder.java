@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.Executors;
@@ -21,9 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StoredField;
@@ -94,7 +92,7 @@ public class BigLuceneIndexBuilder {
         final SpatialPrefixTree grid = new GeohashPrefixTree( ctx, 11 );
         final RecursivePrefixTreeStrategy strategy = new RecursivePrefixTreeStrategy( grid, FIELD_LOCATION );
 
-        final WhitespaceAnalyzer a = new WhitespaceAnalyzer( Version.LUCENE_43 );
+        final StandardAnalyzer a = new StandardAnalyzer( Version.LUCENE_43 );
         final IndexWriterConfig iwc = new IndexWriterConfig( Version.LUCENE_43, a );
         iwc.setRAMBufferSizeMB( 512 );
         Directory directory;
@@ -109,7 +107,7 @@ public class BigLuceneIndexBuilder {
         
         final ArrayList<String> fails = new ArrayList<String>();
 
-        final ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool( 4, new DaemonThreadFactory() );
+        final ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool( 18, new DaemonThreadFactory() );
         Parallel.forEachPartitioned( new FixedSizeChunkPartitioner<String>( IterableIterator.in( iter ), 1000 ), new Operation<Iterator<String>>() {
 
             @Override
@@ -133,10 +131,11 @@ public class BigLuceneIndexBuilder {
                         final String tags = StringUtils.strip( parts[17], "\"[]" ).replaceAll( ", ", " " ).replaceAll("\"", "");
                         final float lat = Float.parseFloat( parts[15] );
                         final float lon = Float.parseFloat( parts[16] );
-                        Date taken = df.parse( parts[11] );
-                        Date uploaded = df.parse( parts[10] );
+//                        Date taken = df.parse( parts[11] );
+//                        Date uploaded = df.parse( parts[10] );
 
-                        final Document doc = makeDocument( flickrId, userId, url, tags, taken.getTime(), uploaded.getTime(), lat, lon, ctx, strategy );
+//                        final Document doc = makeDocument( flickrId, userId, url, tags, taken.getTime(), uploaded.getTime(), lat, lon, ctx, strategy );
+                        final Document doc = makeDocument( flickrId, userId, url, tags, lat, lon, ctx, strategy );
                         indexWriter.addDocument( doc );
                     } catch( Throwable t ) {
                         fails.add( parts[2] );
@@ -152,22 +151,24 @@ public class BigLuceneIndexBuilder {
         indexWriter.commit();
         indexWriter.close();
         
-        System.out.println( "Done!" );
-        System.out.println( "Failed on " + fails.size() + " lines." );
+        System.out.println( "---FAILS---" );
         for( String fail : fails )
             System.out.println( fail );
+        System.out.println( "Failed on " + fails.size() + " lines." );
+        System.out.println( "Done!" );
     }
 
     @SuppressWarnings( "deprecation" )
-    private static Document makeDocument( long flickrId, String userId, String url, String tags, long taken, long uploaded, float lat, float lon, SpatialContext ctx, SpatialStrategy strategy ) {
+//    private static Document makeDocument( long flickrId, String userId, String url, String tags, long taken, long uploaded, float lat, float lon, SpatialContext ctx, SpatialStrategy strategy ) {
+    private static Document makeDocument( long flickrId, String userId, String url, String tags, float lat, float lon, SpatialContext ctx, SpatialStrategy strategy ) {
         final Document doc = new Document();
         
         doc.add( new LongField( FIELD_ID, flickrId, Store.YES ) );
         doc.add( new StringField( FIELD_USER, userId, Store.YES ) );
         doc.add( new StringField( FIELD_URL, url, Store.YES ) );
         doc.add( new TextField( FIELD_TAGS, tags, Store.YES ) );
-        doc.add( new LongField( FIELD_TAKEN, taken, Field.Store.YES ) );
-        doc.add( new LongField( FIELD_UPLOADED, uploaded, Field.Store.YES ) );
+//        doc.add( new LongField( FIELD_TAKEN, taken, Field.Store.YES ) );
+//        doc.add( new LongField( FIELD_UPLOADED, uploaded, Field.Store.YES ) );
 
         final Shape point = ctx.makePoint( lon, lat );
         for( final IndexableField f : strategy.createIndexableFields( point ) ) {

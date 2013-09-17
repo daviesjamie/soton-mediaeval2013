@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.LineIterator;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
@@ -64,9 +64,12 @@ public class LuceneIndexBuilder {
 	private final static String CSV_REGEX = ",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))";
 
 	public static void main(String[] args) throws IOException {
-		final String latlngPath = "../Placement/data/training_latlng";
-		final String csvPath = "../Placement/data/all.csv";
-		final String indexPath = "../Placement/data/placesutf8.lucene";
+//		final String latlngPath = "../Placement/data/training_latlng";
+//		final String csvPath = "../Placement/data/all.csv";
+//		final String indexPath = "../Placement/data/placesutf8.lucene";
+		final String latlngPath = "training_latlng";
+		final String csvPath = "all.csv";
+		final String indexPath = "placesutf8.lucene";
 
 		buildIndex(latlngPath, csvPath, indexPath);
 	}
@@ -95,7 +98,7 @@ public class LuceneIndexBuilder {
 		final SpatialPrefixTree grid = new GeohashPrefixTree(ctx, 11);
 		final RecursivePrefixTreeStrategy strategy = new RecursivePrefixTreeStrategy(grid, FIELD_LOCATION);
 
-		final WhitespaceAnalyzer a = new WhitespaceAnalyzer(Version.LUCENE_43);
+		final StandardAnalyzer a = new StandardAnalyzer(Version.LUCENE_43);
 		final IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_43, a);
 		iwc.setRAMBufferSizeMB(512);
 		Directory directory;
@@ -106,7 +109,7 @@ public class LuceneIndexBuilder {
 		br = new BufferedReader(new InputStreamReader(new FileInputStream(csvPath), "UTF-8"));
 		final LineIterator iter = new LineIterator(br);
 
-		final ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(4, new DaemonThreadFactory());
+		final ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(18, new DaemonThreadFactory());
 		Parallel.forEachPartitioned(new FixedSizeChunkPartitioner<String>(IterableIterator.in(iter), 1000),
 				new Operation<Iterator<String>>() {
 					@Override

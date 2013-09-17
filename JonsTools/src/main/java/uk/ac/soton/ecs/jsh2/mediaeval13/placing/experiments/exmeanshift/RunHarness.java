@@ -33,7 +33,7 @@ public class RunHarness {
 	private static final File BIG_SET_CACHE_LOCATION = new File(BASE, "bigcache");
 	private static final File BIG_SET_LAT_LNG_FILE = new File(BASE, "big_latlng");
 
-	private static final File TEST_SET_FILE = new File(BASE, "testset.csv");
+	private static final File TEST_SET_FILE = new File(BASE, "smalltestset.csv");
 
 	public enum Runs {
 		Run1 {
@@ -93,7 +93,6 @@ public class RunHarness {
 						new CachingTagBasedEstimator(luceneIndex, BIG_SET_CACHE_LOCATION));
 				
 				// TODO: Add visual features!
-				// TODO: Filter test set users from data set
 			}
 		},
 		Run5 {
