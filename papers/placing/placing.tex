@@ -1,4 +1,6 @@
 \documentclass{../acm_proc_article-me11_tweaked}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
 \def \rothead [#1]{\rotatebox[origin=l]{60}{#1}}
 \renewcommand{\arraystretch}{1.5}
 
@@ -18,29 +20,29 @@
 \author{
 \alignauthor
 Jamie Davies\\
-       \email{jagd1g11@ecs.soton.ac.uk}
+    \email{jagd1g11@ecs.soton.ac.uk}
 \and
 \alignauthor
 Jonathon S. Hare\\
-       \email{jsh2@ecs.soton.ac.uk}
+    \email{jsh2@ecs.soton.ac.uk}
 \and
 \alignauthor
 Sina Samangooei\\
-       \email{ss@ecs.soton.ac.uk}
+    \email{ss@ecs.soton.ac.uk}
 \and
 \alignauthor
 John Preston\\
-	\email{jlp1g11@ecs.soton.ac.uk}
+    \email{jlp1g11@ecs.soton.ac.uk}
 \and
 \alignauthor
 Neha Jain\\
-	\email{nj1g12@ecs.soton.ac.uk}
+    \email{nj1g12@ecs.soton.ac.uk}
 \and
 \alignauthor
 David P. Dupplaw
-	\email{dpd@ecs.soton.ac.uk}
+    \email{dpd@ecs.soton.ac.uk}
 \sharedaffiliation
-       \affaddr{Electronics and Computer Science, University of Southampton, United Kingdom}
+    \affaddr{Electronics and Computer Science, University of Southampton, United Kingdom}
 }
 
 \additionalauthors{Additional author: Paul H. Lewis (
@@ -48,7 +50,7 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
 
 \maketitle
 \begin{abstract}
-    The geotagging of a photos location provides data that could be useful in a wide spectrum of applications. With the advance of digital cameras, and with many users exchanging their digital cameras for their GPS-enabled mobile phones, photographs annotated with geographical locations are becoming ever more present on photo-sharing websites such as Flickr. However there is still a wide majority of online content that is not geotagged, meaning that algorithms for efficient and accurate geographical estimation of an image are needed. We present a general model for using both textual metadata and visual features of photos to automatically place them on a world map. This forms the University of Southampton's entry for the MediaEval 2013 Placing task.
+Knowing the location that a photograph was taken provides us with data that could be useful in a wide spectrum of applications. With the advance of digital cameras, and with many users exchanging their digital cameras for their GPS-enabled mobile phones, photographs annotated with geographical locations are becoming ever more present on photo-sharing websites such as Flickr. However there is still a wide majority of online content that is not geotagged, meaning that algorithms for efficient and accurate geographical estimation of an image are needed. We present a general model for using both textual metadata and visual features of photos to automatically place them on a world map. This forms the University of Southampton's entry for the MediaEval 2013 Placing task.
 \end{abstract}
 
 \keywords{Geotagging, Probability Density, Image Annotation}
@@ -58,9 +60,17 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
 \section{Overall Methodology}
 
 \section{Experiments}
+\textcolor{red}{\begin{itemize}
+    \item Mention all features we tried
+    \item Time $\rightarrow$ better?
+    \item VLAD $\rightarrow$ similar to CEDD?
+    \item LSH query expansion $\rightarrow$ too slow, not much better
+\end{itemize}}
+
+See table \ref{tab:runconf} for details on the configuration of the run submissions.
 \begin{table}
     \centering
-    \begin{tabular}[H]{l|*{5}{c|}}
+    \begin{tabular}[h]{l|*{5}{>{\centering\arraybackslash}m{0.85cm}|}}
         \multicolumn{1}{c}{} & \multicolumn{1}{c}{\rothead[Prior]} & \multicolumn{1}{c}{\rothead[Tags]} & \multicolumn{1}{c}{\rothead[CEDD]} & \multicolumn{1}{c}{\rothead[SIFT-LSH]} & \multicolumn{1}{c}{\rothead[Geonames]} \\
         \hline
         Run 1 & \checkmark & \checkmark & \checkmark & \checkmark & \\
@@ -75,6 +85,7 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
         \hline
     \end{tabular}
     \caption{The feature configuration for the run submissions.}
+    \label{tab:runconf}
 \end{table}
 
 \subsection{Run 1: Text+Visual, provided data}
@@ -85,6 +96,13 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
 \subsection{Results and Discussion}
 
 \section{Conclusions and Future Work}
+\textcolor{red}{\begin{itemize}
+    \item LSH query expansion
+    \item Geonames
+    \item VLAD
+    \item GIST
+    \item More features
+\end{itemize}}
 
 \section{Acknowledgments}
 The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
