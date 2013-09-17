@@ -48,7 +48,7 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
 
 \maketitle
 \begin{abstract}
-    The geotagging of a photos location provides data that could be useful in a wide spectrum of applications. With the advance of digital cameras, and with many users exchanging their digital cameras for their GPS-enabled mobile phones, photographs annotated with geographical locations are becoming ever more present on photo-sharing websites such as Flickr. However there is still a wide majority of online content that is not geotagged, meaning that algorithms for efficient and accurate geographical estimation of an image are needed. We present a general model for using both textual metadata and visual features of photos to automatically place them on a world map. This forms the University of Southampton's entry for the MediaEval 2013 Placing task.
+Knowing the location that a photograph was taken provides us with data that could be useful in a wide spectrum of applications. With the advance of digital cameras, and with many users exchanging their digital cameras for their GPS-enabled mobile phones, photographs annotated with geographical locations are becoming ever more present on photo-sharing websites such as Flickr. However there is still a wide majority of online content that is not geotagged, meaning that algorithms for efficient and accurate geographical estimation of an image are needed. We present a general model for using both textual metadata and visual features of photos to automatically place them on a world map. This forms the University of Southampton's entry for the MediaEval 2013 Placing task.
 \end{abstract}
 
 \keywords{Geotagging, Probability Density, Image Annotation}
@@ -58,9 +58,10 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
 \section{Overall Methodology}
 
 \section{Experiments}
+See table \ref{tab:runconf} for details on the configuration of the run submissions.
 \begin{table}
     \centering
-    \begin{tabular}[H]{l|*{5}{c|}}
+    \begin{tabular}[h]{l|*{5}{c|}}
         \multicolumn{1}{c}{} & \multicolumn{1}{c}{\rothead[Prior]} & \multicolumn{1}{c}{\rothead[Tags]} & \multicolumn{1}{c}{\rothead[CEDD]} & \multicolumn{1}{c}{\rothead[SIFT-LSH]} & \multicolumn{1}{c}{\rothead[Geonames]} \\
         \hline
         Run 1 & \checkmark & \checkmark & \checkmark & \checkmark & \\
@@ -75,6 +76,7 @@ email: {\texttt{phl@ecs.soton.ac.uk}})}
         \hline
     \end{tabular}
     \caption{The feature configuration for the run submissions.}
+    \label{tab:runconf}
 \end{table}
 
 \subsection{Run 1: Text+Visual, provided data}
