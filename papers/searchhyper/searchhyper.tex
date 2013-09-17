@@ -50,6 +50,43 @@ Paul H. Lewis\\
 
 \section{Introduction}
 
+\section{Architecture}
+For the search sub-task, the system was to take a query and return a series of 
+clips as results. This necessitated extracting relevant or otherwise 
+appropriate sections from programmes. To facilitate this, individual 
+programmes were generalised to functions of interest over time, where the real 
+value at a given time indicated the instantaneous relevance of that point 
+within the context of the current query. This paradigm permitted a modular 
+approach to the system architecture, where individual modules can be applied 
+to add, remove, or modify a set of timelines.
+
+\subsection{Transcript module}
+The transcript module searched for keywords (taken from the query string) 
+across all transcripts of a certain kind (LIMSI, LIUM, or subtitles). Matches 
+were extracted from each transcript in turn, and a binary tree of these `hits' 
+was then built using agglomerative clustering. The tree was walked, and when 
+a cluster's separation (calculated as the distance between the average values 
+of the cluster's left and right children) fell below a specified threshold, 
+the cluster was used to build a Gaussian whose amplitude was
+\[a = \frac{| W |}{| Q |} \sum_{w \in W} \operatorname{boost}(w) \operatorname{idf}(w)\]
+where \(W\) was the set of keywords in the transcript, \(Q\) was the set of 
+all possible keywords from the query, \(idf : W \to \mathbb{R}\) was a 
+function mapping each keyword on to its inverse document frequency, and 
+\(boost : W \to \mathbb{R}\) was a function mapping each keyword on to its 
+boost in the query, if any. Thus the amplitude of the Gaussian captures the 
+relevancy of all keywords in the cluster with respect to the document, as well 
+as how completely the cluster covers the set of all possible query terms.
+
+\subsection{Tools and techniques}
+
+\section{Results}
+
+\section{Problems encountered}
+
+\section{Further work}
+
+\section{Conclusion}
+
 \bibliographystyle{abbrv}
 \bibliography{../bibliography}
 \end{document}

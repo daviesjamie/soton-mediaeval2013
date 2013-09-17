@@ -1,0 +1,66 @@
+Architecture
+    Original design
+        Query expansion, iterative development.
+
+        Start with transcript hits, ...
+
+    New design
+        Extract results as regions of high interest from a timeline.
+
+        Interest at a point determined by various factors
+            Keywords in transcript
+
+            Image similarity matches
+
+            Concept matches from keywords at certain points
+
+        Scale timelines
+            Synopsis and title keyword matches
+
+        Divide timelines by shot boundaries, integrate to determine score.
+
+        Hyperlinking task
+            Viewed as an extension of the search task.
+
+            Text extracted from anchor to build queries for textual aspects 
+            of search architecture.
+
+Results
+
+Problems encountered
+    Ground truth not of a high standard.
+        Typos in queries.
+
+        Uninformative queries for very specific results.
+
+        Some results less appropriate for a query than other results.
+
+        As such, a ceiling is placed on the numbers for these results.
+
+    Lucene highlighting not of a good standard
+        Skews results towards the beginning of transcripts.
+
+    Variety of programmes eliminates the possibility of a single good 
+    configuration of the system for all programme types.
+        Differences in how transcript hits are handled between a documentary 
+        and a news programme.
+
+    Some concepts missing, some transcripts unparseable.
+
+Further work
+    Introduce person tracking / searching.
+
+    Split dataset by programme category and optimise feature extraction for 
+    each category.
+
+
+
+Tools and techniques used
+    Transcripts, synopses, titles indexed with Lucene.
+
+    Agglomerative clustering on transcript keyword hits.
+        Thanks Thomas Jungblut (https://github.com/thomasjungblut).
+
+    SIFT features in LSH graph.
+
+
