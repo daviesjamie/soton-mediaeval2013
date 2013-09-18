@@ -88,7 +88,7 @@ The basic idea of our approach is that we estimate a continuous probability dens
 	\caption{(a) Sets of points representing the probability density of each feature are overlaid. (b) A kernel density estimator is applied and we estimate the photograph's location at the position of the largest peak in the density function.}
 \end{figure}
 
-In practice, density estimation and mode-finding can be combined by applying the mean-shift algorithm~\cite{1000236}. Mean-shift has been used in the context of geolocation estimation in the past; Crandall et al~\cite{Crandall:2009:MWP:1526709.1526812} used mean-shift to determine landmarks, and Hays and Efros~\cite{Hays:2008:im2gps} used mean-shift on the results of content-based image search to determine probable locations. Whilst Hays and Efros's approach is similar to ours, it differs in a number of important ways. In particular, whereas they only considered single (high recall/low precision) content-based features, we consider the fusion of multiple features from different modalities. In addition, Hays and Efros used the mean-shift algorithm for coarse-grained location estimation, with a very large kernel bandwidth. In our technique, because of the way we are using features we are able to use a much smaller kernel bandwidth for fine-grained location estimation.
+In practice, density estimation and mode-finding can be combined by applying the mean-shift algorithm. Mean-shift has been used in the context of geolocation estimation in the past; for example, Hays and Efros~\cite{Hays:2008:im2gps} used mean-shift on the results of content-based image search to determine probable locations. Whilst Hays and Efros's approach is similar to ours, it differs in a number of important ways. In particular, whereas they only considered single (high recall/low precision) content-based features, we consider the fusion of multiple features from different modalities. In addition, Hays and Efros used the mean-shift algorithm for coarse-grained location estimation, with a very large kernel bandwidth. In our technique, because of the way we are using features we are able to use a much smaller kernel bandwidth for fine-grained location estimation.
 
 \section{Experiments}
 The implementation of our methodology was realised in Java using OpenIMAJ\footnote{\url{http://openimaj.org}}~\cite{Hare:2011:OIJ:2072298.2072421} and Lucene\footnote{\url{http://lucene.apache.org}}. For speed, we used an approximate mean-shift implementation inspired by the one in scikit-learn\footnote{\url{http://scikit-learn.org/stable/modules/clustering.html#mean-shift}}. The approximations stem from using a regular grid for determining the seed points from which to seek modes (rather than using the actual data), and using nearest-neighbours to assign data points to modes, rather than actually assigning them to the mode they converge to. A KD-Tree was used for efficient nearest neighbour lookup.
@@ -100,11 +100,9 @@ The following features were used in the our experiments. Each feature provides a
 
 \noindent\textbf{Tags}. Every tag in the query image is associated with the coordinates of the training images in which the tag appeared. If a tag in the query was unseen in the training data, then it contributes no points. Each tag is considered to be an independent feature. No filtering of tags was performed.
 
-\noindent\textbf{PQ-CEDD}. In order to provide a high-recall/low-precision image search we indexed the provided CEDD features~\cite{Chatzichristofis:2008:CCE:1788524.1788559} with a product quantiser (18 products of 256 clusters) to enable fast in memory search of the complete training data using the asymmetric distance computation method~\cite{Jegou:2011:PQN:1916487.1916695}. The locations of the 100 top images to a query formed the point set returned by the feature.
+\noindent\textbf{PQ-CEDD}. In order to provide a high-recall/low-precision image search we indexed the provided CEDD features with a product quantiser (18 products of 256 clusters) to enable fast in memory search of the complete training data using the asymmetric distance computation method~\cite{Jegou:2011:PQN:1916487.1916695}. The locations of the 100 top images to a query formed the point set returned by the feature.
 
 \noindent\textbf{LSH-SIFT}. High-precision (low recall) image content search was performed using a variant of the approach we developed in~~\cite{Hare:2013:TVP:2461466.2461514}. DoG-SIFT features were extracted from the images and hashed using Locality Sensitive Hashing. A graph was built with the images as the nodes, and edge weights were based on the number of collisions. In order to perform a query, the directly connected nodes to the query were detected in the graph, and their geo-coordinates returned.
-
-We also started to experiment with product-quantised PCA VLAD encodings of SIFT features (appeared to have similar performance to PQ-CEDD), temporal features (time-uploaded appears to give a hint to longitude) and query expansion of LSH-SIFT features (appeared to be similar to not using expansion, but much slower), however we ran out of time to optimise and include these in the runs.
 
 \subsection{Runs}
 For all of our submitted runs, the methodology described in Section~\ref{sec:meth} was applied. In all runs we used a flat kernel with bandwidth of $0.01^\circ$. All runs except for run \#5 used a constant number of 1000 points per feature (effectively making all features have a fixed weight); any feature that produced more or less points was randomly and uniformly sub- or super-sampled to reach 1000 points. In total, 5 runs were submitted. The configurations are summarised in Table~\ref{tab:runconf}. Notes about each run are listed below:
@@ -136,18 +134,12 @@ For all of our submitted runs, the methodology described in Section~\ref{sec:met
 
 \noindent\textbf{Run 4: Text+Visual, bigger dataset}. The fourth run used features extracted from a larger dataset of 46 million geotagged Flickr images we crawled last year. As with the provided data, only images with an accuracy of 16 were crawled. For the purposes of fair experimentation, we removed all photos from the users who appeared in the test set.
 
-\noindent\textbf{Run 5: Text+Visual, provided data with tag boosting}. The fifth run was the same as run 1, but we used the GeoNames gazetteer to boost the weight of tag features that were likely to belong to a specific geographic location; any textual tag that could be matched against the the GeoNames ``name'' or ``alternate-name'' field was boosted by doubling its number of points from 1000 to 2000. Non textual features, and tags that didn't match remained at 1000 points/feature.
+\noindent\textbf{Run 5: Text+Visual, provided data with tag boosting}. The fifth run was the same as run 1, but we used the GeoNames\footnote{http://www.geonames.org} gazetteer to boost the weight of tag features that were likely to belong to a specific geographic location; any textual tag that could be matched against the the GeoNames ``name'' or ``alternate-name'' field was boosted by doubling its number of points from 1000 to 2000. Non textual features, and tags that didn't match remained at 1000 points/feature.
 
 \subsection{Results and Discussion}
 
 \section{Conclusions and Future Work}
-\textcolor{red}{\begin{itemize}
-    \item LSH query expansion
-    \item Geonames
-    \item VLAD
-    \item GIST
-    \item More features
-\end{itemize}}
+We had started to experiment with product-quantised PCA VLAD encodings of SIFT features, temporal features and query expansion of LSH-SIFT features, however we ran out of time to optimise and include these in the runs. It will be interesting to investigate these further, together with other features such as GIST in the future. It would also be interesting to try some other approaches to incorporating structured knowledge from GeoNames.
 
 \section{Acknowledgments}
 The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
