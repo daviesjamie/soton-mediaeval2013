@@ -64,7 +64,7 @@ The diversification of search results is increasingly becoming an important topi
 
 Our motivation for this task was to build on the diversification techniques we developed in ImageCLEF'09~\cite{} by incorporating truly multimodal data. We were also motivated to explore how the precision of the search results could be improved by filtering and re-ranking prior to the diversification step, thus minimising the loss in precision usually seen when diversification is applied.
 
-\section{Overall Methodology}\label{sec:meth}
+\section{Methodology}\label{sec:meth}
 In terms of overall approach, after a number of experiments, we settled on the workflow illustrated in Figure~\ref{fig:overview}. In order to improve precision, we applied filters to the input results list to remove images unlikely to be relevant, and for the runs that allowed use of the text and metadata, we reranked the results before applying diversification. To diversify the results, after testing a number of techniques (i.e. clustering followed by round-robin selection), we reverted to a Min-Max diversification technique as it gave the best results on the development dataset with the features we used. 
 
 Briefly, the Min-Max technique takes as input a similarity matrix and a pivot image (usually the first ranked result), and uses this to build a result list. The pivot is the first image in the result list. The second image is chosen as the one that has the minimum similarity to the pivot. The remaining images are chosen such that they have the maximum dissimilarity to all of the previously chosen images. Similarity of an image from a set of images can be computed via a number of functions over the piecewise similarities of the image to each element of the set; $sum$, $product$ and $max$ are typical choices. On the development set, we found $max$ worked best.
@@ -74,7 +74,6 @@ Briefly, the Min-Max technique takes as input a similarity matrix and a pivot im
 	\caption{\label{fig:overview}Overall workflow for diversify results}
 \end{figure}
 
-\section{Experiments}\label{sec:exp}
 The implementation of our methodology was realised in Java using OpenIMAJ\footnote{\url{http://openimaj.org}}~\cite{Hare:2011:OIJ:2072298.2072421} and Lucene\footnote{\url{http://lucene.apache.org}}. 
 
 \subsection{Pre-Filters}
@@ -106,7 +105,8 @@ In order to use the Min-Max diversifier, a similarity matrix is required. At the
 
 \noindent \textbf{MD}.
 
-\subsection{Runs}
+\section{Experiments}\label{sec:exp}
+Three runs were submitted; their configuration with respect to the methodology and features described in Section~\ref{sec:meth} is illustrated in Tables~\ref{tab:filters} and~\ref{tab:feat}.
 
 \begin{table}
 	\centering
@@ -143,6 +143,41 @@ Run	& Reranker & CN & SIFT & TU & MD \\
 \end{table}
 
 \subsection{Results and Discussion}
+
+\begin{table*}[ht]
+	\centering
+	\caption{\label{tab:expertResults}}
+	\begin{tabular}{|l||c|c|c||c|c|c||c|c|c|}
+		\hline
+		 & \multicolumn{3}{c|}{ALL} & \multicolumn{3}{c||}{Keywords} & \multicolumn{3}{c|}{KeywordsGPS} \\
+		Run & P@10 & CR@10 & F1@10 & P@10 & CR@10 & F1@10 & P@10 & CR@10 & F1@10 \\
+		\hline\hline
+		1 & 0.6994 & 0.4081 & 0.4926 & 0.6106 & 0.4075 & 0.462 & 0.7552 & 0.4085 & 0.5119 \\
+		\hline
+		2 & 0.8231 & 0.4306 & 0.5397 & 0.7667 & 0.4527 & 0.5379 & 0.8586 & 0.4166 & 0.5408 \\
+		\hline
+		3 & 0.8158 & 0.4398 & 0.5455 & 0.7561 & 0.4655 & 0.5461 & 0.8533 & 0.4236 & 0.5451 \\
+		\hline
+	\end{tabular}
+\end{table*}
+
+\begin{table*}[ht]
+	\centering
+	\caption{\label{tab:crowdResults}}
+	\begin{tabular}{|l||c||c|c||c|c||c|c|}
+		\hline
+		 &  & \multicolumn{2}{c||}{GT1} & \multicolumn{2}{c||}{GT2} & \multicolumn{2}{c|}{GT3} \\
+		Run & P@10 & CR@10 & F1@10 & CR@10 & F1@10 & CR@10 & F1@10 \\
+		\hline\hline
+		1 & 0.6612 & 0.8174 & 0.7043 & 0.7858 & 0.688 & 0.6398 & 0.6197 \\
+		\hline
+		2 & 0.7694 & 0.8124 & 0.7689 & 0.7474 & 0.7276 & 0.6745 & 0.6944 \\
+		\hline
+		3 & 0.7714 & 0.8184 & 0.7734 & 0.7486 & 0.7263 & 0.668 & 0.6906 \\
+		\hline
+	\end{tabular}
+\end{table*}
+
 
 \section{Conclusions and Future Work}
 
