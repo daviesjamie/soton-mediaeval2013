@@ -1,10 +1,14 @@
 \documentclass{../acm_proc_article-me11_tweaked}
 
+\usepackage{tabu}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
 \begin{document}
 
 \conferenceinfo{\textit{MediaEval 2013 Workshop,}}{October 18-19, 2013, Barcelona, Spain}
 
-\title{}
+\title{Southampton WAIS and the MediaEval 2013 Search and Hyperlinking Task}
 
 %
 \def\sharedaffiliation{%
@@ -46,9 +50,15 @@ Paul H. Lewis\\
 
 \terms{}
 
-\keywords{}
+\keywords{search, video, transcripts, agglomerative clustering, SIFT, 
+          locality-sensitive hashing}
 
 \section{Introduction}
+A team from the University of Southampton's Web and Internet Science research 
+group participated in the 2013 MediaEval Search and Hyperlinking challenge. 
+A system was built to address the two tasks of retrieving video segments from 
+an archive of programmes, given a textual query or an anchor segment from 
+which to originate.\cite{mediaeval2013:searchhyper}
 
 \section{Architecture}
 For the search sub-task, the system was to take a query and return a series of 
@@ -69,17 +79,15 @@ calculated as
 where \(S_m\) was the scale factor for a module \(m\), \(\alpha\) was the 
 module's base value for the operation, and \(P_m\) was the power factor for 
 said module. This was done to provide the opportunity to control how much one 
-module contributed to determining some section of a timeline as interesting, 
-as well as the distribution of amplitudes of the Gaussians created by said 
-module. See Table \ref{tbl:constants} for the values used for these variables 
-when the runs were produced.
+module contributed to describing (some section of) a timeline as interesting, 
+as well as the distribution of values created by said module.
 
 \subsection{Transcript module}
 The transcript module was the most important component of the system, doing 
 most of the heavy lifting when it came to determining the relevant sections 
 of a programme. The module searched for keywords (taken from the query string) 
 across all transcripts of a certain kind (LIMSI, LIUM, or subtitles). Matches 
-were extracted from each transcript in turn, and a binary tree of these `hits' 
+were extracted from each transcript in turn, and a binary tree of these hits 
 was then built using agglomerative clustering. The tree was walked, and when 
 a cluster's separation (calculated as the distance between the average values 
 of the cluster's left and right children) fell below a specified threshold, 
@@ -135,13 +143,88 @@ number of collisions, and the true amplitudes were additionally scaled by the
 integral of the shot from which the graph traversal originated. A constant 
 width of 60 seconds was used.
 
+\subsection{Hyperlinking}
+The hyperlinking sub-task was viewed as an extension of the search sub-task, 
+where the search query was an anchor as opposed to a string. Thus hyperlinking 
+was addressed by slightly modifying the search architecture. 
+
+A module was written to construct textual queries from anchors by extracting 
+the portion of a transcript throughout the anchor segment. This allowed the 
+use of the transcript, synopsis, title, and channel filter modules from the 
+searcher architecture without any modification.
+
+The concept module was re-written to find any concept detections during the 
+anchor segment and to bring in other sections of video matching these 
+concepts, whereas in the searcher architecture concepts were inferred from the 
+query text.
+
+The LSH SIFT graph module was re-written to operate by searching for similar 
+frames starting with the frames in the anchor segment, whereas before this 
+module was purely expansionary, operating on timeline sections that were 
+already of high confidence.
+
 \subsection{Tools and techniques}
+In order to facilitate searching of transcripts, synopses, and programme 
+titles, these features were indexed using Apache Lucene.
+
+The Apache Commons Math library provided implementations of Gaussian functions 
+and integrators which were used for constructing timelines and assessing the 
+confidence of various segments, respectively.
+
+Thomas Jungblut's implementation of agglomerative clustering 
+(\url{https://github.com/thomasjungblut/tjungblut-math}) was used to 
+enable clustering of transcript search hits.
+
+SIFT features were extracted from keyframes using the OpenIMAJ 
+library\cite{Hare:2011:OIJ:2072298.2072421} and Apache Hadoop.
 
 \section{Results}
 
 \section{Problems encountered}
+A number of issues were encountered while developing the system.
+
+The ground truth provided was not to a standard acceptable to facilitate 
+automation of certain aspects of training of the system. Sometimes, the 
+expected result was less relevant than other results which may be returned by 
+the system. This was compounded by the fact that some queries were rather 
+vague, and a number of results would adequately answer such queries. These 
+factors placed a ceiling on the performance of the system, at least insofar as 
+measurable by a metric based on sub-optimal ground truths.
+
+The variety of different types of programmes eliminated the possibility of a 
+single good all-round configuration for the system. For example, in a news 
+programme keywords may pop up at regular intervals when headlines are read 
+out, despite there being only a single short segment of said programme that 
+contains the content the user is looking for. In contrast, a documentary may 
+have multiple longer segments that are relevant, again with a different 
+distribution of keywords. Ideally there would be some way to detect what 
+genre of programme the system is extracting sections from, so as to maximise 
+the potential relevance of such sections in the context of the query.
+
+Originally sections were extracted from transcripts using Lucene's 
+highlighting feature, but this was found to produce sub-optimal results: the 
+highlighter tended to skew results towards the start of a transcript, and the 
+length of the fragments returned was unpredictable, often extending much after 
+the last keyword seen in said fragment. A manual approach to fragmentation 
+using agglomerative clustering was used instead.
+
+Additionally, there were a few issues with the provided data: typos in 
+queries, unparseable subtitles, and missing concept detections, however these 
+did not pose a systematic challenge.
 
 \section{Further work}
+One feature that was not implemented was person detection: ideally the system 
+would be able to extract names from queries or faces/names from anchor 
+segments and match these via a pre-computed database mapping between face 
+detections and names. A good approximation could have been built using the 
+provided metadata on characters and actors in each programme, and a system was 
+envisioned that would allow arbitrary names to be queried against an online 
+image datasource such as an image search engine, from which a detector could 
+be trained and used to process the dataset live.
+
+As previously mentioned, the performance of the system may be improved by 
+categorising programmes and developing profiles for modules based upon these 
+classifications.
 
 \section{Conclusion}
 
