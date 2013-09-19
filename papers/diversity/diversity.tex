@@ -1,10 +1,19 @@
 \documentclass{../acm_proc_article-me11_tweaked}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{caption}
+\DeclareCaptionType{copyrightbox}
+\usepackage{subcaption}
+
+\def \rothead [#1]{\rotatebox[origin=l]{45}{#1}}
+\renewcommand{\arraystretch}{1.5}
 
 \begin{document}
 
 \conferenceinfo{\textit{MediaEval 2013 Workshop,}}{October 18-19, 2013, Barcelona, Spain}
 
-\title{}
+\title{Experiments in Diversifying Flickr Result Sets}
 
 %
 \def\sharedaffiliation{%
@@ -12,43 +21,134 @@
 \begin{tabular}{c}}
 %
 
-\numberofauthors{4}
+\numberofauthors{7}
 \author{
-% 1st. author
 \alignauthor
-Jonathon S. Hare\\
-       \email{jsh2@ecs.soton.ac.uk}
-% 2nd. author
-\alignauthor
-Sina Samangooei\\
-       \email{ss@ecs.soton.ac.uk}
-% 3rd. author
-\alignauthor
-David P. Dupplaw\\
-			\email{dpd@ecs.soton.ac.uk}
-% 4th. author
+Neha Jain\\
+    \email{nj1g12@ecs.soton.ac.uk}
 \and
 \alignauthor
-Paul H. Lewis\\
-       \email{phl@ecs.soton.ac.uk}
+Jonathon S. Hare\\
+    \email{jsh2@ecs.soton.ac.uk}
+\and
+\alignauthor
+Sina Samangooei\\
+    \email{ss@ecs.soton.ac.uk}
+\and
+\alignauthor
+John Preston\\
+    \email{jlp1g11@ecs.soton.ac.uk}
+\and
+\alignauthor
+Jamie Davies\\
+    \email{jagd1g11@ecs.soton.ac.uk}
+\and
+\alignauthor
+David P. Dupplaw
+    \email{dpd@ecs.soton.ac.uk}
 \sharedaffiliation
-       \affaddr{Electronics and Computer Science, University of Southampton, United Kingdom}
+    \affaddr{Electronics and Computer Science, University of Southampton, United Kingdom}
 }
+
+\additionalauthors{Additional author: Paul H. Lewis (email: {\texttt{phl@ecs.soton.ac.uk}})}
 
 \maketitle
 \begin{abstract}
+The 2013 MediaEval Diversification task looked to tackling the problem of search result diversification of Flickr results sets formed from queries about geographic places and landmarks. In this paper we describe our approach of using a min-max similarity diversifier coupled with a pre-filter and reranker. We also demonstrate a number of novel features for measuring similarity to use in the diversification step.
 \end{abstract}
 
-% A category with the (minimum) three required fields
-\category{H.4}{Information Systems Applications}{Miscellaneous}
-%A category including the fourth, optional field follows...
-\category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
+%\keywords{Geotagging, Probability Density, Image Annotation}
 
-\terms{}
+\section{Introduction and Motivation}
+The diversification of search results is increasingly becoming an important topic in the area of information retrieval. The 2013 MediaEval Diversification task~\cite{} aimed to foster new multimodal approaches to the diversification of result sets from social photo retrieval. 
 
-\keywords{}
+Our motivation for this task was to build on the diversification techniques we developed in ImageCLEF'09~\cite{} by incorporating truly multimodal data. We were also motivated to explore how the precision of the search results could be improved by filtering and re-ranking prior to the diversification step, thus minimising the loss in precision usually seen when diversification is applied.
 
-\section{Introduction}
+\section{Overall Methodology}\label{sec:meth}
+In terms of overall approach, after a number of experiments, we settled on the workflow illustrated in Figure~\ref{fig:overview}. In order to improve precision, we applied filters to the input results list to remove images unlikely to be relevant, and for the runs that allowed use of the text and metadata, we reranked the results before applying diversification. To diversify the results, after testing a number of techniques (i.e. clustering followed by round-robin selection), we reverted to a Min-Max diversification technique as it gave the best results on the development dataset with the features we used. 
+
+Briefly, the Min-Max technique takes as input a similarity matrix and a pivot image (usually the first ranked result), and uses this to build a result list. The pivot is the first image in the result list. The second image is chosen as the one that has the minimum similarity to the pivot. The remaining images are chosen such that they have the maximum dissimilarity to all of the previously chosen images. Similarity of an image from a set of images can be computed via a number of functions over the piecewise similarities of the image to each element of the set; $sum$, $product$ and $max$ are typical choices. On the development set, we found $max$ worked best.
+
+\begin{figure}
+	\includegraphics[width=\columnwidth]{images/overview}
+	\caption{\label{fig:overview}Overall workflow for diversify results}
+\end{figure}
+
+\section{Experiments}\label{sec:exp}
+The implementation of our methodology was realised in Java using OpenIMAJ\footnote{\url{http://openimaj.org}}~\cite{Hare:2011:OIJ:2072298.2072421} and Lucene\footnote{\url{http://lucene.apache.org}}. 
+
+\subsection{Pre-Filters}
+
+\noindent \textbf{Face}.
+
+\noindent \textbf{Blur}.
+
+\noindent \textbf{Text}.
+
+\noindent \textbf{Geo}.
+
+\noindent \textbf{Views}.
+
+\noindent \textbf{DLen}.
+
+\subsection{Reranker}
+
+\subsection{Diversifier}
+
+\subsubsection{Similarity Matrices}
+In order to use the Min-Max diversifier, a similarity matrix is required. At the beginning of the task we spent some time analysing the data, and looking at features which could be sensibly used  to compute similarity. One particular problem we noticed was that many of the images had the same description and tags, even though they were visually diverse. This is a result of the way many images are tagged and annotated on Flickr using so-called \emph{bulk tagging}. This means that standard techniques for diversification based on the text are unlikely to work well in many cases, and would in all likelihood end up to being similar to just diversifying based on the users that took the photo. With this in mind, we started to explore other features that could work better. 
+
+\noindent \textbf{CN}.
+
+\noindent \textbf{SIFT}.
+
+\noindent \textbf{TU}.
+
+\noindent \textbf{MD}.
+
+\subsection{Runs}
+
+\begin{table}
+	\centering
+	\caption{\label{tab:filters}Pre-filters applied in each of the runs.}
+\begin{tabular}{|l||c|c|c|c|c|c|}
+	\hline
+	& \multicolumn{3}{c|}{Visual} & \multicolumn{3}{c|}{Meta/Textual} \\
+Run	& Face & Blur & Text & Geo & Views & DLen \\
+	\hline
+1 & \checkmark & \checkmark & \checkmark &   &   &   \\
+	\hline
+2 &   &   &   & \checkmark & \checkmark & \checkmark \\
+	\hline
+3 &   & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+	\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+	\centering
+	\caption{\label{tab:feat}Reranker and diversification feature configuration in each of the runs.}
+\begin{tabular}{|l||c|c|c|c|c|}
+	\hline
+	& & \multicolumn{2}{c|}{Visual} & \multicolumn{2}{c|}{Meta/Textual} \\
+Run	& Reranker & CN & SIFT & TU & MD \\
+	\hline
+1 &   & \checkmark &   &   &  \\
+	\hline
+2 & \checkmark &   &   & \checkmark & \checkmark \\
+	\hline
+3 & \checkmark &  & \checkmark & \checkmark & \checkmark \\
+	\hline
+\end{tabular}
+\end{table}
+
+\subsection{Results and Discussion}
+
+\section{Conclusions and Future Work}
+
+\section{Acknowledgments}
+The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
+
 
 \bibliographystyle{abbrv}
 \bibliography{../bibliography}
