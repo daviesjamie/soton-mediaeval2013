@@ -1,10 +1,12 @@
 \documentclass{../acm_proc_article-me11_tweaked}
-
+\usepackage{url}
+\usepackage{paralist}
+\usepackage{natbib}
 \begin{document}
 
 \conferenceinfo{\textit{MediaEval 2013 Workshop,}}{October 18-19, 2013, Barcelona, Spain}
 
-\title{}
+\title{Social Event Detection via sparse multi-modal feature selection and incremental density based clustering methods}
 
 %
 \def\sharedaffiliation{%
@@ -16,12 +18,12 @@
 \author{
 % 1st. author
 \alignauthor
-Jonathon S. Hare\\
-       \email{jsh2@ecs.soton.ac.uk}
-% 2nd. author
-\alignauthor
 Sina Samangooei\\
        \email{ss@ecs.soton.ac.uk}
+% 2nd. author
+\alignauthor
+Jonathon S. Hare\\
+       \email{jsh2@ecs.soton.ac.uk}
 % 3rd. author
 \alignauthor
 David P. Dupplaw\\
@@ -37,6 +39,7 @@ Paul H. Lewis\\
 
 \maketitle
 \begin{abstract}
+Combining items from social media streams, such as flickr photos and twitter tweets etc. into meaningful events can help users contextualize and effectively consume the torrents of information now made available on the social web. This task is made challenging due to the scale of the streams and the inherently multimodal nature of the information to be contextualized. Clustering is a fundamentally illposed and application specific question which results in questioning which modality matters most when describing two items as related or not. Is it the time the items were created, the global location they were created in, or is their content most important? We present a methodology which approaches the social event detection as a multi-modal clustering task. We address the various challenges of this task, including: the selection of the features used to compare items to one another; the construction of a sparse affinity matrix which combines these features, their relative importance considered and finally clustering techniques which produce meaningful item groups and which can scale to cluster the large number of items present in this task. In our best tested configuration we achieve an F1 score of 0.94, representing a good compromise between precision and recall of clusters can be achieved using our technique.
 \end{abstract}
 
 % A category with the (minimum) three required fields
@@ -49,7 +52,40 @@ Paul H. Lewis\\
 \keywords{}
 
 \section{Introduction}
+In their June 2013 WWDC keynote, Apple announced a new photo collection feature for their iOS mobile operating system~\footnote{\url{http://www.apple.com/uk/ios/whats-new/#photos}}. With the evocative tag-line ``Life is full of special moments. So is your photo library'' Apple note the importance of clustering social streams into related events. This along with the plethora of applications, both mobile and consumer desktop, which offer some degree of event detection in user photo streams demonstrates that detecting events in multimedia streams has real practical utility for users. If the importance of detecting events within private collections is clear, the detection of events across social multimedia streams must also be obvious. Within the context of social streams, challenges of scale and feature error inherent in non-curated collections must be addressed to create meaningful groupings of social media artifacts which afford the user with the ability better understand, consume and contextualize the noisy stream of social media data. 
 
-\bibliographystyle{abbrv}
+In this short document we present our approach to achieving clustering of social media artifacts towards addressing task 1 in the Social Event Detection (SED) challenge of the Mediaeval 2013 multimedia evaluation. Task 1 asks that a collection of flickr photos be organised into events such that social events are defined as ``events that are planned by people, attended by people and the media illustrating the events are captured by people''. To aid this event based clustering, the flickr items contain metadata beyond the content of the image itself. Namely, the flickr photos definitely include: a flickrid, user id and time posted and may contain in varying degrees of accuracy location information, time taken according to the camera, and textual information including title, tags and a description. 
+
+Our approach outlined in Figure~\ref{fig:approach} is comprised of \begin{inparaenum}[\itshape1\upshape)]
+\item an initial similar event step using a fast inverted index;
+\item custom feature and distance metrics along with a custom weighting scheme used to construct a sparse affinity matrix;
+\item exploration of two clustering techniques which cluster events using this affinity matrix, namely DBSCAN and spectral clustering;
+\item development of an incremental event clustering technique which allow the clustering techniques used to scale
+\end{inparaenum}. These steps will be described in more detail in the following sections.
+
+\section{Methodology} % (fold)
+\label{sec:methodology}
+
+\subsection{Lucene Filter} % (fold)
+\label{sub:lucene_filter}
+The overarching strategy of our technique is the construction of a square sparse affinity matrix whose elements represent the similarity of two items of social media. Once this object is created, the clustering algorithms can work efficiently. However, the creation of such a matrix for any number of items beyond a trivial number is a time consuming $O(n^2)$ operation which scales poorly. Therefore, the first stage of our process was the efficient construction of such an affinity matrix. 
+
+Given the SED2013 training set we know for $~300,000$ objects there exist $~10,000$ clusters. The average number of items per cluster in the training set is $14$. From this information we know that the similarity between most objects must be 0, and therefore the affinity matrix must be very sparse. However, inducing this sparsity after feature extraction/comparison of the social media objects is without merit as the expensive operation is still performed, but forced to 0. To address this issue, we construct a Lucene~\cite{????} index of the items to be clustered. Then, for each item in the dataset we construct a custom Lucene query, receiving an artificially limited number of documents. We then extract features and compare distances using only the documents returned by this query. Once the work is done to construct this lucene index, this operation has a complexity of $O(n)$ which allows a much faster construction of the affinity matrix.
+% subsection lucene_filter (end)
+
+\subsubsection{Multi-modal Affinity} % (fold)
+\label{ssub:multi_modal_affinity}
+Once documents are filtered using lucene, the affinity matrix is constructed. The items being clustered are inherently multi-modal. These modalities include time information (both posted and taken), geo graphic information, textual information (tags, descriptions and titles) as well as the visual information of the flickr photos themselves. Any of these modalities might serve as a strong signal of cluster membership. Photos taken in the same place, or at the same time, or containing similar text might all serve as strong indication of these photos being of the same event. Therefore, the first stage in the construction of a unified affinity matrix is a separate affinity matrix for each of these features. Inspired by~\citet{Reuter2012ECS23247962324824}.
+% subsubsection multi_modal_affinity (end)
+
+
+
+
+% section methodology (end)
+
+
+
+
+\bibliographystyle{abbrvnat}
 \bibliography{../bibliography}
 \end{document}
