@@ -54,7 +54,7 @@ David P. Dupplaw
 
 \maketitle
 \begin{abstract}
-The 2013 MediaEval Diversification task looked to tackling the problem of search result diversification of Flickr results sets formed from queries about geographic places and landmarks. In this paper we describe our approach of using a min-max similarity diversifier coupled with a pre-filter and reranker. We also demonstrate a number of novel features for measuring similarity to use in the diversification step.
+The 2013 MediaEval Diversification task looked to tackling the problem of search result diversification of Flickr results sets formed from queries about geographic places and landmarks. In this paper we describe our approach of using a min-max similarity diversifier coupled with pre-filters and a reranker. We also demonstrate a number of novel features for measuring similarity to use in the diversification step.
 \end{abstract}
 
 %\keywords{Geotagging, Probability Density, Image Annotation}
@@ -78,17 +78,7 @@ The implementation of our methodology was realised in Java using OpenIMAJ\footno
 
 \subsection{Pre-Filters}
 
-\noindent \textbf{Face}.
-
-\noindent \textbf{Blur}.
-
-\noindent \textbf{Text}.
-
-\noindent \textbf{Geo}.
-
-\noindent \textbf{Views}.
-
-\noindent \textbf{DLen}.
+We removed many of the images which weren't relevant using some of our pre-filters before diversifying them. Images which contained frontal or side view of faces in focus were discarded and we also got rid of the blurred out-of-focus ones. Images were further checked for the amount of text they contained and those with high percentage were thrown away. Those images which had been geotagged more than 8 km away from their actual location were removed. We found that images without any views were usually not relevant and so only took into consideration those which had more than 2 views. Similarly we discovered that images with very large desciptions tend to be irrelevant and hence filtered out those whose desciptions were over 2000 characters long.
 
 \subsection{Reranker}
 
@@ -97,13 +87,22 @@ The implementation of our methodology was realised in Java using OpenIMAJ\footno
 \subsubsection{Similarity Matrices}
 In order to use the Min-Max diversifier, a similarity matrix is required. At the beginning of the task we spent some time analysing the data, and looking at features which could be sensibly used  to compute similarity. One particular problem we noticed was that many of the images had the same description and tags, even though they were visually diverse. This is a result of the way many images are tagged and annotated on Flickr using so-called \emph{bulk tagging}. This means that standard techniques for diversification based on the text are unlikely to work well in many cases, and would in all likelihood end up to being similar to just diversifying based on the users that took the photo. With this in mind, we started to explore other features that could work better. 
 
-\noindent \textbf{CN}.
+\vspace{\baselineskip}\vspace{-\parskip}
 
-\noindent \textbf{SIFT}.
+\noindent \textbf{Color Naming Histogram} (CN) - 
+Images with similar CN values, which had been provided by the organisers [2], proved to be visually very similar and hence we used this feature for diversification.
+%\vspace{\baselineskip}\vspace{-\parskip}
 
-\noindent \textbf{TU}.
+\noindent \textbf{Scale-Invariant Feature Transform} (SIFT) - 
+We extracted SIFT features from the images and used them to further diversify the images with the similarity matrix diversifier.
+%\vspace{\baselineskip}\vspace{-\parskip}
 
-\noindent \textbf{MD}.
+\noindent \textbf{Time User} (TU) - 
+After experimenting a little, we found that images taken by the same user within 3.25 mins from each other inclined to be quite similar.
+%\vspace{\baselineskip}\vspace{-\parskip}
+
+\noindent \textbf{Month Delta} (MD) - 
+12 months
 
 \section{Experiments}\label{sec:exp}
 Three runs were submitted; their configuration with respect to the methodology and features described in Section~\ref{sec:meth} is illustrated in Tables~\ref{tab:filters} and~\ref{tab:feat}.
