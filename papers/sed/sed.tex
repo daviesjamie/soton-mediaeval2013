@@ -122,6 +122,8 @@ In response to challenges of scale that both DBSCAN and Spectral clustering meth
 For the runs submitted we first had to explore and set the various parameters of our approach against the training set. Our first parameter was the weightings with which the feature affinity matrices were combined. We performed a search across the weighting simplex and found that for the training set the best F1 score was achieved when the features were weighted as: $p_{timetaken}=3$, $p_{timeposted}=0$, $p_{geolocation}=1$, $p_{description}=1$, $p_{tags}=3$, $p_{title}=0$. However, we noticed that the F1 achieved by the top feature weightings on the simplex were very similar. Therefore, to avoid over-fitting we selected the top 1000 F1 ranked selections on the weightings simplex and got the weightings average in the training set. This resulted in the features weighted as: $p_{timetaken}=2.1$, $p_{timeposted}=1.8$, $p_{geolocation}=1.4$, $p_{description}=0.7$, $p_{tags}=1.7$, $p_{title}=0.3$. We performed a similar line search to find the optimal values for DBSCAN's parameters ($eps=0.45$, $minpts=3$) and Spectral Clustering's parameters ($eigengap=0.8$, $eps=-0.6$). The 4 runs we submitted for the MediaEval 2013 SED Task 1 were therefore: DBSCAN with the best weighting, Spectral clustering with the best, DBSCAN with the average weighting and spectral clustering with the average. All these runs were performed using our incremental clustering technique.
 % section experiments (end)
 
+\section{Acknowledgments}
+The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
 
 \bibliographystyle{abbrv}
 \bibliography{../bibliography}
