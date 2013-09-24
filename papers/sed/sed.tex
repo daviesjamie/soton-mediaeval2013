@@ -57,18 +57,18 @@ Combining items from social media streams, such as flickr photos and twitter twe
 \begin{table*}[t!]
 \centering
     \begin{tabular}{l|l|l|l|l}
-    ~                  & \textbf{DBSCAN (best)} &  \textbf{Spectral (best)} & \textbf{DBSCAN (average)} & \textbf{Spectral (average)} \\
+    ~                  & \textbf{DBSCAN (best-weight)} &  \textbf{Spectral (best-weight)} & \textbf{DBSCAN (average-weight)} & \textbf{Spectral (average-weight)} \\
     \hline
     \hline
     \textbf{F1}                 & 0.9454        & 0.9114           & 0.9461           & 0.9024             \\
-    % \hline
-    % \textbf{NMI}                & 0.9851        & 0.9765           & 0.9852           & 0.9737             \\
-    % \hline
-    % \textbf{F1 (Div)}           & 0.9350        & 0.8819           & 0.9358           & 0.8663             \\
-    % \hline
-    % \textbf{Random Baseline F1} & 0.0589        & 0.0580           & 0.0597           & 0.0569             \\
-    % \hline
-    % \textbf{Div F1}             & 0.8865        & 0.8534           & 0.8864           & 0.8455             \\
+    \hline
+    \textbf{NMI}                & 0.9851        & 0.9765           & 0.9852           & 0.9737             \\
+    \hline
+    \textbf{F1 (Div)}           & 0.9350        & 0.8819           & 0.9358           & 0.8663             \\
+    \hline
+    \textbf{Random Baseline F1} & 0.0589        & 0.0580           & 0.0597           & 0.0569             \\
+    \hline
+    \textbf{Div F1}             & 0.8865        & 0.8534           & 0.8864           & 0.8455             \\
     \end{tabular}
 \end{table*}
 \section{Introduction}
@@ -108,7 +108,7 @@ where $p^{(f)}$ is the weight of a given feature $f$. The final affinity matrix 
 \subsection{Event Clustering} % (fold)
 \label{sub:event_clustering}
 
-The exact number of events in a corpus was unknown and hard to estimate, we explored clustering techniques which work without an explicit $k$. The first technique we experimented with was a modified version of the classic Density-Based Spatial Clustering of Applications with Noise  (DBSCAN) algorithm, implementing a fast version of the neighborhood selection stage which worked against sparse affinity matrices. Secondly, we explored more sophisticated spectral clustering techniques, interpreting the affinity matrix as weights of edges on a graph and uses graph theoretic techniques to automatically estimate the number of clusters present in the graph. The data items are projected into a metric space which ensures better separation between the clusters. We used a classic cosine similarity nearest neighbour DBSCAN to cluster in the spectral space. 
+The exact number of events in a corpus was unknown and hard to estimate, we explored clustering techniques which work without an explicit $k$. The first technique we experimented with was a modified version of the classic Density-Based Spatial Clustering of Applications with Noise  (DBSCAN) algorithm, implementing a fast version of the neighborhood selection stage which worked against sparse affinity matrices. Secondly, we explored more sophisticated spectral clustering techniques which intorprate   the affinity matrix as weights of edges on a graph and uses graph theoretic techniques to automatically estimate the number of clusters present in the graph. The data items are projected into a metric space which ensures better separation between the clusters. We used a classic cosine similarity nearest neighbour DBSCAN to cluster in the spectral space. 
 
 % Spectral clustering requires the eigen decomposition of the laplacian of the affinity matrix, a calculation which quickly becomes intractable beyond $100,000$ items. Our sparse matrix DBSCAN is a relatively efficient algorithm and can easily cluster the number of items in the SED2013 challenge in memory. However, even DBSCAN has limits in terms of performance, its unmodified form requiring the entire space's affinity matrix to be held in memory, this could eventually become intractable to hold.
 In response to challenges of scale that both DBSCAN and Spectral clustering methods face given enough data, we developed a general incremental clustering technique which takes advantage of the streaming nature of social media data. Namely, if we assume the data appears in an incremental fashion, we can cluster the data in small windows. If we then allow the windows to grow and perform the clustering again, we might notice that certain clusters and their members are stable across window growth. This stability could be defined as the cluster members not changing whatsoever, or a relaxed form could define stability as paired clusters with high overlap. Regardless, once a cluster is defined as stable those items could be removed and not involved in the next window size increase. In this way, the effective number of items to be clustered in any given round will increase as items arrive but will also decrease as clusters become stable. In this way we were able to successfully apply the spectral clustering algorithm to the large training set of $300,000$ items unlike Petkos et al.~\cite{Petkos:2012:SED:2324796.2324825} who also applied a spectral clustering technique to event detection, but on a comparatively small sample size.
