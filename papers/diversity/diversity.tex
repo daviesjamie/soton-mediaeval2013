@@ -1,6 +1,7 @@
 \documentclass{../acm_proc_article-me11_tweaked}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \usepackage{graphicx}
+\usepackage{alltt}
 \usepackage{url}
 \usepackage{caption}
 \DeclareCaptionType{copyrightbox}
@@ -81,6 +82,14 @@ The implementation of our methodology was realised in Java using OpenIMAJ\footno
 We removed many of the images which weren't relevant using some of our pre-filters before diversifying them. Images which contained frontal or side view of faces in focus were discarded and we also got rid of the blurred out-of-focus ones. Images were further checked for the amount of text they contained and those with high percentage were thrown away. Those images which had been geotagged more than 8 km away from their actual location were removed. We found that images without any views were usually not relevant and so only took into consideration those which had more than 2 views. Similarly we discovered that images with very large desciptions tend to be irrelevant and hence filtered out those whose desciptions were over 2000 characters long.
 
 \subsection{Reranker}
+The original results lists provided in the task were retrieved by searching Flickr with a given monument name. The exact search implementation used by Flickr is unknown, but it is likely to be a rather standard vector space model with stemming. A better, more precise, ranking of the results can be achieved by performing a phrase or proximity search in which the results are scored higher if the query terms occur in close proximity in the metadata. To apply proximity-based reranking, we index the title, description and tags fields of each image in the filtered results list with Lucene, and perform the following query:
+\begin{alltt}
+\textrm
+(TITLE:"\emph{monument}"~20 OR TAGS:"\emph{monument}"~20 OR 
+    DESCRIPTION:"\emph{monument}"~20)
+OR
+    (TITLE:"\emph{monument}")^0.5 (TAGS:"\emph{monument}")^0.1
+\end{alltt}
 
 \subsection{Diversifier}
 
