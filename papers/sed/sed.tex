@@ -1,7 +1,6 @@
 \documentclass{../acm_proc_article-me11_tweaked}
 \usepackage{url}
 \usepackage{paralist}
-\usepackage[numbers]{natbib}
 \usepackage{mathptmx}
 
 \setlength{\parskip}{0cm}
@@ -10,7 +9,7 @@
 \begin{document}
 \conferenceinfo{\textit{MediaEval 2013 Workshop,}}{October 18-19, 2013, Barcelona, Spain}
 
-\title{Social Event Detection via sparse multi-modal feature selection and incremental density based clustering methods}
+\title{Social Event Detection via sparse multi-modal feature selection and incremental density based clustering}
 
 %
 \def\sharedaffiliation{%
@@ -18,7 +17,7 @@
 \begin{tabular}{c}}
 %
 
-\numberofauthors{4}
+\numberofauthors{9}
 \author{
 % 1st. author
 \alignauthor
@@ -26,34 +25,35 @@ Sina Samangooei\\
        \email{ss@ecs.soton.ac.uk}
 % 2nd. author
 \alignauthor
-Jonathon S. Hare\\
+Jonathon Hare\\
        \email{jsh2@ecs.soton.ac.uk}
 % 3rd. author
 \alignauthor
-David P. Dupplaw\\
+David Dupplaw\\
 			\email{dpd@ecs.soton.ac.uk}
 % 4th. author
 \and
 \alignauthor
-Paul H. Lewis\\
+Mahesan Niranjan\\
+       \email{mn@ecs.soton.ac.uk}
+\alignauthor
+Nicholas Gibbons\\
+       \email{nmg@ecs.soton.ac.uk}
+\alignauthor
+Paul Lewis\\
        \email{phl@ecs.soton.ac.uk}
 \sharedaffiliation
        \affaddr{Electronics and Computer Science, University of Southampton, United Kingdom}
 }
+
+\additionalauthors{Additional author: Jamie Davies (email: \texttt{jagd1g11@ecs.soton. ac.uk}) Neha Jain (email: {\texttt{nj1g12@ecs.soton.ac.uk}}), and John Preston (email: \texttt{jlp1g11@ecs.soton.ac.uk})}
+
 
 \maketitle
 \begin{abstract}
 Combining items from social media streams, such as flickr photos and twitter tweets, into meaningful groups can help users contextualize and effectively consume the torrents of information now made available on the social web. This task is made challenging due to the scale of the streams and the inherently multimodal nature of the information to be contextualized. Such unsupervised clustering tasks are fundamentally ill-posed and application specific questions. A fundamental question in such multimodal contexts is which features best signify that two items should belong to the same grouping. We present a methodology which approaches social event detection as a multi-modal clustering task. We address the various challenges of this task, including: the selection of the features used to compare items to one another; the construction of a single sparse affinity matrix, combining the features, their relative importance considered and finally clustering techniques which produce meaningful item groups and which can scale to cluster the large number of items present in this task. In our best tested configuration we achieve an F1 score of 0.94, showing that a good compromise between precision and recall of clusters can be achieved using our technique.
 \end{abstract}
 
-% A category with the (minimum) three required fields
-\category{H.4}{Information Systems Applications}{Miscellaneous}
-%A category including the fourth, optional field follows...
-\category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
-
-\terms{}
-
-\keywords{}
 \begin{table*}[t!]
 \centering
     \begin{tabular}{l|l|l|l|l}
@@ -95,7 +95,7 @@ Given the SED2013 training set we know for $~300,000$ objects there exist $~14,0
 
 \subsection{Multi-modal Affinity} % (fold)
 \label{ssub:multi_modal_affinity}
-Once documents are filtered using lucene, the affinity matrix is constructed. The items being clustered are inherently multi-modal. These modalities include time information (both posted and taken), geo graphic information, textual information (tags, descriptions and titles) as well as the visual information of the flickr photos themselves. Any of these modalities might serve as a strong signal of cluster membership. Photos taken in the same place, or at the same time, or containing similar text might all serve as strong indication of these photos being of the same event. However on their own the features might also serve to confuse unrelated events, for example, two events happening on a Friday, but one in Nottingham and one in London. Therefore, the first stage in the construction of a unified affinity matrix is a separate affinity matrix for each of these features, while the second step is the correct combination of the affinity matrices. Inspired by~\citet{Reuter2012ECS23247962324824} we use a logarithmic distance function for our two time features. We also use a logarithmic distance function for our geographic haversine based distance function. Fundamentally, this forces distances and times beyond a certain distance to count as being infinitely far, or as having 0 similarity. For the textual features we use the TF-IDF score with the IDF statistics calculated against the entire corpus of flickr objects. We also experimented with an LSH based visual feature for image feature affinity matrix construction. However, we found this feature only made F1 scores worse in the training set and the visual features were completely ignored in all submitted runs against the test set. If any given feature is missing or empty for either object represented by a particular cell in the affinity matrix, for the purpose of the sparse affinity matrix it is treated as being ``not present'' rather than 0 similarity. The distinction here is important for how these affinity matrices are combined.
+Once documents are filtered using lucene, the affinity matrix is constructed. The items being clustered are inherently multi-modal. These modalities include time information (both posted and taken), geo graphic information, textual information (tags, descriptions and titles) as well as the visual information of the flickr photos themselves. Any of these modalities might serve as a strong signal of cluster membership. Photos taken in the same place, or at the same time, or containing similar text might all serve as strong indication of these photos being of the same event. However on their own the features might also serve to confuse unrelated events, for example, two events happening on a Friday, but one in Nottingham and one in London. Therefore, the first stage in the construction of a unified affinity matrix is a separate affinity matrix for each of these features, while the second step is the correct combination of the affinity matrices. Inspired by Reuter and Cimiano~\cite{Reuter2012ECS23247962324824} we use a logarithmic distance function for our two time features. We also use a logarithmic distance function for our geographic haversine based distance function. Fundamentally, this forces distances and times beyond a certain distance to count as being infinitely far, or as having 0 similarity. For the textual features we use the TF-IDF score with the IDF statistics calculated against the entire corpus of flickr objects. We also experimented with an LSH based visual feature for image feature affinity matrix construction. However, we found this feature only made F1 scores worse in the training set and the visual features were completely ignored in all submitted runs against the test set. If any given feature is missing or empty for either object represented by a particular cell in the affinity matrix, for the purpose of the sparse affinity matrix it is treated as being ``not present'' rather than 0 similarity. The distinction here is important for how these affinity matrices are combined.
 
 Once the per-modality affinity matrices were constructed, we experimented with various feature-fusion techniques to combine them. Combination schemes including: product, max, min, and average were tested, average was shown to work well. Different feature weightings were also investigated. To calculate the combined affinity $w_{ij}$ of the $i^{th}$ image with the $j^{th}$ image, the feature affinities $w_{ij}^{(f)}$ for all features $f\in F_{ij}$ were used where $F_{ij}$ is all the features which had values for both images $i$ and $j$, i.e. those features ``present'' in the affinity matrix:
 \begin{eqnarray}
@@ -111,7 +111,7 @@ where $p^{(f)}$ is the weight of a given feature $f$. The final affinity matrix 
 The exact number of events in a corpus was unknown and hard to estimate, we explored clustering techniques which work without an explicit $k$. The first technique we experimented with was a modified version of the classic Density-Based Spatial Clustering of Applications with Noise  (DBSCAN) algorithm, implementing a fast version of the neighborhood selection stage which worked against sparse affinity matrices. Secondly, we explored more sophisticated spectral clustering techniques, interpreting the affinity matrix as weights of edges on a graph and uses graph theoretic techniques to automatically estimate the number of clusters present in the graph. The data items are projected into a metric space which ensures better separation between the clusters. We used a classic cosine similarity nearest neighbour DBSCAN to cluster in the spectral space. 
 
 % Spectral clustering requires the eigen decomposition of the laplacian of the affinity matrix, a calculation which quickly becomes intractable beyond $100,000$ items. Our sparse matrix DBSCAN is a relatively efficient algorithm and can easily cluster the number of items in the SED2013 challenge in memory. However, even DBSCAN has limits in terms of performance, its unmodified form requiring the entire space's affinity matrix to be held in memory, this could eventually become intractable to hold.
-In response to challenges of scale that both DBSCAN and Spectral clustering methods face given enough data, we developed a general incremental clustering technique which takes advantage of the streaming nature of social media data. Namely, if we assume the data appears in an incremental fashion, we can cluster the data in small windows. If we then allow the windows to grow and perform the clustering again, we might notice that certain clusters and their members are stable across window growth. This stability could be defined as the cluster members not changing whatsoever, or a relaxed form could define stability as paired clusters with high overlap. Regardless, once a cluster is defined as stable those items could be removed and not involved in the next window size increase. In this way, the effective number of items to be clustered in any given round will increase as items arrive but will also decrease as clusters become stable. In this way we were able to successfully apply the spectral clustering algorithm to the large training set of $300,000$ items unlike~\citet{Petkos:2012:SED:2324796.2324825} who also applied a spectral clustering technique to event detection, but on a comparatively small sample size.
+In response to challenges of scale that both DBSCAN and Spectral clustering methods face given enough data, we developed a general incremental clustering technique which takes advantage of the streaming nature of social media data. Namely, if we assume the data appears in an incremental fashion, we can cluster the data in small windows. If we then allow the windows to grow and perform the clustering again, we might notice that certain clusters and their members are stable across window growth. This stability could be defined as the cluster members not changing whatsoever, or a relaxed form could define stability as paired clusters with high overlap. Regardless, once a cluster is defined as stable those items could be removed and not involved in the next window size increase. In this way, the effective number of items to be clustered in any given round will increase as items arrive but will also decrease as clusters become stable. In this way we were able to successfully apply the spectral clustering algorithm to the large training set of $300,000$ items unlike Petkos et al.~\cite{Petkos:2012:SED:2324796.2324825} who also applied a spectral clustering technique to event detection, but on a comparatively small sample size.
 % subsection event_clustering (end)
 
 % section methodology (end)
@@ -123,6 +123,6 @@ For the runs submitted we first had to explore and set the various parameters of
 % section experiments (end)
 
 
-\bibliographystyle{plainnat}
+\bibliographystyle{abbrv}
 \bibliography{../bibliography}
 \end{document}
