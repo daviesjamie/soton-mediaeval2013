@@ -21,6 +21,7 @@ import org.openimaj.mediaeval.evaluation.datasets.SED2013ExpOne.Training;
 import org.openimaj.util.pair.LongLongPair;
 import org.openimaj.util.stream.Stream;
 import org.openimaj.vis.general.BarVisualisation;
+import org.openimaj.vis.general.BarVisualisationBasic;
 import org.xml.sax.SAXException;
 
 import twitter4j.internal.logging.Logger;
@@ -64,7 +65,8 @@ public class FlickrPhotoTimeVisualiser {
 			data[index] = 1;
 			clusterColours[index] = clusterColourMap.get(photos.getPhotoCluster(photo));
 		}
-		BarVisualisation vis = new BarVisualisation(2000,600);
+		BarVisualisationBasic vis = new BarVisualisationBasic(2000,600);
+		vis.setInvidiualBarColours(clusterColours);
 		vis.setData(data);
 
 		vis.showWindow("Flickr Clusters");
@@ -109,7 +111,8 @@ public class FlickrPhotoTimeVisualiser {
 	 * @throws XMLStreamException
 	 */
 	public static void main(String[] args) throws IOException, SAXException, ParserConfigurationException, ParseException, XMLStreamException {
-		String bigFile = "/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train.xml";
+		String bigFile = "/Users/ss/Experiments/sed2013/sed2013_dataset_train.xml";
+		String csv = "/Users/ss/Experiments/sed2013/sed2013_dataset_train_gs.csv";
 		File xmlFile = new File(bigFile);
 		final SimpleDateFormat df = new SimpleDateFormat("yyyy MM");
 		final Date after = df.parse("2007 01");
@@ -117,7 +120,7 @@ public class FlickrPhotoTimeVisualiser {
 		Stream<Photo> photoStream = new XMLCursorStream(xmlFile,"photo")
 		.filter(new CursorDateFilter(after, before))
 		.map(new CursorWrapperPhoto());;
-		InputStream clStream = new FileInputStream("/Volumes/data/mediaeval/mediaeval-SED2013/sed2013_dataset_train_gs.csv");
+		InputStream clStream = new FileInputStream(csv);
 		Training dataset = new Training(clStream, photoStream);
 		SimpleDateFormat f = new SimpleDateFormat("yyyy MM dd");
 		Date start = f.parse("2007 01 01");

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -71,6 +72,30 @@ public class SED2013ExpOne {
 			Integer clusterID = Integer.parseInt(line[0]);
 			String photoID = line[1];
 			ret.put(photoID, clusterID);
+		}
+		return ret;
+	}
+	
+	/**
+	 * @param csv the csv file
+	 * @return mapping from photo to cluster
+	 * @throws IOException
+	 * @throws NumberFormatException
+	 */
+	public static Map<Integer, List<Long>> clusters(File csv) throws NumberFormatException, IOException{
+		Map<Integer, List<Long>> ret = new HashMap<Integer, List<Long>>();
+		CSVParser parser = new CSVParser(new FileInputStream(csv), '\t');
+		String[] line;
+		logger.debug("Loading cluster CSV");
+		while((line = parser.getLine()) != null){
+			if(line[0].equals("cluster")) continue;
+			Integer clusterID = Integer.parseInt(line[0]);
+			Long photoID = Long.parseLong(line[1]);
+			List<Long> clusterset = ret.get(clusterID);
+			if(clusterset==null){
+				ret.put(clusterID, clusterset = new ArrayList<Long>());
+			}
+			clusterset.add(photoID);
 		}
 		return ret;
 	}
