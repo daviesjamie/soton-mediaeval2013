@@ -41,6 +41,14 @@ Paul H. Lewis\\
 
 \maketitle
 \begin{abstract}
+A modular architecture for searching and hyperlinking clips of TV programmes 
+was described and implemented. The core component of the system consisted of 
+analysis of sections of transcripts based on a textual query. Results showed 
+that search is made worse by the addition of other components, whereas in 
+hyperlinking precision is increased by the addition of visual features. It is 
+proposed that search could be improved by more intelligent anaylsis of textual 
+queries, especially in the line of extracting actor and character names for 
+querying against some database. 
 \end{abstract}
 
 % A category with the (minimum) three required fields
@@ -172,13 +180,74 @@ and integrators which were used for constructing timelines and assessing the
 confidence of various segments, respectively.
 
 Thomas Jungblut's implementation of agglomerative clustering 
-(\url{https://github.com/thomasjungblut/tjungblut-math}) was used to 
+(\url{https:\\github.com/thomasjungblut/tjungblut-math}) was used to 
 enable clustering of transcript search hits.
 
 SIFT features were extracted from keyframes using the OpenIMAJ 
 library\cite{Hare:2011:OIJ:2072298.2072421} and Apache Hadoop.
 
 \section{Results}
+
+\begin{figure}
+\begin{tabu} to 1.1\linewidth {|l|X|X|X|}
+\hline
+\textbf{Run code} & \textbf{MRR\footnotemark[1]} &
+\textbf{mGAP\footnotemark[2]} &
+\textbf{MASP\footnotemark[3]} \\
+\hline
+S\_M\_Modular & 0.208 & 0.0973 & 0.113 \\
+U\_M\_Modular & 0.141 & 0.0812 & 0.0587 \\
+I\_M\_Modular & 0.149 & 0.0828 & 0.581 \\
+S\_MV\_ModularConcepts & 0.146 & 0.0743 & 0.726 \\
+U\_MV\_ModularConcepts & 0.0808 & 0.0542 & 0.0401 \\
+I\_MV\_ModularConcepts & 0.0746 & 0.0412 & 0.0208 \\
+S\_MV\_ModularConceptsLSH & 0.117 & 0.0652 & 0.0533 \\
+U\_MV\_ModularConceptsLSH & 0.0510 & 0.0383 & 0.0211 \\
+I\_MV\_ModularConceptsLSH & 0.0723 & 0.0431 & 0.0221 \\
+\hline
+\end{tabu}
+\caption{Results for the search task}
+\label{tbl:searchresults}
+\end{figure}
+
+\footnotetext[1]{Mean reciprocal rank}
+\footnotetext[2]{Mean generalised average precision}
+\footnotetext[3]{Mean average segment precision}
+
+The results from the search task are summarised in table 
+\ref{tbl:searchresults}. Runs using the subtitles gave the best performance in 
+each category, which is understandable due to the more accurate nature of 
+subtitles compared with speech-to-text transcripts. It is interesting to 
+observe that the performance of the system decreased as additional features 
+were brought in, which may indicate that these additional modules were not 
+scaled properly, or otherwise very noisy in the context of the query. This is 
+surprising for concept detection, as in the search task concepts were directly 
+picked from the query.
+
+\begin{figure}
+\centering
+\begin{tabu} to 1.1\linewidth {|l|X[2]|X|X|X|}
+\hline
+\textbf{Run components} & \textbf{Retrieved} & \textbf{P5} & \textbf{P10} &
+\textbf{P20} \\
+\hline
+Subs & 5412 & 0.513 & 0.483 & 0.390 \\
+Subs, concepts & 7510 & 0.560 & 0.517 & 0.425 \\
+Subs, concepts, LSH & 7515 & 0.573 & 0.520 & 0.428 \\
+\hline
+\end{tabu}
+\caption{Results for the hyperlinking task}
+\label{tbl:hyperresults}
+\end{figure}
+
+In table \ref{tbl:hyperresults} we can ree the results for the hyperlinking 
+task. Here it can be seen that as additional features were added, the 
+precision of the system increased, which may be a result of concept detection 
+and LSH graph searching occuring directly on a segment of video, as opposed to 
+extracting concepts from a textual query and using LSH as a purely 
+expansionary tactic. Additionally, baseline results indicate that this 
+architecture, at least in its current configuration, is more oriented towards 
+hyperlinking than search.
 
 \section{Problems encountered}
 A number of issues were encountered while developing the system.
@@ -227,6 +296,19 @@ categorising programmes and developing profiles for modules based upon these
 classifications.
 
 \section{Conclusion}
+Unexpectedly, the system implemented served much better at the hyperlinking 
+sub-task than the search sub-task. This may in part be due to 
+mis-configuration, but also as a result of fundamental limits to core aspects 
+of the architecture, namely the transcript module: textual queries have a low 
+bandwidth and describe many features that are not discernable from a 
+programme's transcript, and so a more complex approach is required to improve 
+performance. We suggest that additional NLP on queries, along with person 
+detection, would significantly improve performance in the search domain.
+
+For hyperlinking, results indicate that a naïve approach using visual features 
+such as concept detections can readily improve the performance of such 
+systems. Additionally, results show that transcript segments from anchors 
+provide a rich source of textual information for building a search base.
 
 \bibliographystyle{abbrv}
 \bibliography{../bibliography}
