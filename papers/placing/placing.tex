@@ -6,9 +6,6 @@
 \DeclareCaptionType{copyrightbox}
 \usepackage{subcaption}
 
-\def \rothead [#1]{\rotatebox[origin=l]{45}{#1}}
-\renewcommand{\arraystretch}{1.5}
-
 \begin{document}
 
 \conferenceinfo{\textit{MediaEval 2013 Workshop,}}{October 18-19, 2013, Barcelona, Spain}
@@ -134,6 +131,24 @@ For all of our submitted runs, the methodology described in Section~\ref{sec:met
 \noindent\textbf{Run 5: Text+Visual, provided data with tag boosting}. The fifth run was the same as run 1, but we used the GeoNames\footnote{http://www.geonames.org} gazetteer to boost the weight of tag features that were likely to belong to a specific geographic location; any textual tag that could be matched against the the GeoNames ``name'' or ``alternate-name'' field was boosted by doubling its number of points from 1000 to 2000. Non textual features, and tags that didn't match remained at 1000 points/feature.
 
 \subsection{Results and Discussion}
+
+\begin{table*}
+	\centering
+	\caption{\label{}}
+	\begin{tabular}{|r||c|c|c|c|c|}
+		\hline
+		 & 1 & 2 & 3 & 4 & 5 \\ \hline \hline
+		No. est. within 1km of the ground truth & 53449 & 891 & 60190 & 68050 & 61631 \\ \hline
+		No. est. within 10km of the ground truth & 81988 & 1453 & 98032 & 106370 & 100009 \\ \hline
+		No. est. within 100km of the ground truth & 93838 & 2711 & 113937 & 123233 & 114986 \\ \hline
+		No. est. within 500km of the ground truth & 109117 & 9174 & 132655 & 139136 & 129721 \\ \hline
+		No. est. within 1000km of the ground truth & 122752 & 19129 & 147443 & 151876 & 141767 \\ \hline
+		Median error in km & 1352.897154 & 6898.266561 & 451.8928271 & 254.4838372 & 540.109773 \\ \hline
+		linear correlation (est. error vs. true error) & 0.1568 & 0.0594 & 0.3693 & 0.3721 & 0.0406 \\ \hline
+	\end{tabular}
+\end{table*}
+
+
 
 \section{Conclusions and Future Work}
 We had started to experiment with product-quantised PCA VLAD encodings of SIFT features, temporal features and query expansion of LSH-SIFT features, however we ran out of time to optimise and include these in the runs. It will be interesting to investigate these further, together with other features such as GIST in the future. It would also be interesting to try some other approaches to incorporating structured knowledge from GeoNames.
