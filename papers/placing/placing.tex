@@ -151,6 +151,24 @@ For all of our submitted runs, the methodology described in Section~\ref{sec:met
 \subsection{Results and Discussion}
 Our results are shown in Table~\ref{tab:results}. The first thing to note is that visual features alone perform relatively poorly for exactly predicting locations; this is be be expected as the vast majority of images do not contain recognisable places. Interestingly our first and fourth runs (text and visual) performed worse than the third (text only). This was unexpected and warrants further investigation as our experiments had indicated that the visual features should help boost performance. Run 4 indicates that using additional data helps our approach. We'd expect our error estimation to improve (higher correlation coefficient) as we become more accurate; this trend can be seen to an extent, although run 5 is a definite outlier.
 
+\begin{table*}
+	\centering
+	\caption{\label{}}
+	\begin{tabular}{|r||c|c|c|c|c|}
+		\hline
+		 & 1 & 2 & 3 & 4 & 5 \\ \hline \hline
+		No. est. within 1km of the ground truth & 53449 & 891 & 60190 & 68050 & 61631 \\ \hline
+		No. est. within 10km of the ground truth & 81988 & 1453 & 98032 & 106370 & 100009 \\ \hline
+		No. est. within 100km of the ground truth & 93838 & 2711 & 113937 & 123233 & 114986 \\ \hline
+		No. est. within 500km of the ground truth & 109117 & 9174 & 132655 & 139136 & 129721 \\ \hline
+		No. est. within 1000km of the ground truth & 122752 & 19129 & 147443 & 151876 & 141767 \\ \hline
+		Median error in km & 1352.897154 & 6898.266561 & 451.8928271 & 254.4838372 & 540.109773 \\ \hline
+		linear correlation (est. error vs. true error) & 0.1568 & 0.0594 & 0.3693 & 0.3721 & 0.0406 \\ \hline
+	\end{tabular}
+\end{table*}
+
+
+
 \section{Conclusions and Future Work}
 We had started to experiment with product-quantised PCA VLAD encodings of SIFT features, temporal features and query expansion of LSH-SIFT features, however we ran out of time to optimise and include these in the runs. It will be interesting to investigate these further, together with other features such as GIST in the future. It would also be interesting to try some other approaches to incorporating structured knowledge from GeoNames.
 
