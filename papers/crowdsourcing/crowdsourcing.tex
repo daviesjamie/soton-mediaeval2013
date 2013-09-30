@@ -21,14 +21,15 @@
 \author{
 	\alignauthor
 	Jonathon Hare, Anna Weston, Elena Simperl\\
+    \email{jsh2@ecs.soton.ac.uk, aw3g10@ecs.soton.ac.uk, E.Simperl@soton.ac.uk} \\
 	Sina Samangooei, David Dupplaw, Paul Lewis\\
+	\email{ss@ecs.soton.ac.uk, dpd@ecs.soton.ac.uk, phl@ecs.soton.ac.uk}\\
 	\affaddr{Electronics and Computer Science, University of Southampton, United Kingdom}
-    \email{jsh2@ecs.soton.ac.uk, aw3g10@ecs.soton.ac.uk, E.Simperl@soton.ac.uk}
 	\and
 	\alignauthor
 	Maribel Acosta\\
+	\email{maribel.acosta@kit.edu} \\
 	\affaddr{Institute AIFB, Karlsruhe Institute of Technology, Germany}
-	\email{maribel.acosta@kit.edu}
 }
 
 \maketitle
@@ -64,7 +65,7 @@ As described previously, the overall methodology for our run submissions was to 
 	\end{tabular}
 \end{table*}
 
-\newpage
+%\newpage
 \subsection{Run 1}
 The first run was required to only make use of the provided crowdsourced labels. For this run, we applied the generative model developed by Paul Mineiro~\cite{Mineiro20110124} illustrated in Figure~\ref{fig:model1}. This model extends the one by Whitehill et al.~\cite{NIPS2009_0100} by incorporating a hierarchical Gaussian prior on the elements of the confusion matrix (i.e. the $\gamma$ hyper-parameter in the figure). Briefly, the model assumes an unobserved ground truth label $z$ combines with a per-worker model parametrized by vector $\alpha$ and scalar item difficulty $\beta$ to generate an observed worker label $l$ for an image. The hyper-parameter $\gamma$ moderates the worker reliability as a function of the label class. The model parameters are learnt using a `Bayesian' Expectation-Maximisation algorithm. For our experiments with this model, we used the \texttt{nominallabelextract} implementation published by Paul Mineiro\footnote{\url{http://code.google.com/p/nincompoop/downloads/}} with uniform class priors. Note that the software was applied to data from each of the two questions asked of the workers separately, and ``NotSure'' answers were treated as unknowns (not included in the input data).
 
@@ -72,12 +73,12 @@ The first run was required to only make use of the provided crowdsourced labels.
 \centering
 \begin{subfigure}[t]{0.48\columnwidth}
 	\centering
-	\includegraphics[width=0.9\columnwidth]{images/model1}
+	\includegraphics[width=0.7\columnwidth]{images/model1}
 	\caption{\label{fig:model1}}
 \end{subfigure}
 \begin{subfigure}[t]{0.48\columnwidth}
 	\centering
-	\includegraphics[width=0.9\columnwidth]{images/model2}
+	\includegraphics[width=0.7\columnwidth]{images/model2}
 	\caption{\label{fig:model2}}
 \end{subfigure}
 \caption{Generative model of crowdworkers: (a) incorporating per-item difficulty and per-worker reliability; (b) incorporating per-item difficulty, per-worker reliability and features describing the image.}
