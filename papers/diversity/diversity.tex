@@ -1,13 +1,16 @@
 \documentclass{../acm_proc_article-me11_tweaked}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \usepackage{graphicx}
-\usepackage{alltt}
 \usepackage{url}
 \usepackage{caption}
 \DeclareCaptionType{copyrightbox}
 \usepackage{subcaption}
 
+\usepackage{textcomp}
+\newcommand{\textapprox}{\raisebox{0.5ex}{\texttildelow}}
+
 \captionsetup{belowskip=4.5pt,aboveskip=2pt}
+\setlength{\belowcaptionskip}{-2pt}
 
 \def \rothead [#1]{\rotatebox[origin=l]{45}{#1}}
 \renewcommand{\arraystretch}{1.5}
@@ -57,13 +60,13 @@ David P. Dupplaw
 
 \maketitle
 \begin{abstract}
-The 2013 MediaEval Diversification task looked to tackling the problem of search result diversification of Flickr results sets formed from queries about geographic places and landmarks. In this paper we describe our approach of using a min-max similarity diversifier coupled with pre-filters and a reranker. We also demonstrate a number of novel features for measuring similarity to use in the diversification step.
+The 2013 MediaEval \emph{Retrieving Diverse Social Images Task} looked to tackling the problem of search result diversification of Flickr results sets formed from queries about geographic places and landmarks. In this paper we describe our approach of using a min-max similarity diversifier coupled with pre-filters and a reranker. We also demonstrate a number of novel features for measuring similarity to use in the diversification step.
 \end{abstract}
 
 %\keywords{Geotagging, Probability Density, Image Annotation}
 
 \section{Introduction and Motivation}
-The diversification of search results is increasingly becoming an important topic in the area of information retrieval. The 2013 MediaEval Diversification task~\cite{DIV2013} aimed to foster new multimodal approaches to the diversification of result sets from social photo retrieval. 
+The diversification of search results is increasingly becoming an important topic in the area of information retrieval. The 2013 MediaEval Retrieving Diverse Social Images Task~\cite{DIV2013} aimed to foster new multimodal approaches to the diversification of result sets from social photo retrieval. 
 
 Our motivation for this task was to build on the diversification techniques we developed in ImageCLEF'09~\cite{ecs17993} by incorporating truly multimodal data. We were also motivated to explore how the precision of the search results could be improved by filtering and re-ranking prior to the diversification step, thus minimising the loss in precision usually seen when diversification is applied.
 
@@ -82,10 +85,12 @@ Briefly, the Min-Max technique takes as input a similarity matrix and a pivot im
 We removed many of the images which weren't relevant using some of our pre-filters before diversifying them. Images which contained frontal or side-views of faces in focus were discarded and we also got rid of the blurred out-of-focus ones. Images were further checked for the amount of text they contained and those with high percentage were thrown away. Those images which had been geotagged more than 8~km away from their actual location were removed. We found that images without any views were usually not relevant and so only took into consideration those which had more than 2 views. Similarly we discovered that images with very large descriptions tend to be irrelevant and hence filtered out those whose descriptions were over 2000 characters long.
 
 \begin{table*}[t!]
-	\caption{\label{tab:conf}Run configuration}
 	\centering
+	\small
+	\caption{\label{tab:conf}Run configuration}
 \begin{subtable}{0.9\columnwidth}
 	\centering
+	\caption{\label{tab:filters}Pre-filters applied in each of the runs.}
 \begin{tabular}{|l||c|c|c|c|c|c|}
 	\hline
 	& \multicolumn{3}{c|}{Visual} & \multicolumn{3}{c|}{Meta/Textual} \\
@@ -98,11 +103,11 @@ Run	& Face & Blur & Text & Geo & Views & DLen \\
 3 &   & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
 	\hline
 \end{tabular}
-\caption{\label{tab:filters}Pre-filters applied in each of the runs.}
 \end{subtable}
 ~
 \begin{subtable}{0.9\columnwidth}
 	\centering
+	\caption{\label{tab:feat}Reranker and features in each of the runs.}
 \begin{tabular}{|l||c|c|c|c|c|}
 	\hline
 	& & \multicolumn{2}{c|}{Visual} & \multicolumn{2}{c|}{Meta/Textual} \\
@@ -115,7 +120,6 @@ Run	& Reranker & CN & SIFT & TU & MD \\
 3 & \checkmark &  & \checkmark & \checkmark & \checkmark \\
 	\hline
 \end{tabular}
-\caption{\label{tab:feat}Reranker and features in each of the runs.}
 \end{subtable}
 \end{table*}
 
@@ -158,7 +162,8 @@ Run	& Reranker & CN & SIFT & TU & MD \\
 
 \begin{table*}[ht]
 	\centering
-	\caption{\label{tab:results}Official Results}
+	\small
+	\caption{\label{tab:results}Official Results. Crowdworker evaluation was performed on a subset of 50 locations from the testset (346 locations.}
 	\begin{tabular}{|l|||c|c|c|||c||c|c||c|c||c|c|}
 		\hline
 		 & \multicolumn{3}{c|||}{Expert} &  \multicolumn{7}{c|}{Crowdworker}\\
@@ -175,15 +180,8 @@ Run	& Reranker & CN & SIFT & TU & MD \\
 	\end{tabular}
 \end{table*}
 
-
-
 \subsection{Reranker}
-The original results lists provided in the task were retrieved by searching Flickr with a given monument name. The exact search implementation used by Flickr is unknown, but it is likely to be a variant of the vector space model with stemming. A better, more precise, ranking of the results can be achieved by performing a phrase or proximity search in which the results are scored higher if the query terms occur in close proximity in the metadata. To apply proximity-based reranking, we indexed the title, description and tags fields of each image in the filtered results list with Lucene, and performed the following query:
-\begin{alltt}
-\texttt{(TITLE:``\emph{monument}''~20 OR TAGS:``\emph{monument}''~20 OR 
-  DESCRIPTION:``\emph{monument}''~20) OR
-  (TITLE:``\emph{monument}'')^0.5 (TAGS:``\emph{monument}'')^0.1}
-\end{alltt}
+The original results lists provided in the task were retrieved by searching Flickr with a given monument name. The exact search implementation used by Flickr is unknown, but it is likely to be a variant of the vector space model with stemming. A better, more precise, ranking of the results can be achieved by performing a phrase or proximity search in which the results are scored higher if the query terms occur in close proximity in the metadata. To apply proximity-based reranking, we indexed the title, description and tags fields of each image in the filtered results list with Lucene, and performed the following query: \texttt{(TITLE:"\emph{monument}"\textapprox20 OR TAGS:"\emph{monument}"\textapprox20 OR DESCRIPTION:"\emph{monument}"\textapprox20) OR (TITLE:"\emph{monument}")\textasciicircum0.5 (TAGS:"\emph{monument}")\textasciicircum0.1}
 
 \subsection{Similarity Matrices}
 In order to use the Min-Max diversifier, a similarity matrix is required. At the beginning of the task we spent some time analysing the data, and looking at features which could be sensibly used  to compute similarity. One particular problem we noticed was that many of the images had the same description and tags, even though they were visually diverse. %This is a result of the way many images are tagged and annotated on Flickr using so-called \emph{bulk tagging}. 
@@ -199,6 +197,9 @@ This means that standard techniques for diversification based on the text are un
 
 \section{Experiments and Results}\label{sec:exp}
 Three runs were submitted; their configuration with respect to the methodology and features described in Section~\ref{sec:meth} is illustrated in Tables~\ref{tab:filters} and~\ref{tab:feat}. Where multiple features were used, the similarity matrices were just averaged to create a single matrix. Two major points can be noted from the results. Firstly, using textual and visual features outperforms the use of either modality alone with our techniques. It is also clear that the reranking stage massively helps improve precision. Secondly, the high variability in results across the experts and crowdworkers indicates that the task is actually rather subjective; it is particularly interesting that when compared against the crowdworker groundtruths our cluster recall scores are almost double, perhaps indicating that the experts tended to over-segment the result sets.
+
+\section{Conclusions}
+In this work we've explored different features for search result diversification, and also explored how relevance can be maximised by pre-filtering and re-ranking prior to the diversification step. The results indicate that our re-ranking step gives a good increase in precision. The combination of features from multiple modalities leads to a modest increase in diversity. In the future we intend to investigate whether automatically generated classifications from the visual features (indoor/outdoor, etc) can be leveraged to increase diversity.
 
 \section{Acknowledgments}
 The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
