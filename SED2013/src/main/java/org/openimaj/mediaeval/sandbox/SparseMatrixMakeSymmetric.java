@@ -52,7 +52,7 @@ public class SparseMatrixMakeSymmetric {
 	}
 
 	private static SparseMatrix makeSymmetric(SparseMatrix sp) {
-		System.out.println("Start density: " + (1-MatlibMatrixUtils.sparcity(sp)));
+		System.out.println("Start density: " + (1-MatlibMatrixUtils.sparsity(sp)));
 		int r = 0;
 		SparseMatrix retmat = new SparseMatrix(sp.rowCount(),sp.columnCount());
 		for (Vector row : sp.rows()) {
@@ -63,7 +63,7 @@ public class SparseMatrixMakeSymmetric {
 			}
 			r++;
 		}
-		System.out.println("End density: " + (1-MatlibMatrixUtils.sparcity(retmat)));
+		System.out.println("End density: " + (1-MatlibMatrixUtils.sparsity(retmat)));
 		return retmat;
 	}
 }

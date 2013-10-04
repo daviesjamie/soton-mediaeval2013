@@ -138,7 +138,7 @@ public class SED2013SimilarityMatrix {
 			// flush the row matrix
 			IOUtils.writeToFile(rmat.getInternalMatrix(), rowout);
 			if(i%100 == 0){
-				logger.debug(String.format("Similarity calculated for row %d, last sparcity: %2.5f",i,CFMatrixUtils.sparcity(rmat)));
+				logger.debug(String.format("Similarity calculated for row %d, last sparcity: %2.5f",i,CFMatrixUtils.sparsity(rmat)));
 			}
 		}
 	}
