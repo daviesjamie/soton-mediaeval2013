@@ -108,15 +108,15 @@ width of 60 seconds was used. This module was implemented using OpenIMAJ~\footno
 \textbf{mGAP} &
 \textbf{MASP} \\
 \hline
-S\_M\_Mod & 0.208 & 0.0973 & 0.113 \\
-U\_M\_Mod & 0.141 & 0.0812 & 0.0587 \\
-I\_M\_Mod & 0.149 & 0.0828 & 0.0581 \\
-S\_MV\_ModCon & 0.146 & 0.0743 & 0.0726 \\
-U\_MV\_ModCon & 0.0808 & 0.0542 & 0.0401 \\
-I\_MV\_ModCon & 0.0746 & 0.0412 & 0.0208 \\
-S\_MV\_ModConLSH & 0.117 & 0.0652 & 0.0533 \\
+S\_M\_Mod & 0.208 & 0.0973 & 0.113 \\ %OK
+U\_M\_Mod & 0.141 & 0.0812 & 0.0587 \\ %OK
+I\_M\_Mod & 0.149 & 0.0828 & 0.0581 \\ %OK
+S\_MV\_ModCon & 0.146 & 0.0743 & 0.0726 \\ %OK
+U\_MV\_ModCon & 0.0808 & 0.0542 & 0.0401 \\ %OK
+I\_MV\_ModCon & 0.0746 & 0.0412 & 0.0208 \\ %OK
+S\_MV\_ModConLSH & 0.117 & 0.0652 & 0.0533 \\ %OK
 U\_MV\_ModConLSH & 0.0510 & 0.0383 & 0.0211 \\
-I\_MV\_ModConLSH & 0.0723 & 0.0431 & 0.0221 \\
+I\_MV\_ModConLSH & 0.0723 & 0.0431 & 0.0221 \\ %OK
 \hline
 \end{tabular}
 \end{table}
@@ -131,9 +131,9 @@ I\_MV\_ModConLSH & 0.0723 & 0.0431 & 0.0221 \\
 \textbf{Run Conf.} & \textbf{Retr.} & \textbf{P5} & \textbf{P10} &
 \textbf{P20} & \textbf{MAP}\\
 \hline
-Subs & 5412 & 0.22 & 0.22 & 0.14 & 0.029\\
-Subs, cons & 7510 & 0.30 & 0.29 & 0.17 & 0.038 \\
-Subs, cons, LSH & 7515 & 0.30 & 0.28 & 0.17 & 0.038 \\
+Subs & 5393 & 0.42 & 0.35 & 0.22 & 0.069\\
+Subs, cons & 7489 & 0.35 & 0.30 & 0.20 & 0.059 \\
+Subs, cons, LSH & 7488 & 0.35 & 0.30 & 0.21 & 0.059 \\
 \hline
 \end{tabular}
 \end{table}
@@ -159,11 +159,12 @@ surprising for concept detection, as in the search task concepts were directly
 picked from the query.
 
 Table~\ref{tbl:hyperresults} shows the results for the hyperlinking 
-task. It can be seen that as additional features were added, the 
-precision of the system increased, which may be a result of concept detection 
-and LSH graph searching occurring directly on a segment of video, as opposed to 
-extracting concepts from a textual query and using LSH purely for 
-query expansion. 
+task. It can be seen that the baseline results with just the subtitle 
+information used give the best results. Adding the concept detections 
+causes a drop in performance; this indicates that similar visual concepts
+do not necessarily indicate relevant content. The addition of the SIFT-LSH
+features looks like it might slightly improve performance, but this needs to 
+be verified with further experiments without the visual concepts.
 
 % \section{Problems encountered}
 % A number of issues were encountered while developing the system.
@@ -212,16 +213,13 @@ query expansion.
 % classifications.
 % 
 \section{Conclusion}
-The system implemented served much better at the hyperlinking 
-sub-task than the search sub-task; this was slightly unexpected as the performance on the development data was higher. This may in part be due to fundamental limits to core aspects of the architecture, namely the transcript module: textual queries have a low bandwidth and describe many features that are not discernible from a 
-programme's transcript, and so a more complex approach is required to improve 
+The system performed better at the hyperlinking 
+sub-task than the search sub-task; this was slightly unexpected as the search performance on the development data was higher. This may in part be due to fundamental limits to core aspects of the architecture, namely the transcript module: textual queries have a low bandwidth and describe many features that are not discernible from a 
+programme's transcript, and thus a more complex approach might be required to improve 
 performance. Additional NLP on queries, along with person 
-detection (i.e. face recognition/verification), could significantly improve performance in the search domain, and we would like to explore this further in the future.
+detection (i.e. face recognition/verification), could also improve performance in the search domain, and we would like to explore this further in the future.
 
-For hyperlinking, results indicate that a naïve approach using visual features 
-such as concept detections can readily improve the performance of such 
-systems. Additionally, results show that transcript segments from anchors 
-provide a rich source of textual information for building a search base.
+For both tasks the addition of visual information tended to harm overall performance. Again, this was slightly unexpected, as we saw improvements in the development search queries when using this information. One possible reason for this is that the visual information is only useful for certain types of query (or anchor). It would be interesting to explore this further in the future. A starting point for this would be to analyse the results on a per-item basis (rather than just looking at the overall averages).
 
 \section{Acknowledgments}
 The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
