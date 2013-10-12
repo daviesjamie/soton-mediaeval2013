@@ -40,12 +40,13 @@ The 2013 MediaEval Crowdsourcing task looked at the problem of working with nois
 \section{Introduction}
 Crowdsourcing is increasingly becoming a popular way of extracting information. One problem with crowdsourcing is that the workers can have a number of traits that affect the quality of the work they are performing. One standard way of dealing with the problem of noisy data is to ask multiple workers to perform the same task and then combine the labels of the workers in order to obtain a final estimate.
 
-Perhaps the most intuitive way of combining labels of multiple workers is through majority voting, however other possibilities exist. The aim of the 2013 MediaEval Crowdsourcing task~\cite{CS2013} is to explore techniques in which better estimates of the true labels can be created. Our run submissions for this task explore a number of techniques to achieve this: probabilistic models of workers (i.e. estimating which workers are bad, and discounting their votes), additional crowdsourcing of images without a clear majority vote, and joint probabilistic models that take into account both the crowdsourced votes as well as features from the images (and their metadata).
+Perhaps the most intuitive way of combining labels of multiple workers is through majority voting, however other possibilities exist. The aim of the 2013 MediaEval Crowdsourcing task~\cite{CS2013} was to explore techniques in which better estimates of the true labels can be created. Our run submissions for this task explore a number of techniques to achieve this: probabilistic models of workers (i.e. estimating which workers are bad, and discounting their votes), additional crowdsourcing of images without a clear majority vote, and joint probabilistic models that take into account both the crowdsourced votes as well as extracted features.
 	
 \section{Methodology}
 As described previously, the overall methodology for our run submissions was to take a \emph{shotgun} approach and try three fundamentally different approaches (generative probabilistic model of workers; extra crowdsourcing; and joint modelling) to the problem. The techniques and data we used for each run are summarised in Table~\ref{tab:config}. Specific details on each run are given below.
 
 \begin{table*}[t]
+	\small
 	\centering
 	\caption{\label{tab:config}Configuration of the submitted runs.}
 	\begin{tabular}{|l||c|c|c|c|c||c|c|c|}
@@ -91,7 +92,7 @@ For the second run, we gathered additional data in two ways. Firstly, we randoml
 In the third run, we applied the model used in run 1 to the data in run 2. The original worker labels and additional crowdsourced labels were combined and used as the primary input. The expert labels were used to \emph{clamp} the model at the respective images in order to obtain a better fit.
 
 \subsection{Run 4}
-In the fourth run, we chose to explore the use of another generative model developed by Paul Mineiro~\cite{Mineiro20111116}. This model is inspired by the work of Raykar et al.~\cite{Raykar:2010:LC:1756006.1859894}, and incorporates the notion of the hidden unknown true label also generating a set of observed features. This is illustrated in the plate diagram shown in Figure~\ref{fig:model2}.
+In the fourth run, we chose to explore the use of another generative model developed by Paul Mineiro~\cite{Mineiro20111116}. This model is inspired by the work of Raykar et al.~\cite{Raykar:2010:LC:1756006.1859894}, and incorporates the notion of the hidden unknown true label also generating a set of observed features ($\psi$). This is illustrated in the plate diagram shown in Figure~\ref{fig:model2}.
 
 Mineiro developed an online procedure to learn the model parameters that jointly learns a logistic regressor to learn how to create classifications (estimations of the true label) from the features. A nice feature of this approach is that in each iteration of learning/fitting, the worker model informs the classifier and the classifier informs the worker model.
 
@@ -104,6 +105,7 @@ Finally, for the fifth run, we applied the same technique as used in run 4, but 
 The results of the five runs are shown in Table~\ref{tab:results}. Whilst we can't currently make global comments as to how well these runs performed compared to na\"ive majority voting, we can note a few points. Firstly, looking at runs 2 and 3 which used the same data, we can see that the generative model used in run 3 had a minor improvement for the second label, but it had a big negative effect for the first label. It's also clear that the more advanced model (runs 4 \& 5), that took into account features, also performed less well with this data than hoped. Interestingly, when we applied both generative models to the smaller MMSys dataset we had a slight improvement. One possible reason for the relatively low performance of the generative models on the first label could well be due to the subjectiveness of the question being asked, which would lead to errors when fitting the models. This would also help indicate why additional crowdsourcing seems to improve results.
 
 \begin{table}
+	\small
 	\centering
 	\caption{\label{tab:results}Results for each run and label.}
 	\begin{tabular}{|c|c|c|}
@@ -118,7 +120,7 @@ The results of the five runs are shown in Table~\ref{tab:results}. Whilst we can
 \end{table}
 
 \section{Acknowledgments}
-The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
+The described work was funded by the Engineering and Physical Sciences Research Council under the SOCIAM platform grant, and European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM) and 287863 (TrendMiner).
 
 \bibliographystyle{abbrv}
 \bibliography{../bibliography}
