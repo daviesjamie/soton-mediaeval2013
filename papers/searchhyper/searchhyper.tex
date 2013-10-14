@@ -57,16 +57,14 @@ This paper describes a modular architecture for searching and hyperlinking clips
 The 2013 MediaEval search an hyperlinking task~\cite{mediaeval2013:searchhyper} tackles two problems; search across and within video collections, and hyperlinking of short video segments relevant to a given anchor segment. This paper describes the system we built to address the two tasks. The motivation behind the design of this system was to provide a uniform way of combining features across different modalities of data.
 
 \section{Overall Approach}
-The overall idea behind our approach was represent each programme by a probability density function (PDF) over the timeline of the programme. The area under the PDF between two time points essentially represents the probability of that portion of the programme to being relevant to the query. By constructing PDFs for each programme with a given query, we can then locate the high-probability segments of the PDFs, which in turn tell us the beginning and end times of hits that can be returned to the user. With respect to the search and hyperlinking tasks, the primary difference is the form of the query.
+Our overall idea was to represent each programme by a probability density function (PDF) over the timeline of the programme. The area under the PDF between two time points essentially represents the probability of that portion of the programme to being relevant to the query. By constructing PDFs for each programme with a given query, we can then locate the high-probability segments of the PDFs, which in turn tell us the beginning and end times of hits that can be returned to the user. With respect to the search and hyperlinking tasks, the primary difference is the form of the query.
 
 The architecture backing the approach was modular, and we constructed various modules to incorporate data from different data sources. We developed two forms of module; the first was capable of using the query to generate new data points for the PDFs for a set of programmes, and the second was capable of weighting the entire PDF for a given programme (i.e. to increase or decrease the global relevance). The modules responsible for adding to the PDF worked by placing Gaussian functions at the point of interest on the timeline, with variance proportional to the length of the segment of interest. At the end, the overall PDF for a programme can be computed from summation of the Gaussians at every time point; this entire process can be viewed as a variable bandwidth kernel density estimation. 
 
 Most of the work is done by modules working on the textual data (transcripts, synopsis, program titles). This information was indexed using Lucene\footnote{\url{http://lucene.apache.org}} with separate fields for each source. Each module is described briefly below.
 
 \subsection{Generating Modules}
-The \emph{transcript search module} was the most important component of the system, doing 
-most of the heavy lifting when it came to determining the relevant sections 
-of a programme. The module searched for keywords (taken from the query string) 
+The \emph{transcript search module} was the most important component of the system. The module searched for keywords (taken from the query string) 
 across all transcripts of a certain kind (LIMSI/Vocapia, LIUM, or subtitles) using the Lucene index. Keyword matches were extracted from each transcript in turn and grouped using hierarchical agglomerative clustering over the time differences between hits within a programme. When a cluster's separation (calculated as the temporal distance between the average values of the cluster's left and right children) fell below a specified threshold, a cluster was formed, and used to build a Gaussian whose amplitude was calculated from \[\alpha = \frac{| W_Q |}{| Q |} \sum_{w \in W_Q} \operatorname{boost}(w) \operatorname{idf}(w)\] where \(Q\) was the set of all possible keywords from the query,
 \(W_Q\) was the subset of query keywords that appeared in the transcript, 
  \(idf : W \to \mathbb{R}\) was a 
@@ -93,9 +91,7 @@ calculated. Each SIFT feature was hashed using locality-sensitive hashing
 centred on the shots whose keyframes were directly connected to this keyframe 
 on the LSH graph. The base amplitude of the Gaussians was determined as the 
 fraction of functions under which the two keyframes collided to the largest 
-number of collisions. The amplitudes were additionally scaled by the 
-integral of the shot from which the graph traversal originated. A constant 
-width of 60 seconds was used. This module was implemented using OpenIMAJ~\footnote{\url{http://openimaj.org}}~\cite{Hare:2011:OIJ:2072298.2072421}.
+number of collisions. A constant width of 60 seconds was used. This module was implemented using OpenIMAJ~\footnote{\url{http://openimaj.org}}~\cite{Hare:2011:OIJ:2072298.2072421}.
 
 \begin{table}
 	\small
@@ -139,7 +135,7 @@ Subs, cons, LSH & 7488 & 0.35 & 0.30 & 0.21 & 0.059 \\
 \end{table}
 
 \subsection{Weighting modules}
-The \emph{synopsis} and \emph{title} modules increased the weight of timelines belonging to programmes whose keywords matched keywords in the synopsis and title fields of the index. The \emph{channel filter} module performed naïve NLP on the query: if it was found that a channel was mentioned in the query then any 
+The \emph{synopsis} and \emph{title} modules increased the weight of timelines belonging to programmes whose keywords matched keywords in the synopsis and title fields of the index. The \emph{channel filter} module performed naïve NLP on the query: if a channel was mentioned in the query, then any 
 timelines corresponding to programmes on other channels were removed from the 
 timeline set (i.e. setting the weight to zero).
 
@@ -161,10 +157,10 @@ picked from the query.
 Table~\ref{tbl:hyperresults} shows the results for the hyperlinking 
 task. It can be seen that the baseline results with just the subtitle 
 information used give the best results. Adding the concept detections 
-causes a drop in performance; this indicates that similar visual concepts
+causes a drop in performance, indicating that similar visual concepts
 do not necessarily indicate relevant content. The addition of the SIFT-LSH
-features looks like it might slightly improve performance, but this needs to 
-be verified with further experiments without the visual concepts.
+features looks like it might slightly improve performance; this needs further verification
+without the concepts.
 
 % \section{Problems encountered}
 % A number of issues were encountered while developing the system.
@@ -214,12 +210,11 @@ be verified with further experiments without the visual concepts.
 % 
 \section{Conclusion}
 The system performed better at the hyperlinking 
-sub-task than the search sub-task; this was slightly unexpected as the search performance on the development data was higher. This may in part be due to fundamental limits to core aspects of the architecture, namely the transcript module: textual queries have a low bandwidth and describe many features that are not discernible from a 
+sub-task than the search sub-task; this was slightly unexpected as the search performance on the development data was higher. This may in part be due to fundamental limits within the transcript module: textual queries have a low bandwidth and describe many features that are not discernible from a 
 programme's transcript, and thus a more complex approach might be required to improve 
-performance. Additional NLP on queries, along with person 
-detection (i.e. face recognition/verification), could also improve performance in the search domain, and we would like to explore this further in the future.
+performance. Additional NLP on queries, along with person detection (i.e. face recognition/verification), could also improve performance in the search domain. 
 
-For both tasks the addition of visual information tended to harm overall performance. Again, this was slightly unexpected, as we saw improvements in the development search queries when using this information. One possible reason for this is that the visual information is only useful for certain types of query (or anchor). It would be interesting to explore this further in the future. A starting point for this would be to analyse the results on a per-item basis (rather than just looking at the overall averages).
+For both tasks the addition of visual information tended to harm overall performance. Again, this was slightly unexpected, as we saw improvements in the development search queries when using this information. One possible reason for this is that the visual information is only useful for certain types of query (or anchor). It would be interesting to explore this further; a starting point for this would be to analyse the results on a per-item basis (rather than just looking at the overall averages).
 
 \section{Acknowledgments}
 The described work was funded by the European Union Seventh Framework Programme (FP7/2007-2013) under grant agreements 270239 (ARCOMEM), and 287863 (TrendMiner).
