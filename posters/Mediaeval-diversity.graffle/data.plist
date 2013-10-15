@@ -97,10 +97,10 @@
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStripItalic;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\i\fs64 \cf2 Greedy MIN-MAX SIMILARITY DIVERSIFier}</string>
+\f0\i\fs64 \cf0 Greedy MIN-MAX SIMILARITY DIVERSIFier}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -6107,10 +6107,10 @@ Similarity matrix}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 LucidaGrande;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs96 \cf2 N}</string>
+\f0\fs96 \cf0 N}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -6182,10 +6182,10 @@ Similarity matrix}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 LucidaGrande;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs96 \cf2 1}</string>
+\f0\fs96 \cf0 1}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -10832,10 +10832,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -10905,10 +10905,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -10978,10 +10978,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11051,10 +11051,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11124,10 +11124,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11197,10 +11197,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11270,10 +11270,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11343,10 +11343,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11416,10 +11416,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11489,10 +11489,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11562,10 +11562,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset77 ZapfDingbatsITC;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs44 \cf2 \uc0\u10004 }</string>
+\f0\fs44 \cf0 \uc0\u10004 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11635,10 +11635,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\i\fs44 \cf2 3}</string>
+\f0\i\fs44 \cf0 3}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11708,10 +11708,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\i\fs44 \cf2 2}</string>
+\f0\i\fs44 \cf0 2}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11781,10 +11781,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\i\fs44 \cf2 1}</string>
+\f0\i\fs44 \cf0 1}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11856,10 +11856,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStripItalic;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 Meta/Textual}</string>
+\f0\i\fs44 \cf0 Meta/Textual}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -11931,10 +11931,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStripItalic;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 Visual}</string>
+\f0\i\fs44 \cf0 Visual}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12006,10 +12006,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 DLen}</string>
+\f0\i\fs44 \cf0 DLen}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12081,10 +12081,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 Views}</string>
+\f0\i\fs44 \cf0 Views}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12156,10 +12156,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 Geo}</string>
+\f0\i\fs44 \cf0 Geo}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12231,10 +12231,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 Text}</string>
+\f0\i\fs44 \cf0 Text}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12306,10 +12306,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 BLUR}</string>
+\f0\i\fs44 \cf0 BLUR}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12381,10 +12381,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 Face}</string>
+\f0\i\fs44 \cf0 Face}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12456,10 +12456,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs44 \cf2 Run}</string>
+\f0\i\fs44 \cf0 Run}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12914,10 +12914,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs56 \cf2 Features are extracted and compared to produce similarity matrices for input to the diversifier}</string>
+\f0\i\fs56 \cf0 Features are extracted and compared to produce similarity matrices for input to the diversifier}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -13325,10 +13325,10 @@ CORR}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 LucidaGrande;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs242 \cf2 = \uc0\u8721 }</string>
+\f0\fs242 \cf0 = \uc0\u8721 }</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -18222,7 +18222,7 @@ CORR}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{66.833694, 142.23491}, {229.58376, 31.823498}}</string>
+			<string>{{66.833702, 124.95473}, {229.58376, 66.38385}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -18520,7 +18520,7 @@ CORR}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{296.41748, 160.21703}</string>
+				<string>{296.41745, 160.21703}</string>
 				<string>{355.18524, 161.27696}</string>
 			</array>
 			<key>Style</key>
@@ -18545,7 +18545,7 @@ CORR}</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{39.371685, 464.2395}, {261.4072, 31.823498}}</string>
+			<string>{{39.371689, 432.28345}, {261.4072, 95.735596}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FontInfo</key>
@@ -75640,7 +75640,7 @@ Similarity matrix}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2013-10-09 17:55:33 +0000</string>
+	<string>2013-10-14 16:31:23 +0000</string>
 	<key>Modifier</key>
 	<string>Jonathon Hare</string>
 	<key>NotesVisible</key>
@@ -75676,7 +75676,7 @@ Similarity matrix}</string>
 		<key>NSPaperName</key>
 		<array>
 			<string>string</string>
-			<string>A1</string>
+			<string>E10B09F3-9F72-4BB9-A4BE-002881309524</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>

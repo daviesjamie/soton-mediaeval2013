@@ -236,10 +236,10 @@
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 Official Results}</string>
+\f0\i\fs52 \cf0 Official Results}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -3328,7 +3328,7 @@
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
 \f0\i\fs44 \cf0 Text\
-Title}</string>
+Tags}</string>
 						<key>VerticalPad</key>
 						<integer>0</integer>
 					</dict>
@@ -4073,10 +4073,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 Weight Selection}</string>
+\f0\i\fs52 \cf0 Weight Selection}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -4148,10 +4148,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 4) Continue ignoring stable clusters}</string>
+\f0\i\fs52 \cf0 4) Continue ignoring stable clusters}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -4223,10 +4223,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 3) Identify stable clusters}</string>
+\f0\i\fs52 \cf0 3) Identify stable clusters}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -4298,10 +4298,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 2) Grow window, cluster again}</string>
+\f0\i\fs52 \cf0 2) Grow window, cluster again}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12380,10 +12380,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 1) Cluster initial window}</string>
+\f0\i\fs52 \cf0 1) Cluster initial window}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12567,10 +12567,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\i\fs32 \cf2 3) Clustered using DBSCAN}</string>
+\f0\i\fs32 \cf0 3) Clustered using DBSCAN}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12633,10 +12633,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\i\fs32 \cf2 2) Laplacian Eigenvectors}</string>
+\f0\i\fs32 \cf0 2) Laplacian Eigenvectors}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -12699,10 +12699,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\i\fs32 \cf2 1) Raw Data}</string>
+\f0\i\fs32 \cf0 1) Raw Data}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -14733,8 +14733,8 @@ Desc}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{109.17152, 1079.8628}</string>
-				<string>{119.2365, 1050.1272}</string>
+				<string>{109.2121, 1079.8766}</string>
+				<string>{119.3694, 1050.1736}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -14781,8 +14781,8 @@ Desc}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{140.78731, 1096.5594}</string>
-				<string>{118.49034, 1093.6517}</string>
+				<string>{140.75848, 1096.7976}</string>
+				<string>{118.44096, 1094.2822}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -14829,8 +14829,8 @@ Desc}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{115.23845, 1101.7935}</string>
-				<string>{148.8923, 1130.4014}</string>
+				<string>{115.23023, 1101.8032}</string>
+				<string>{148.85727, 1130.4423}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -14877,8 +14877,8 @@ Desc}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{156.09085, 1111.9851}</string>
-				<string>{157.76859, 1125.6991}</string>
+				<string>{156.06189, 1111.9886}</string>
+				<string>{157.71045, 1125.7057}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -14925,8 +14925,8 @@ Desc}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{194.6745, 1103.9515}</string>
-				<string>{168.84518, 1129.4434}</string>
+				<string>{194.72618, 1104.0038}</string>
+				<string>{169.03641, 1129.6306}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -15069,8 +15069,8 @@ Desc}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{148.30569, 1086.0201}</string>
-				<string>{130.12328, 1049.3989}</string>
+				<string>{148.27341, 1086.0363}</string>
+				<string>{129.99539, 1049.4637}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -15117,8 +15117,8 @@ Desc}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{156.40407, 1038.0088}</string>
-				<string>{137.577, 1036.6831}</string>
+				<string>{156.38388, 1038.3617}</string>
+				<string>{137.58096, 1037.5228}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -16242,10 +16242,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 Spectral Clustering}</string>
+\f0\i\fs52 \cf0 Spectral Clustering}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -16317,10 +16317,10 @@ Desc}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 DBSCAN}</string>
+\f0\i\fs52 \cf0 DBSCAN}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -24333,7 +24333,7 @@ Images}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{460.62988, 582.93915}</string>
+				<string>{460.62988, 582.93921}</string>
 				<string>{636.84515, 640.81647}</string>
 			</array>
 			<key>Style</key>
@@ -24379,7 +24379,7 @@ Images}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{460.62991, 582.93915}</string>
+				<string>{460.62988, 582.93921}</string>
 				<string>{708.39075, 610.77924}</string>
 			</array>
 			<key>Style</key>
@@ -24425,8 +24425,8 @@ Images}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{460.62991, 582.93915}</string>
-				<string>{666.87793, 549.0285}</string>
+				<string>{460.62988, 582.93921}</string>
+				<string>{666.87787, 549.0285}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -24471,7 +24471,7 @@ Images}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{460.62991, 582.93915}</string>
+				<string>{460.62988, 582.93921}</string>
 				<string>{576.85437, 521.65094}</string>
 			</array>
 			<key>Style</key>
@@ -24517,7 +24517,7 @@ Images}</string>
 			<integer>0</integer>
 			<key>Points</key>
 			<array>
-				<string>{460.62991, 582.93909}</string>
+				<string>{460.62988, 582.93921}</string>
 				<string>{484.901, 531.50385}</string>
 			</array>
 			<key>Style</key>
@@ -24921,7 +24921,7 @@ Images}</string>
 			<real>-1</real>
 			<key>Points</key>
 			<array>
-				<string>{88.58268, 599.80719}</string>
+				<string>{88.582672, 599.80719}</string>
 				<string>{238.94495, 619.12195}</string>
 			</array>
 			<key>Style</key>
@@ -25025,7 +25025,7 @@ Images}</string>
 			<real>-1</real>
 			<key>Points</key>
 			<array>
-				<string>{88.58268, 503.14963}</string>
+				<string>{88.582672, 503.14957}</string>
 				<string>{170.07874, 481.43927}</string>
 				<string>{182.01762, 521.7915}</string>
 			</array>
@@ -25402,10 +25402,10 @@ Images}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 Matrix Combination}</string>
+\f0\i\fs52 \cf0 Matrix Combination}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -25477,10 +25477,10 @@ Images}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 Feature Similarity Matrix}</string>
+\f0\i\fs52 \cf0 Feature Similarity Matrix}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -25552,10 +25552,10 @@ Images}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf390
 \cocoascreenfonts1{\fonttbl\f0\fnil\fcharset0 DigitalStrip;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
 
-\f0\i\fs52 \cf2 Lucene Index}</string>
+\f0\i\fs52 \cf0 Lucene Index}</string>
 				<key>VerticalPad</key>
 				<integer>0</integer>
 			</dict>
@@ -26313,8 +26313,8 @@ Feature Matrix}</string>
 					<integer>2885</integer>
 					<key>Points</key>
 					<array>
-						<string>{668.64166, 223.54997}</string>
-						<string>{706.16144, 223.60516}</string>
+						<string>{668.64172, 223.36003}</string>
+						<string>{706.1615, 223.38261}</string>
 					</array>
 					<key>Style</key>
 					<dict>
@@ -26357,8 +26357,8 @@ Feature Matrix}</string>
 					<integer>2886</integer>
 					<key>Points</key>
 					<array>
-						<string>{367.73859, 216.14185}</string>
-						<string>{382.60455, 216.14188}</string>
+						<string>{367.73859, 216.14177}</string>
+						<string>{382.60455, 216.14178}</string>
 					</array>
 					<key>Style</key>
 					<dict>
@@ -30077,7 +30077,7 @@ Social Event Detection for Social Multimedia}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2013-10-14 09:41:29 +0000</string>
+	<string>2013-10-14 16:06:29 +0000</string>
 	<key>Modifier</key>
 	<string>Jonathon Hare</string>
 	<key>NotesVisible</key>
@@ -30113,7 +30113,7 @@ Social Event Detection for Social Multimedia}</string>
 		<key>NSPaperName</key>
 		<array>
 			<string>string</string>
-			<string>6FEC67A4-EB5B-40DE-AB22-4A6966F97BDF</string>
+			<string>FD0A7272-1933-4131-91A5-284744450D94</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>
