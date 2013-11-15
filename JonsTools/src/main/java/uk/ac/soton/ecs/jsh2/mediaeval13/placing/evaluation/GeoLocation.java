@@ -7,7 +7,7 @@ package uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation;
  * 
  */
 public class GeoLocation {
-	public static final double EARTH_RADIUS_KM = 6372.8; // In kilometers
+	public static final double EARTH_RADIUS_KM = 6371;// In kilometers
 
 	/**
 	 * The latitude

@@ -91,20 +91,6 @@ public class GeoEvaluator implements Evaluator<TLongObjectHashMap<GeoLocationEst
 		return new GeoAnalysisResult(results);
 	}
 
-	public static void main(String[] args) throws IOException {
-		final TLongObjectHashMap<GeoLocation> gt = readGroundTruth(args[0]);
-		final TLongObjectHashMap<GeoLocationEstimate> predictions = readPredictions(args[1]);
-
-		final GeoEvaluator eval = new GeoEvaluator(gt);
-		final GeoAnalysisResult result = eval.analyse(predictions);
-		System.out.println();
-		System.out.println("Ground truth file: " + args[0]);
-		System.out.println(" Predictions file: " + args[1]);
-		System.out.println();
-		System.out.println(result.getDetailReport());
-		System.out.println();
-	}
-
 	public static TLongObjectHashMap<GeoLocation> readGroundTruth(String filename) throws IOException {
 		FileInputStream fis = null; // new FileInputStream(filename);
 		try {
@@ -163,5 +149,19 @@ public class GeoEvaluator implements Evaluator<TLongObjectHashMap<GeoLocationEst
 		}
 
 		return data;
+	}
+
+	public static void main(String[] args) throws IOException {
+		final TLongObjectHashMap<GeoLocation> gt = readGroundTruth(args[0]);
+		final TLongObjectHashMap<GeoLocationEstimate> predictions = readPredictions(args[1]);
+
+		final GeoEvaluator eval = new GeoEvaluator(gt);
+		final GeoAnalysisResult result = eval.analyse(predictions);
+		System.out.println();
+		System.out.println("Ground truth file: " + args[0]);
+		System.out.println(" Predictions file: " + args[1]);
+		System.out.println();
+		System.out.println(result.getDetailReport());
+		System.out.println();
 	}
 }

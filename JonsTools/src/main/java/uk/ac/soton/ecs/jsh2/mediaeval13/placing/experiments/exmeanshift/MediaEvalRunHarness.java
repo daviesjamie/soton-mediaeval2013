@@ -19,7 +19,7 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.InMemCEDDPQSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.LSHSiftGraphSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
 
-public class RunHarness {
+public class MediaEvalRunHarness {
 	//private static final File BASE = new File(".");
 	// private static final File BASE = new
 	// File("/Users/jamie/Code/openimaj-code/soton-mediaeval2013/Placement/data");

@@ -23,7 +23,7 @@ import com.bethecoder.ascii_table.ASCIITableHeader;
  * 
  */
 public class GeoAnalysisResult implements AnalysisResult {
-	private static int[] distances = { 1, 10, 100, 1000 };
+	private static double[] distances = { 0.1, 0.5, 1, 10, 100, 500, 1000, 2500, 5000 };
 
 	private List<DoubleDoublePair> results;
 
@@ -107,17 +107,18 @@ public class GeoAnalysisResult implements AnalysisResult {
 		final String[][] table = new String[accuracyPerDistance.length + 3][2];
 
 		for (int i = 0; i < accuracyPerDistance.length; i++) {
-			table[i][0] = "Percentage accuracy within " + distances[i] + "km";
-			table[i][1] = "" + accuracyPerDistance[i];
+			table[i][0] = "Accuracy within " + distances[i] + "km";
+			table[i][1] = String.format("%6d    %3.2f%%", (int) (accuracyPerDistance[i] * results.size()),
+					accuracyPerDistance[i] * 100);
 		}
 		table[0 + accuracyPerDistance.length][0] = "Median Error";
-		table[0 + accuracyPerDistance.length][1] = "" + medianError;
+		table[0 + accuracyPerDistance.length][1] = String.format("%2.3fkm", medianError);
 
 		table[1 + accuracyPerDistance.length][0] = "Linear Correlation";
-		table[1 + accuracyPerDistance.length][1] = "" + linearCorrelation;
+		table[1 + accuracyPerDistance.length][1] = String.format("%2.3f", linearCorrelation);
 
 		table[2 + accuracyPerDistance.length][0] = "Kendall's Tau";
-		table[2 + accuracyPerDistance.length][1] = "" + kendallTauCorrelation;
+		table[2 + accuracyPerDistance.length][1] = String.format("%2.3f", kendallTauCorrelation);
 
 		final ASCIITableHeader[] header = {
 				new ASCIITableHeader("Statistic", ASCIITable.ALIGN_RIGHT),

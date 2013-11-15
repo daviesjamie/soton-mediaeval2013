@@ -94,32 +94,8 @@ public class ExtensibleMeanShiftEngine implements GeoPositioningEngine {
 			}
 		}
 
-		// double maxX = -1000;
-		// double minX = 1000;
-		// double maxY = -1000;
-		// double minY = 1000;
-		// final double[][] biggest = new double[counts.get(maxIdx)][];
-		// for (int i = 0, j = 0; i < data.length; i++) {
-		// if (result.secondObject()[i] == maxIdx) {
-		// biggest[j++] = data[i];
-		//
-		// if (data[i][0] > maxX)
-		// maxX = data[i][0];
-		// if (data[i][0] < minX)
-		// minX = data[i][0];
-		// if (data[i][1] > maxY)
-		// maxY = data[i][1];
-		// if (data[i][1] < minY)
-		// minY = data[i][1];
-		// }
-		// }
-		//
-		// final double dx = maxX - minX;
-		// final double dy = maxY - minY;
-		// final double varKM = Math.sqrt((dx * dx) + (dy * dy));
-
 		final double lat = result.firstObject()[maxIdx][1];
-		final double lng = result.firstObject()[maxIdx][0];
+		final double lng = result.firstObject()[maxIdx][0] / Math.cos(lat * Math.PI / 180.0);
 
 		final DescriptiveStatistics stats = new DescriptiveStatistics();
 		for (int i = 0; i < data.length; i++) {
@@ -144,7 +120,10 @@ public class ExtensibleMeanShiftEngine implements GeoPositioningEngine {
 		final double[][] data = new double[pts.size()][];
 
 		for (int i = 0; i < data.length; i++) {
-			data[i] = new double[] { pts.get(i).longitude, pts.get(i).latitude };
+			data[i] = new double[] {
+					pts.get(i).longitude * Math.cos(pts.get(i).latitude * Math.PI / 180.0),
+					pts.get(i).latitude
+			};
 		}
 
 		return data;
