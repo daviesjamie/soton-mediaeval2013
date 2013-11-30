@@ -180,6 +180,37 @@ public class ICMRHarness {
 						new ScoreWeightedVisualEstimator(luceneIndex, cedd, 100, 1.0f));
 			}
 		},
+		MediaEval_R1_NoCEDD {
+			// Text + Visual
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f));
+			}
+		},
+		MediaEval_R1_VLAD {
+			// Text + Visual
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				final VLADSearcher vlad = new VLADSearcher(DEFAULT_VLAD_FEATURES_FILE, DEFAULT_VLAD_INDEX, luceneIndex);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
+						new ScoreWeightedVisualEstimator(luceneIndex, vlad, 100, 1.0f));
+			}
+		},
 		MediaEval_R2 {
 			// Visual Only
 			@Override
@@ -195,6 +226,22 @@ public class ICMRHarness {
 						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
 						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
 						new ScoreWeightedVisualEstimator(luceneIndex, cedd, 100, 1.0f));
+			}
+		},
+		VLAD_LSH {
+			// Visual Only
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				final VLADSearcher vlad = new VLADSearcher(DEFAULT_VLAD_FEATURES_FILE, DEFAULT_VLAD_INDEX, luceneIndex);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f),
+						new ScoreWeightedVisualEstimator(luceneIndex, vlad, 100, 1.0f));
 			}
 		},
 		MediaEval_R3 {
