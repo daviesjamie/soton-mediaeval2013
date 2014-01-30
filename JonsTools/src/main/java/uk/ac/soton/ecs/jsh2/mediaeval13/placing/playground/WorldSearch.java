@@ -1,7 +1,8 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.placing.playground;
 
+import gnu.trove.list.array.TLongArrayList;
+
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +12,8 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.lucene.search.IndexSearcher;
-import org.openimaj.image.FImage;
 import org.openimaj.image.ImageUtilities;
+import org.openimaj.image.MBFImage;
 import org.openimaj.util.api.auth.DefaultTokenFactory;
 import org.openimaj.util.api.auth.common.FlickrAPIToken;
 import org.restlet.Component;
@@ -25,8 +26,6 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.Extensib
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.CachingTagBasedEstimator;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.GeoDensityEstimateProvider;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.PriorEstimator;
-import uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.providers.ScoreWeightedVisualEstimator;
-import uk.ac.soton.ecs.jsh2.mediaeval13.placing.search.LSHSiftGraphSearcher;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
 
 import com.aetrion.flickr.Flickr;
@@ -43,29 +42,42 @@ public class WorldSearch {
 
 	private GeoPositioningEngine engine;
 
-	public WorldSearch() throws IOException {
-		final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
-		final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
-		lsh.setExpand(false);
+	public WorldSearch() {
+		try {
+			final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+			// final LSHSiftGraphSearcher lsh = new
+			// LSHSiftGraphSearcher(DEFAULT_LSH_EDGES_FILE, 1, luceneIndex);
+			// lsh.setExpand(false);
 
-		final GeoDensityEstimateProvider[] providers = {
-				new PriorEstimator(DEFAULT_LAT_LNG_FILE),
-				new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION),
-				new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f)
-		};
+			final GeoDensityEstimateProvider[] providers = {
+					new PriorEstimator(DEFAULT_LAT_LNG_FILE),
+					new CachingTagBasedEstimator(luceneIndex, DEFAULT_CACHE_LOCATION) // ,
+					// new ScoreWeightedVisualEstimator(luceneIndex, lsh,
+					// 100000, 1.0f)
+			};
 
-		this.engine = new ExtensibleMeanShiftEngine(1000, 0.01, providers);
+			final TLongArrayList skipIds = new TLongArrayList();
+			for (final GeoDensityEstimateProvider p : providers)
+				p.setSkipIds(skipIds);
+
+			this.engine = new ExtensibleMeanShiftEngine(1000, 0.01, providers);
+		} catch (final Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public static class Search extends ServerResource {
 		static Pattern FLICKR_URL = Pattern.compile("http://www.flickr.com/photos/.*/([0-9]*)[/|$]");
+		static WorldSearch ws = new WorldSearch();
 
 		@Get()
 		public String search() throws Exception {
+			System.err.println("Hit search");
+
 			final String url = getQueryValue("url");
 			final Matcher m = FLICKR_URL.matcher(url);
 
-			FImage image;
+			MBFImage image;
 			final List<String> tags = new ArrayList<String>();
 
 			if (m.matches()) {
@@ -77,10 +89,13 @@ public class WorldSearch {
 					tags.add(((Tag) o).getValue());
 				}
 
-				image = ImageUtilities.readF(new URL(p.getMediumUrl()));
+				image = ImageUtilities.readMBF(new URL(p.getMediumUrl()));
 			} else {
-				image = ImageUtilities.readF(new URL(url));
+				image = ImageUtilities.readMBF(new URL(url));
 			}
+
+			System.err.println("Geo Estimation");
+			System.out.println(ws.engine.estimateLocation(image, tags.toArray(new String[tags.size()])));
 
 			return "";
 		}
