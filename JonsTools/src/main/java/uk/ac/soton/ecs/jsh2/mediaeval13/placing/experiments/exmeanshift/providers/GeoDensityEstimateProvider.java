@@ -4,6 +4,8 @@ import gnu.trove.list.array.TLongArrayList;
 
 import java.util.List;
 
+import org.openimaj.image.MBFImage;
+
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
 
@@ -37,7 +39,22 @@ public interface GeoDensityEstimateProvider {
 	 * {@link GeoDensityEstimateProvider} works with.
 	 * 
 	 * @param query
-	 *            the query * @return the estimated location
+	 *            the query
+	 * @return the estimated location
 	 */
 	List<GeoLocation> estimatePoints(QueryImageData query);
+
+	/**
+	 * Estimate the density of geographical points for the given query. The
+	 * returned list must either be empty (if no estimate can be made), or it
+	 * must contain an integer multiple of sampleCount points. The multiple of
+	 * the number of points is typically based on the number of features this
+	 * {@link GeoDensityEstimateProvider} works with.
+	 * 
+	 * @param query
+	 *            the query
+	 * 
+	 * @return the estimated location
+	 */
+	List<GeoLocation> estimatePoints(MBFImage image, String[] tags);
 }

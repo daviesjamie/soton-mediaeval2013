@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
+import org.openimaj.image.MBFImage;
+
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
@@ -38,5 +40,10 @@ public class PriorRandomPositioningEngine implements GeoPositioningEngine {
 		final GeoLocation loc = pts.get(r);
 
 		return new GeoLocationEstimate(loc.latitude, loc.longitude, Math.random());
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] tags) {
+		return estimateLocation(null);
 	}
 }

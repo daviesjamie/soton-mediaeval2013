@@ -150,6 +150,28 @@ public class ICMRHarness {
 						new ScoreWeightedVisualEstimator(luceneIndex, vlad, 150, 1.0f));
 			}
 		},
+		MEVLADOnlyT200 {
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+
+				final VLADSearcher vlad = new VLADSearcher(DEFAULT_VLAD_FEATURES_FILE, DEFAULT_VLAD_INDEX, luceneIndex);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new ScoreWeightedVisualEstimator(luceneIndex, vlad, 200, 1.0f));
+			}
+		},
+		MEVLADOnlyT250 {
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(DEFAULT_LUCENE_INDEX);
+
+				final VLADSearcher vlad = new VLADSearcher(DEFAULT_VLAD_FEATURES_FILE, DEFAULT_VLAD_INDEX, luceneIndex);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new ScoreWeightedVisualEstimator(luceneIndex, vlad, 250, 1.0f));
+			}
+		},
 		MELSHSIFTOnly {
 			// Text + Visual
 			@Override
@@ -277,6 +299,35 @@ public class ICMRHarness {
 				);
 			}
 		},
+		MediaEval_R4_TAGS {
+			// Text + Visual, Big data
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_LUCENE_INDEX);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(BIG_SET_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, BIG_SET_CACHE_LOCATION)
+				);
+			}
+		},
+		MediaEval_R4_VISUAL {
+			// Text + Visual, Big data
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_LUCENE_INDEX);
+
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(BIG_SET_LSH_EDGES_FILE, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(BIG_SET_LAT_LNG_FILE),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f)// ,
+				// new ScoreWeightedVisualEstimator(luceneIndex, vlad, 100,
+				// 1.0f)
+				);
+			}
+		},
 		MediaEval_R5 {
 			// Text + Visual, no prior
 			@Override
@@ -333,6 +384,33 @@ public class ICMRHarness {
 				);
 			}
 		},
+		MediaEval_R4_WITH_COMPLETE_USERS_TAGS {
+			// Text + Visual, Big data
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_WUSERS_LUCENE_INDEX);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(BIG_SET_WUSERS_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, BIG_SET_WUSERS_CACHE_LOCATION)
+				);
+			}
+		},
+		MediaEval_R4_WITH_COMPLETE_USERS_VISUAL {
+			// Text + Visual, Big data
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_WUSERS_LUCENE_INDEX);
+
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(BIG_SET_WUSERS_LSH_EDGES_FILE, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(BIG_SET_WUSERS_LAT_LNG_FILE),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f)// ,
+				);
+			}
+		},
 		MediaEval_R4_WITH_24HR_FILTERED_USERS {
 			// Text + Visual, Big data
 			@Override
@@ -353,6 +431,33 @@ public class ICMRHarness {
 						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f)// ,
 				// new ScoreWeightedVisualEstimator(luceneIndex, vlad, 100,
 				// 1.0f)
+				);
+			}
+		},
+		MediaEval_R4_WITH_24HR_FILTERED_USERS_TAGS {
+			// Text + Visual, Big data
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_WUSERS24_LUCENE_INDEX);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(BIG_SET_WUSERS24_LAT_LNG_FILE),
+						new CachingTagBasedEstimator(luceneIndex, BIG_SET_WUSERS24_CACHE_LOCATION)
+				);
+			}
+		},
+		MediaEval_R4_WITH_24HR_FILTERED_USERS_VISUAL {
+			// Text + Visual, Big data
+			@Override
+			protected MeanShiftPlacingExperiment create() throws Exception {
+				final IndexSearcher luceneIndex = Utils.loadLuceneIndex(BIG_SET_WUSERS24_LUCENE_INDEX);
+
+				final LSHSiftGraphSearcher lsh = new LSHSiftGraphSearcher(BIG_SET_WUSERS24_LSH_EDGES_FILE, 1, luceneIndex);
+				lsh.setExpand(false);
+
+				return new MeanShiftPlacingExperiment(0.01, 1000, TEST_SET_URL, TEST_SET_GT_URL,
+						new PriorEstimator(BIG_SET_WUSERS24_LAT_LNG_FILE),
+						new ScoreWeightedVisualEstimator(luceneIndex, lsh, 100000, 1.0f)
 				);
 			}
 		},

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
+import org.openimaj.image.MBFImage;
 import org.openimaj.util.pair.IndependentPair;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
@@ -127,5 +128,22 @@ public class ExtensibleMeanShiftEngine implements GeoPositioningEngine {
 		}
 
 		return data;
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] tags) {
+		final List<GeoLocation> pts = new ArrayList<GeoLocation>();
+
+		for (final GeoDensityEstimateProvider p : providers)
+			pts.addAll(p.estimatePoints(image, tags));
+
+		if (pts.size() == 0)
+			return new GeoLocationEstimate(UNKNOWN_LAT, UNKNOWN_LNG, UNKNOWN_DISTANCE);
+		if (allSame(pts))
+			return new GeoLocationEstimate(pts.get(0).latitude, pts.get(0).longitude, 0);
+
+		final GeoLocationEstimate estimate = computeLocationMeanShift(pts);
+
+		return estimate;
 	}
 }

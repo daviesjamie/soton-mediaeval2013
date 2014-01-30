@@ -12,6 +12,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
+import org.openimaj.image.MBFImage;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
@@ -89,5 +90,18 @@ public class TagBasedEstimator implements GeoDensityEstimateProvider {
 	@Override
 	public void setSkipIds(TLongArrayList skipIds) {
 		this.skipIds = skipIds;
+	}
+
+	@Override
+	public List<GeoLocation> estimatePoints(MBFImage image, String[] tags) {
+		if (tags.length == 0)
+			return new ArrayList<GeoLocation>();
+
+		final List<GeoLocation> pts = search(tags[0]);
+		for (int i = 1; i < tags.length; i++) {
+			pts.addAll(search(tags[i]));
+		}
+
+		return pts;
 	}
 }

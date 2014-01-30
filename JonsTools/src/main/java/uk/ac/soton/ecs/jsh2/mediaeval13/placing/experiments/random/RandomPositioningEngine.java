@@ -1,5 +1,7 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.random;
 
+import org.openimaj.image.MBFImage;
+
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoPositioningEngine;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
@@ -17,5 +19,10 @@ public class RandomPositioningEngine implements GeoPositioningEngine {
 		final double lng = (Math.random() * 360) - 180;
 		final double est = Math.random() * 1000;
 		return new GeoLocationEstimate(lat, lng, est);
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] tags) {
+		return estimateLocation(null);
 	}
 }

@@ -2,6 +2,7 @@ package uk.ac.soton.ecs.jsh2.mediaeval13.placing.experiments.exmeanshift.provide
 
 import gnu.trove.list.array.TLongArrayList;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
+import org.openimaj.image.MBFImage;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
@@ -43,35 +45,50 @@ public class VisualEstimator implements GeoDensityEstimateProvider {
 		try {
 			final ScoreDoc[] hits = visualSearcher.search(query.flickrId, numResults);
 
-			List<GeoLocation> locations = new ArrayList<GeoLocation>(hits.length);
-			for (int i = 0; i < hits.length; ++i) {
-				final int docId = hits[i].doc;
-				final Document d = searcher.doc(docId);
+			return buildResults(hits);
+		} catch (final Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-				final long flickrId = Long.parseLong(d.get(LuceneIndexBuilder.FIELD_ID));
-				if (skipIds.contains(flickrId))
-					continue;
+	private List<GeoLocation> buildResults(final ScoreDoc[] hits) throws IOException {
+		List<GeoLocation> locations = new ArrayList<GeoLocation>(hits.length);
+		for (int i = 0; i < hits.length; ++i) {
+			final int docId = hits[i].doc;
+			final Document d = searcher.doc(docId);
 
-				final String[] llstr = d.get(LuceneIndexBuilder.FIELD_LOCATION).split(" ");
-				final float lon = Float.parseFloat(llstr[0]);
-				final float lat = Float.parseFloat(llstr[1]);
+			final long flickrId = Long.parseLong(d.get(LuceneIndexBuilder.FIELD_ID));
+			if (skipIds.contains(flickrId))
+				continue;
 
-				locations.add(new GeoLocation(lat, lon));
-			}
+			final String[] llstr = d.get(LuceneIndexBuilder.FIELD_LOCATION).split(" ");
+			final float lon = Float.parseFloat(llstr[0]);
+			final float lat = Float.parseFloat(llstr[1]);
 
-			if (locations.size() == 0)
-				return locations;
+			locations.add(new GeoLocation(lat, lon));
+		}
 
-			if (locations.size() > sampleCount) {
-				Collections.shuffle(locations);
-				locations = locations.subList(0, sampleCount);
-			} else {
-				while (locations.size() < sampleCount) {
-					locations.add(locations.get((int) (Math.random() * locations.size())));
-				}
-			}
-
+		if (locations.size() == 0)
 			return locations;
+
+		if (locations.size() > sampleCount) {
+			Collections.shuffle(locations);
+			locations = locations.subList(0, sampleCount);
+		} else {
+			while (locations.size() < sampleCount) {
+				locations.add(locations.get((int) (Math.random() * locations.size())));
+			}
+		}
+
+		return locations;
+	}
+
+	@Override
+	public List<GeoLocation> estimatePoints(MBFImage image, String[] tags) {
+		try {
+			final ScoreDoc[] hits = visualSearcher.search(image, numResults);
+
+			return buildResults(hits);
 		} catch (final Exception e) {
 			throw new RuntimeException(e);
 		}

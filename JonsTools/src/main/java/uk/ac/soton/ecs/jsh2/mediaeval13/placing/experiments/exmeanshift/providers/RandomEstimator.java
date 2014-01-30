@@ -5,6 +5,8 @@ import gnu.trove.list.array.TLongArrayList;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openimaj.image.MBFImage;
+
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.QueryImageData;
@@ -15,15 +17,15 @@ public class RandomEstimator implements GeoDensityEstimateProvider {
 
 	@Override
 	public List<GeoLocation> estimatePoints(QueryImageData query) {
-		List<GeoLocation> pts = new ArrayList<GeoLocation>(sampleCount);
+		final List<GeoLocation> pts = new ArrayList<GeoLocation>(sampleCount);
 
-		for( int i = 0; i < sampleCount; i++ ) {
+		for (int i = 0; i < sampleCount; i++) {
 			final double lat = (Math.random() * 180) - 90;
 			final double lng = (Math.random() * 360) - 180;
 			final double est = Math.random() * 5000;
 			pts.add(new GeoLocationEstimate(lat, lng, est));
 		}
-		
+
 		return pts;
 	}
 
@@ -34,5 +36,10 @@ public class RandomEstimator implements GeoDensityEstimateProvider {
 
 	@Override
 	public void setSkipIds(TLongArrayList skipIds) {
+	}
+
+	@Override
+	public List<GeoLocation> estimatePoints(MBFImage image, String[] tags) {
+		return estimatePoints(null);
 	}
 }

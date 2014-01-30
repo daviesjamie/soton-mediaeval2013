@@ -18,6 +18,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
+import org.openimaj.image.MBFImage;
 import org.openimaj.math.statistics.distribution.MultivariateKernelDensityEstimate;
 import org.openimaj.math.statistics.distribution.kernel.StandardUnivariateKernels;
 import org.openimaj.ml.clustering.meanshift.ExactMeanShift;
@@ -135,7 +136,9 @@ public class NewMeanShiftTagEngine implements GeoPositioningEngine {
 		double bestLL = kde.estimateLogProbability(esm.getModes()[0]);
 		for (int i = 1; i < esm.getModes().length; i++) {
 			final double[] mode = esm.getModes()[i];
-			final double ll = kde.estimateLogProbability(mode) * esm.counts[i];
+			final double ll = kde.estimateLogProbability(mode);
+			// final double ll = kde.estimateLogProbability(mode) *
+			// esm.counts[i];
 			// final double ll = esm.counts[i];
 
 			if (ll > bestLL) {
@@ -156,5 +159,10 @@ public class NewMeanShiftTagEngine implements GeoPositioningEngine {
 			data[i] = new double[] { pts.get(i).longitude, pts.get(i).latitude };
 
 		return data;
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] tags) {
+		throw new UnsupportedOperationException();
 	}
 }

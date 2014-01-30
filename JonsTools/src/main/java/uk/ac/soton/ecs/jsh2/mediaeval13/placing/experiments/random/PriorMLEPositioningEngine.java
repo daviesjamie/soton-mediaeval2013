@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.openimaj.image.FImage;
+import org.openimaj.image.MBFImage;
 import org.openimaj.image.pixel.FValuePixel;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
@@ -37,5 +38,10 @@ public class PriorMLEPositioningEngine implements GeoPositioningEngine {
 	@Override
 	public GeoLocationEstimate estimateLocation(QueryImageData query) {
 		return new GeoLocationEstimate(mle.latitude, mle.longitude, Math.random());
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] tags) {
+		return estimateLocation(null);
 	}
 }

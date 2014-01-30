@@ -5,6 +5,7 @@ import gnu.trove.TLongObjectHashMap;
 import java.io.File;
 import java.io.IOException;
 
+import org.openimaj.image.MBFImage;
 import org.openimaj.util.iterator.TextLineIterable;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
@@ -49,5 +50,10 @@ public class ExternalDataEngine implements GeoPositioningEngine {
 	@Override
 	public GeoLocationEstimate estimateLocation(QueryImageData query) {
 		return data.get(query.flickrId);
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] tags) {
+		throw new UnsupportedOperationException();
 	}
 }

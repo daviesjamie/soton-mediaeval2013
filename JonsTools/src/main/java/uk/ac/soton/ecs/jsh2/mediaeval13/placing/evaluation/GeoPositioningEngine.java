@@ -1,5 +1,7 @@
 package uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation;
 
+import org.openimaj.image.MBFImage;
+
 /**
  * Interface describing an object that guesses {@link GeoLocationEstimate}s for
  * a {@link QueryImage}.
@@ -9,4 +11,6 @@ package uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation;
  */
 public interface GeoPositioningEngine {
 	GeoLocationEstimate estimateLocation(QueryImageData query);
+
+	GeoLocationEstimate estimateLocation(MBFImage image, String[] tags);
 }

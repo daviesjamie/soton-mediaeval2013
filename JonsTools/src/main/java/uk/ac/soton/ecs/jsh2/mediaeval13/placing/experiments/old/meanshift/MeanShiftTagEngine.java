@@ -19,6 +19,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
+import org.openimaj.image.MBFImage;
 import org.openimaj.util.pair.IndependentPair;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
@@ -188,5 +189,10 @@ public class MeanShiftTagEngine implements GeoPositioningEngine {
 			data[i] = new double[] { pts.get(i).longitude, pts.get(i).latitude };
 
 		return data;
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] tags) {
+		throw new UnsupportedOperationException();
 	}
 }

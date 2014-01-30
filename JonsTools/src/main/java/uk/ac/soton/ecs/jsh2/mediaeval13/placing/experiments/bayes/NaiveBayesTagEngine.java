@@ -18,6 +18,7 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
 import org.openimaj.image.FImage;
+import org.openimaj.image.MBFImage;
 import org.openimaj.image.pixel.FValuePixel;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocationEstimate;
@@ -129,6 +130,24 @@ public class NaiveBayesTagEngine implements GeoPositioningEngine {
 	public GeoLocationEstimate estimateLocation(QueryImageData query) {
 		final String[] queryTerms = query.tags.split(" ");
 
+		if (queryTerms == null || queryTerms.length == 0) {
+			final FValuePixel pos = prior.maxPixel();
+
+			return new GeoLocationEstimate(90 - pos.y, pos.x - 180, 40000);
+		}
+
+		final FImage map = search(queryTerms[0]);
+		for (int i = 1; i < queryTerms.length; i++) {
+			map.addInplace(search(queryTerms[i]));
+		}
+		map.addInplace(prior);
+
+		final FValuePixel pos = map.maxPixel();
+		return new GeoLocationEstimate(90 - pos.y, pos.x - 180, 100 * pos.value);
+	}
+
+	@Override
+	public GeoLocationEstimate estimateLocation(MBFImage image, String[] queryTerms) {
 		if (queryTerms == null || queryTerms.length == 0) {
 			final FValuePixel pos = prior.maxPixel();
 

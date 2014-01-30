@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.openimaj.data.RandomData;
+import org.openimaj.image.MBFImage;
 import org.openimaj.util.list.AcceptingListView;
 
 import uk.ac.soton.ecs.jsh2.mediaeval13.placing.evaluation.GeoLocation;
@@ -21,7 +22,6 @@ import uk.ac.soton.ecs.jsh2.mediaeval13.placing.util.Utils;
  */
 public class PriorEstimator implements GeoDensityEstimateProvider {
 	private List<GeoLocation> prior;
-	private TLongArrayList skipIds;
 	private File latLngFile;
 	private int sampleCount;
 
@@ -31,8 +31,6 @@ public class PriorEstimator implements GeoDensityEstimateProvider {
 
 	@Override
 	public void setSkipIds(TLongArrayList skipIds) {
-		this.skipIds = skipIds;
-
 		try {
 			prior = Utils.readLatLng(latLngFile, skipIds);
 		} catch (final IOException e) {
@@ -53,5 +51,10 @@ public class PriorEstimator implements GeoDensityEstimateProvider {
 	@Override
 	public String toString() {
 		return "PriorEstimator[file=" + latLngFile + "]";
+	}
+
+	@Override
+	public List<GeoLocation> estimatePoints(MBFImage image, String[] tags) {
+		return estimatePoints(null);
 	}
 }
